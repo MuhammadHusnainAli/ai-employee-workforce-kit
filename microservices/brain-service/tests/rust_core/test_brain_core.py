@@ -3,9 +3,8 @@
 import math
 import random
 
-import pytest
-
 import brain_core
+import pytest
 
 TRUST_W = {"human_verified": 1.0, "system": 0.9, "observed": 0.7, "external": 0.4}
 TAU = {"episodic": 30.0, "reflection": 90.0, "semantic": math.inf}
