@@ -19,3 +19,16 @@ events/                       CloudEvents envelope and example events
   subject (`run.completed`), and the `id` is a UUIDv7 that is also sent as `Nats-Msg-Id` so JetStream drops
   duplicates.
 - `wfk.common.v1` holds infrastructure types only. Domain types belong to the service that owns them.
+
+## Pinned-context cache (read by agent-runtime)
+
+Every `Recall` writes the employee's pinned context to Valkey, so the agent runtime can fall back on it when
+brain-api is unreachable (architecture/brain.md, section 3, step 6).
+
+| | |
+|---|---|
+| Key | `wfk:brain:pinned:v1:<tenant_id>:<employee_id>` |
+| Value | JSON `{"version": int, "identity": str, "rules": [str]}` |
+| TTL | 24 hours, refreshed on every recall |
+
+A breaking change to the value needs a new key version (`v2`), written alongside `v1` until readers move.

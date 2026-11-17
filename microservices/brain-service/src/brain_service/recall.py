@@ -12,6 +12,7 @@ import brain_core
 
 from wfk_platform.db import Database
 
+from brain_service.adapters.cache.pinned import NoCache, PinnedCache, PinnedContext
 from brain_service.adapters.modelgw.embeddings import Embedder
 from brain_service.adapters.postgres import brain as brain_repo
 from brain_service.adapters.postgres.memories import MemoryRetrievers
@@ -55,9 +56,10 @@ class RecallResult:
 
 
 class Recall:
-    def __init__(self, db: Database, embedder: Embedder) -> None:
+    def __init__(self, db: Database, embedder: Embedder, cache: PinnedCache | None = None) -> None:
         self.db = db
         self.embedder = embedder
+        self.cache: PinnedCache = cache or NoCache()
         self.stores = MemoryRetrievers(db)
 
     async def _embed(self, text: str) -> list[float] | None:
@@ -76,6 +78,14 @@ class Recall:
         async with self.db.tenant_tx(req.tenant_id) as conn:
             identity = await brain_repo.active_identity(conn, req.employee_id)
         rules: list[str] = []
+        # Write the pinned context through to Valkey: the agent runtime's fallback.
+        await self.cache.put(
+            req.tenant_id,
+            req.employee_id,
+            PinnedContext(version=identity.version, identity=identity.text, rules=rules)
+            if identity
+            else None,
+        )
         pinned = (estimate_tokens(identity.text) if identity else 0) + sum(
             estimate_tokens(r) for r in rules
         )

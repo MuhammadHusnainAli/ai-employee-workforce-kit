@@ -22,6 +22,7 @@ dependencies = [
     # Rust hot path for recall (brain-core/), built with maturin
     "brain-core",
     "httpx>=0.28",
+    "valkey>=6",
 ]
 
 [project.scripts]

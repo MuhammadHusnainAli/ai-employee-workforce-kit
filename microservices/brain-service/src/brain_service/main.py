@@ -11,12 +11,17 @@ import uvicorn
 from wfk_platform import configure_logging, setup_telemetry
 from wfk_platform.db import Database
 
+from brain_service.adapters.cache.pinned import NoCache, PinnedCache, ValkeyPinnedCache
 from brain_service.adapters.modelgw.embeddings import Embedder, GatewayEmbedder, HashEmbedder
 from brain_service.app import NOT_SERVING, SERVING, create_app, create_grpc_server
 from brain_service.recall import Recall
 from brain_service.settings import Settings
 
 log = logging.getLogger(__name__)
+
+
+def pinned_cache(settings: Settings) -> PinnedCache:
+    return ValkeyPinnedCache(settings.valkey_url) if settings.valkey_url else NoCache()
 
 
 def embedder(settings: Settings) -> Embedder:
@@ -40,7 +45,9 @@ async def serve(settings: Settings) -> None:
             log_config=None,  # keep our JSON logging
         )
     )
-    grpc_server, grpc_health, _ = create_grpc_server(settings, Recall(db, embedder(settings)))
+    grpc_server, grpc_health, _ = create_grpc_server(
+        settings, Recall(db, embedder(settings), pinned_cache(settings))
+    )
     await grpc_server.start()
     await grpc_health.set("", SERVING)
     log.info(
