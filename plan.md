@@ -88,12 +88,12 @@ How the harness parts map to the platform:
 | Concern | Choice |
 |---|---|
 | Python | 3.13, `uv` workspace, `ruff`, `pyright`, `pytest`, `pytest-asyncio` |
-| Rust | stable toolchain pinned in `rust-toolchain.toml`, cargo workspace, `clippy`, `rustfmt`, `cargo-nextest`, `cargo-deny` |
+| Rust | 1.99.1 pinned in `rust-toolchain.toml`, cargo workspace, `clippy`, `rustfmt`, `cargo-deny` (CI) |
 | Rust stack | `tokio`, `tonic` + `prost` (gRPC), `axum` (health, REST), `sqlx` (Postgres), `async-nats`, `tracing` + `opentelemetry` |
 | Python stack | `temporalio`, `grpcio`, `psycopg` 3 (async), `nats-py`, `opentelemetry`, `pydantic`, `fastapi` (health, REST) |
 | Python and Rust bridge | PyO3 + maturin |
 | Contracts | Protobuf with `buf` (lint and `buf breaking` in CI), CloudEvents + AsyncAPI for events |
-| Migrations | Plain versioned SQL per service, expand then contract, applied with `sqlx migrate` for both languages |
+| Migrations | Plain versioned SQL per service, expand then contract, applied with `wfk-migrate` (in `wfk-platform`) for both languages |
 | Task runner | `just` (works on Windows, macOS and Linux) |
 | Local stack | Docker Compose in `deployments/`: Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS (S3), Grafana LGTM |
 
@@ -107,14 +107,17 @@ contracts/
   proto/<domain>/v1/     gRPC contracts
   events/                CloudEvents envelope, AsyncAPI per service
 libs/
-  python/wfk-platform/   config, telemetry, health, tenant-scoped db session, outbox, inbox, NATS relay
+  python/wfk-contracts/  generated Python code for contracts/
+  python/wfk-platform/   config, telemetry, health, tenant-scoped db session, outbox, inbox, NATS relay, wfk-migrate
+  rust/wfk-contracts/    generated Rust code for contracts/
   rust/wfk-platform/     the same, for Rust services
   rust/brain-core/       recall fusion, ranking, packing (PyO3 module)
 microservices/<name>/    one service each (exists), gains pyproject.toml or Cargo.toml
 deployments/             docker compose for the local stack (docker-compose.yml)
 platform/                Helm and Kustomize for platform components (later)
 cells/<cell-id>/         per-cell Argo CD values (later)
-templates/               service templates for Python and Rust
+templates/               service templates for Python and Rust (real workspace members) and migrations
+tools/                   repo scripts: new_service.py, check_licenses.py
 pyproject.toml           uv workspace root
 Cargo.toml               cargo workspace root
 justfile                 common commands
@@ -125,7 +128,7 @@ Shared libraries hold **infrastructure only** (outbox, telemetry, tenancy). Doma
 
 ---
 
-## Phase 0: Foundations (Step 0)
+## Phase 0: Foundations (Step 0) - DONE
 
 Goal: a repo where a new service in either language can be created, run against a local stack, and pass CI.
 No business features yet.
@@ -139,16 +142,40 @@ No business features yet.
 | 0.5 | Add root `pyproject.toml` (uv workspace), `Cargo.toml` (cargo workspace), `rust-toolchain.toml`, `.editorconfig`, `.gitignore`, `justfile` | `uv sync` and `cargo check` succeed on an empty workspace | `Add uv and cargo workspace roots` |
 | 0.6 | Add `contracts/` with `buf.yaml`, `common/v1` (TenantContext, IdempotencyKey, ErrorDetail, PageRequest) and the CloudEvents envelope | `buf lint` passes | `Add protobuf contracts skeleton with buf config` |
 | 0.7 | Add contract codegen: `prost`/`tonic` via `build.rs` crate `wfk-contracts`, Python stubs package `wfk-contracts` | `just gen` builds both, a test imports a generated type in each language | `Add Rust and Python codegen for contracts` |
-| 0.8 | Add `deployments/docker-compose.yml` with Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS, OTel Collector, Grafana LGTM | `just up` starts all, health checks green | `Add local docker compose development stack` |
+| 0.8 | Add `deployments/docker-compose.yml` with Postgres 18 + pgvector, Temporal + UI, NATS JetStream, Valkey, SeaweedFS (S3, buckets created), Grafana LGTM (includes the OTel Collector) | `just up` starts all, health checks green | `Add local docker compose development stack` |
 | 0.9 | Python `wfk-platform`: settings, structured logging, OTel setup, `/healthz` and `/readyz` | Unit tests pass | `Add Python platform lib config telemetry health` |
 | 0.10 | Python `wfk-platform`: tenant-scoped db session (`SET LOCAL app.tenant_id`), outbox writer, inbox dedupe, NATS outbox relay | Integration tests against compose Postgres and NATS pass, including the rollback-publishes-nothing case | `Add Python outbox inbox and tenant session` |
 | 0.11 | Rust `wfk-platform`: config, tracing and OTel, health router | Unit tests pass | `Add Rust platform crate config tracing health` |
 | 0.12 | Rust `wfk-platform`: tenant-scoped transaction, outbox, inbox, NATS relay | Same integration tests as 0.10, in Rust | `Add Rust outbox inbox and tenant transaction` |
-| 0.13 | Migration convention: `migrations/` per service, `sqlx migrate` runner, RLS policy template, `outbox` and `inbox` table template | `just migrate <svc>` applies and reverts a sample | `Add migration convention with RLS and outbox tables` |
+| 0.13 | Migration convention: `migrations/` per service, `wfk-migrate` runner, RLS policy template, `outbox` and `inbox` table template | `just migrate <dir> <db>` applies and reverts a sample | `Add migration convention with RLS and outbox tables` |
 | 0.14 | Service templates: `templates/python-service` and `templates/rust-service` (gRPC server, health, telemetry, db, tests, Dockerfile) plus `just new-service` | A generated service of each kind builds, runs, answers `/readyz` | `Add Python and Rust service templates` |
-| 0.15 | CI on GitHub Actions: ruff, pyright, pytest; fmt, clippy, nextest; buf lint and breaking; `cargo-deny` and Python licence check for ADR-0007 | CI green on the branch | `Add CI for Python Rust contracts and licences` |
+| 0.15 | CI on GitHub Actions: ruff, pyright, pytest; fmt, clippy, cargo test; buf lint and breaking; integration tests on the compose stack; template image builds; `cargo-deny` and Python licence check for ADR-0007 | `just ci` green locally; GitHub run after first push | `Add CI for Python Rust contracts and licences` |
 
 **Phase 0 exit:** both templates run against the local stack, CI is green, docs say Rust and Python everywhere.
+
+### Phase 0 outcome
+
+All 15 tasks are committed on `build/implementation`. `just ci` passes locally: lint and types clean, 57 Python
+tests (42 unit, 15 integration), Rust unit and integration tests, `buf lint`, generated code up to date, licences.
+
+Changes from the plan, and why:
+
+| Planned | Built | Why |
+|---|---|---|
+| `deploy/local/compose.yaml` | `deployments/docker-compose.yml` | The folder already existed in the repo |
+| `sqlx migrate` for both languages | `wfk-migrate` (Python, in `wfk-platform`) | One tool for both languages, no extra install, checksum and lock rules we control |
+| Separate OTel Collector | Grafana LGTM image | It already contains the collector |
+| `cargo-nextest` | `cargo test` | Fast enough at this size, one less tool |
+| MinIO (as named in the request) | SeaweedFS (S3 API) | ADR-0007 already chose it for licence reasons. Any S3 client works |
+| Templates as files to copy | Templates are workspace members, compiled and tested in CI | A broken template cannot be copied into a new service |
+
+Notes for later phases:
+
+- `psycopg` (the Python Postgres driver) is **LGPL-3.0**. The licence check allows LGPL for libraries used
+  unmodified. If that is not acceptable, swap to `asyncpg` (Apache-2.0) behind `wfk_platform.db`.
+- `cargo-deny` does not build on this Windows machine (its zstd dependency needs a C toolchain). CI runs it on
+  Linux. The licence part was checked locally from `cargo metadata`: 326 crates, all on the allow-list.
+- Rust JSON logs do not yet carry `trace_id` the way Python logs do. Add it when the first Rust service ships.
 
 ---
 

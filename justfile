@@ -91,3 +91,10 @@ migrate-status dir database:
 # Create a service from a template: just new-service rust task-service
 new-service lang name:
     uv run python tools/new_service.py {{lang}} {{name}}
+
+# Licence policy for Python dependencies (Rust: cargo deny check, run in CI)
+licenses:
+    uv run python tools/check_licenses.py
+
+# Everything CI checks, locally (needs: just up)
+ci: lint test test-integration contracts-lint gen-check licenses
