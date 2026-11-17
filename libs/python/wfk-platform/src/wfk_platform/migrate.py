@@ -176,7 +176,9 @@ class Runner:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="wfk-migrate", description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(
+        prog="wfk-migrate", description="Plain versioned SQL migrations."
+    )
     parser.add_argument("command", choices=["up", "down", "status"])
     parser.add_argument("--dsn", required=True, help="target database URL")
     parser.add_argument("--dir", required=True, type=Path, help="migrations folder")
