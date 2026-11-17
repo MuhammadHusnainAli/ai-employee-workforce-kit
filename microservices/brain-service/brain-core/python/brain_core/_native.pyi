@@ -1,0 +1,12 @@
+RRF_K: float
+
+def fuse(rankings: list[list[str]], k: float = ...) -> dict[str, float]: ...
+def score(
+    rrf: float, importance: float, confidence: float, trust: str, kind: str, age_days: float
+) -> float: ...
+def rank_and_pack(
+    rankings: list[list[str]],
+    candidates: list[tuple[str, str, float, float, str, float, int]],
+    budget: int,
+    k: float = ...,
+) -> tuple[list[tuple[str, float]], int]: ...

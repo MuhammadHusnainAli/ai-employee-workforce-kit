@@ -19,6 +19,8 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-grpc>=1.29",
     "psycopg[binary,pool]>=3.2",
     "nats-py>=2.9",
+    # Rust hot path for recall (brain-core/), built with maturin
+    "brain-core",
 ]
 
 [project.scripts]
@@ -34,6 +36,9 @@ dev = [
     "httpx>=0.28",
     "grpcio-tools>=1.71",
 ]
+
+[tool.uv.sources]
+brain-core = { path = "brain-core" }
 
 [build-system]
 requires = ["hatchling"]
@@ -62,7 +67,7 @@ section-order = ["future", "standard-library", "third-party", "platform", "first
 platform = ["wfk", "wfk_platform"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106", "S608"]
+"tests/**" = ["S105", "S106", "S311", "S608"]  # test data, not secrets or crypto
 
 [tool.pyright]
 pythonVersion = "3.13"

@@ -124,9 +124,10 @@ jobs:
         with:
           tool: cargo-deny
       - run: cargo fmt --check
-      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo clippy --all-targets --all-features --locked -- -D warnings
       - run: cargo test --locked
       - name: Protobuf lint
+        if: hashFiles(format('{0}/contracts/buf.yaml', matrix.service)) != ''
         run: $BUF lint
         working-directory: ${{ matrix.service }}/contracts
       - name: Licences and advisories (ADR-0007)
@@ -138,6 +139,8 @@ jobs:
         working-directory: .
       - run: cargo test --locked -- --ignored
       - name: Image builds
+        # A Rust crate inside a Python service (brain-core) has no image of its own.
+        if: hashFiles(format('{0}/Dockerfile', matrix.service)) != ''
         run: docker build -t ci-image .
       - name: Stack logs on failure
         if: failure()
