@@ -67,3 +67,7 @@ image:
 
 # Everything CI checks
 ci: lint test test-integration contracts-lint gen-check licenses
+
+# Recall latency gate (p95 < 300 ms on 10k seeded memories); prints p50 / p95 / p99
+bench:
+    uv run pytest tests/perf -m integration -s -q
