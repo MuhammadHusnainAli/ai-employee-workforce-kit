@@ -1,6 +1,7 @@
-"""Repo-wide pytest setup, shared by every Python library and service."""
+"""pytest setup for this service."""
 
 import asyncio
+import faulthandler
 import sys
 from collections.abc import Callable, Mapping
 
@@ -15,3 +16,12 @@ def pytest_asyncio_loop_factories(
     if sys.platform == "win32":
         return {"selector": asyncio.SelectorEventLoop}
     return None
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config: pytest.Config) -> None:
+    # On Windows, faulthandler reports every access-violation exception, including ones the
+    # Temporal SDK's Rust core raises and handles itself, flooding the output although
+    # nothing crashed. It stays on everywhere else (CI runs on Linux).
+    if sys.platform == "win32":
+        faulthandler.disable()
