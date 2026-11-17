@@ -24,8 +24,11 @@ opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 tracing-opentelemetry = { workspace = true }
+sqlx = { workspace = true }
+async-nats = { workspace = true }
 
 [dev-dependencies]
+anyhow = { workspace = true }
 tower = { workspace = true }
 http-body-util = { workspace = true }
 

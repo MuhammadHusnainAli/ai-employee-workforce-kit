@@ -35,3 +35,15 @@ def test_event_type_must_be_a_subject() -> None:
         new_event("RunCompleted", "//x", TENANT, {})
     with pytest.raises(ValidationError):
         new_event("run", "//x", TENANT, {})
+
+
+def test_parses_the_shared_contract_example() -> None:
+    """Rust parses the same file (libs/rust/wfk-platform/tests/outbox_inbox.rs)."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[4]
+    raw = (root / "contracts/events/examples/run.completed.json").read_bytes()
+    event = CloudEvent.from_json(raw)
+    assert event.type == "run.completed"
+    assert event.time.microsecond == 161893
+    assert CloudEvent.from_json(event.to_json()) == event
