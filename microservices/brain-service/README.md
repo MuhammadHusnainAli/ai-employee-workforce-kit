@@ -50,22 +50,26 @@ Four deployables: brain-api (HPA), brain-ingest, brain-consolidate, brain-learn 
 Recall degrades to cached identity + rules and never blocks a run; writes are idempotent; consolidation is resumable.
 
 ## Folder layout
+A self-contained Python project ([ADR-0015](../../architecture/adr/0015-self-contained-microservices.md)), with
+its Rust hot path (`brain-core`, PyO3) built inside it. The modules follow
+[brain.md section 8](../../architecture/brain.md#8-building-the-brain-service); later phases add `write/`,
+`consolidate/`, `learn/`, `govern/`, `adapters/nats/` and `adapters/temporal/`.
+
 ```
 brain-service/
-  api/
-  domain/memory/
-  domain/recall/
-  domain/write/
-  domain/consolidate/
-  domain/learn/
-  domain/govern/
-  adapters/postgres/
-  adapters/modelgw/
-  adapters/temporal/
-  adapters/nats/
-  adapters/cache/
-  migrations/
-  evals/
+  pyproject.toml  uv.lock  justfile  Dockerfile
+  brain-core/                Rust: fusion, ranking and packing, exposed to Python with PyO3
+  contracts/                 common types + this service's API (wfk.brain_service.v1)
+  migrations/                brain_db
+  evals/                     golden sets per role, regression and safety suites (data)
+  src/brain_service/
+    api/                     gRPC: Recall (later Remember, Feedback, Forget, Inspect, ...)
+    domain/memory/           memories, episodes, identity core, brain versions (no I/O)
+    domain/recall/           planner, retrievers, fusion, packer
+    adapters/postgres/       repositories, pgvector and full-text queries
+    adapters/modelgw/        embeddings through the Model Gateway
+    adapters/cache/          Valkey identity-core cache
+  src/wfk_platform/          this service's copy of the platform code
   tests/
 ```
 
