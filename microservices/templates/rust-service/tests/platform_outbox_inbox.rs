@@ -181,8 +181,10 @@ async fn committed_event_is_published_once() {
     enqueue(&mut tx, &event).await.unwrap();
     tx.commit().await.unwrap();
 
+    // Another test's relay loop may publish it first (they share the outbox); either way it
+    // must end up published exactly once.
     let relay = OutboxRelay::new(db.clone(), js.clone(), 100);
-    assert!(relay.publish_pending().await.unwrap() >= 1);
+    relay.publish_pending().await.unwrap();
     relay.publish_pending().await.unwrap(); // a second pass must not publish it again
 
     let published: Option<chrono::DateTime<chrono::Utc>> =
@@ -251,11 +253,8 @@ async fn redelivered_event_runs_handler_once() {
         .await
         .unwrap();
     }
-    let seen = Mutex::new(Vec::new());
-    let handler = async |_: &mut PgConnection, e: &CloudEvent| {
-        seen.lock().unwrap().push(e.id);
-        Ok(())
-    };
+    let seen = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let handler = Recorder(seen.clone());
     let consumer = InboxConsumer::new(db, &stream, &format!("c{u}"), &subject)
         .await
         .unwrap();
@@ -282,15 +281,7 @@ async fn failed_handler_leaves_event_unprocessed() {
         .await
         .unwrap();
 
-    let calls = Mutex::new(0);
-    let flaky = async |_: &mut PgConnection, _: &CloudEvent| {
-        let mut n = calls.lock().unwrap();
-        *n += 1;
-        if *n == 1 {
-            anyhow::bail!("transient");
-        }
-        Ok(())
-    };
+    let flaky = FailsOnce(Mutex::new(0));
     let consumer = InboxConsumer::new(db, &stream, &format!("c{u}"), &subject)
         .await
         .unwrap();
@@ -304,7 +295,7 @@ async fn failed_handler_leaves_event_unprocessed() {
         .await
         .unwrap();
     assert_eq!(second, 1, "redelivered, now succeeds");
-    assert_eq!(*calls.lock().unwrap(), 2);
+    assert_eq!(*flaky.0.lock().unwrap(), 2);
 }
 
 #[test]
@@ -342,9 +333,12 @@ async fn migrations_apply_isolate_tenants_and_revert() {
         .execute(&pool)
         .await
         .unwrap();
-    let db = Database { pool: pool.clone() };
+    let db = Database {
+        pool: pool.clone(),
+        tenant_role: None,
+    }
+    .with_tenant_role("wfk_app");
     let mut tx = db.tenant_tx(T1).await.unwrap();
-    tx.execute("SET LOCAL ROLE wfk_app").await.unwrap();
     let names: Vec<String> = sqlx::query_scalar("SELECT name FROM examples")
         .fetch_all(&mut *tx)
         .await
@@ -360,4 +354,130 @@ async fn migrations_apply_isolate_tenants_and_revert() {
     .await
     .unwrap();
     assert_eq!(left, vec!["_sqlx_migrations".to_string()]);
+}
+
+// ---- the long-running loops ------------------------------------------------------------
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn relay_loop_publishes_until_stopped() {
+    use service_template::platform::messaging::run_outbox_relay;
+
+    let (db, js, u) = (db().await, js().await, unique());
+    let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
+    let task = tokio::spawn(run_outbox_relay(
+        db.clone(),
+        nats_url(),
+        format!("RL_{u}"),
+        vec![format!("rl{u}.>")],
+        stop_rx,
+    ));
+    let event = CloudEvent::new(&format!("rl{u}.happened"), SOURCE, T1, json!({})).unwrap();
+    let mut tx = db.tenant_tx(T1).await.unwrap();
+    enqueue(&mut tx, &event).await.unwrap();
+    tx.commit().await.unwrap();
+
+    let mut published = 0;
+    for _ in 0..50 {
+        if let Ok(mut s) = js.get_stream(format!("RL_{u}")).await {
+            published = s.info().await.unwrap().state.messages;
+            if published == 1 {
+                break;
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert_eq!(published, 1);
+    stop_tx.send(true).unwrap();
+    tokio::time::timeout(Duration::from_secs(5), task)
+        .await
+        .expect("stops promptly")
+        .unwrap();
+}
+
+/// Records the ids of the events it handles.
+struct Recorder(std::sync::Arc<Mutex<Vec<Uuid>>>);
+
+/// Fails its first call, succeeds after: a transient error.
+struct FailsOnce(Mutex<u32>);
+
+impl service_template::platform::messaging::EventHandler for FailsOnce {
+    fn handle<'a>(
+        &'a self,
+        _conn: &'a mut PgConnection,
+        _event: &'a CloudEvent,
+    ) -> futures::future::BoxFuture<'a, anyhow::Result<()>> {
+        Box::pin(async move {
+            let mut n = self.0.lock().unwrap();
+            *n += 1;
+            if *n == 1 {
+                anyhow::bail!("transient");
+            }
+            Ok(())
+        })
+    }
+}
+
+impl service_template::platform::messaging::EventHandler for Recorder {
+    fn handle<'a>(
+        &'a self,
+        _conn: &'a mut PgConnection,
+        event: &'a CloudEvent,
+    ) -> futures::future::BoxFuture<'a, anyhow::Result<()>> {
+        Box::pin(async move {
+            self.0.lock().unwrap().push(event.id);
+            Ok(())
+        })
+    }
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn consumer_loop_waits_for_the_stream_then_handles_each_event_once() {
+    use service_template::platform::messaging::run_inbox_consumer;
+
+    let (db, js, u) = (db().await, js().await, unique());
+    let seen = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
+    // Started before the stream exists: it must wait, not fail.
+    let task = tokio::spawn(run_inbox_consumer(
+        db,
+        nats_url(),
+        format!("CL_{u}"),
+        format!("c{u}"),
+        format!("cl{u}.created"),
+        std::sync::Arc::new(Recorder(seen.clone())),
+        stop_rx,
+    ));
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    ensure_stream(&js, &format!("CL_{u}"), vec![format!("cl{u}.>")])
+        .await
+        .unwrap();
+    let event = CloudEvent::new(&format!("cl{u}.created"), SOURCE, T1, json!({})).unwrap();
+    for id in ["a", "b"] {
+        // the same event twice, as at-least-once delivery allows
+        js.send_publish(
+            event.event_type.clone(),
+            async_nats::jetstream::message::PublishMessage::build()
+                .payload(event.to_json().into())
+                .message_id(format!("{id}{u}")),
+        )
+        .await
+        .unwrap()
+        .await
+        .unwrap();
+    }
+    for _ in 0..80 {
+        if !seen.lock().unwrap().is_empty() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    tokio::time::sleep(Duration::from_millis(500)).await; // give a duplicate the chance to show
+    assert_eq!(*seen.lock().unwrap(), vec![event.id]);
+    stop_tx.send(true).unwrap();
+    tokio::time::timeout(Duration::from_secs(5), task)
+        .await
+        .expect("stops promptly")
+        .unwrap();
 }

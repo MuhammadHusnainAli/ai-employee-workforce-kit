@@ -17,10 +17,13 @@ Temporal workers that execute the `EmployeeRun` workflow and the agent harness: 
 - read API for run history (UI)
 
 ## Events
-| Direction | Subjects |
-|---|---|
-| In | (driven by Temporal task queues) |
-| Out | `run.started` · `run.step_completed` · `run.completed` · `run.failed` |
+| Direction | Stream | Subjects |
+|---|---|---|
+| In | `TASKS` (durable consumer `agent-runtime-tasks`) | `task.created` starts `EmployeeRun` (workflow id = task id, never twice) · `task.cancel_requested` · `task.approval_decided` · `task.reply_given` become signals |
+| Out | `RUNS` | `run.started` · `run.step_completed` · `run.completed` · `run.failed` |
+
+The worker process (`agent-runtime worker`) runs the outbox relay and the task inbox next to the
+Temporal workers (`src/agent_runtime/adapters/tasks.py`).
 
 ## Depends on
 - Temporal

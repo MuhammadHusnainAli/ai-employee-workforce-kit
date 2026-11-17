@@ -229,3 +229,46 @@ async def test_relay_loop_publishes_committed_events_until_stopped(
 
     stop.set()
     await asyncio.wait_for(task, timeout=5)  # stops promptly, no hanging connection
+
+
+async def test_consumer_loop_waits_for_the_stream_then_handles_each_event_once(
+    db: Database, nc: NATS, unique: str
+) -> None:
+    import asyncio
+
+    from wfk_platform.messaging import run_inbox_consumer
+
+    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7003")
+    seen: list[uuid.UUID] = []
+
+    async def record(conn: Conn, event: CloudEvent) -> None:
+        seen.append(event.id)
+
+    stop = asyncio.Event()
+    task = asyncio.create_task(
+        run_inbox_consumer(
+            db,
+            nats_url,
+            stream=f"CLOOP_{unique}",
+            consumer=f"cloop-{unique}",
+            subject=f"cloop{unique}.>",
+            handler=record,
+            stop=stop,
+        )
+    )
+    await asyncio.sleep(0.5)  # the stream does not exist yet: the loop waits for it
+    js = nc.jetstream()
+    await ensure_stream(js, f"CLOOP_{unique}", [f"cloop{unique}.>"])
+    event = new_event(f"cloop{unique}.happened", SOURCE, T1, {"n": 1})
+    for _ in range(2):  # the same event twice, without a dedupe id: the inbox drops one
+        await js.publish(event.type, event.to_json())
+
+    for _ in range(100):
+        if seen:
+            break
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.5)  # time for the duplicate to arrive
+    assert seen == [event.id]
+
+    stop.set()
+    await asyncio.wait_for(task, timeout=5)

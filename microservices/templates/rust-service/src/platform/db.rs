@@ -19,6 +19,9 @@ pub type Tx = Transaction<'static, Postgres>;
 #[derive(Clone)]
 pub struct Database {
     pub pool: PgPool,
+    /// Role for tenant transactions (see `ServiceSettings::db_tenant_role`). `None` keeps the
+    /// login role, which bypasses row-level security if it owns the tables.
+    pub tenant_role: Option<String>,
 }
 
 /// A pool that connects on first use, so a service can start while the database is down.
@@ -36,7 +39,10 @@ impl Database {
             .acquire_timeout(Duration::from_secs(5))
             .connect(url)
             .await?;
-        Ok(Self { pool })
+        Ok(Self {
+            pool,
+            tenant_role: None,
+        })
     }
 
     /// A transaction with no tenant set. For cross-tenant infrastructure work only (the outbox
@@ -52,7 +58,20 @@ impl Database {
             .bind(tenant_id.to_string())
             .execute(&mut *tx)
             .await?;
+        if let Some(role) = &self.tenant_role {
+            // `SET LOCAL ROLE`, with the role as a bind parameter.
+            sqlx::query("SELECT set_config('role', $1, true)")
+                .bind(role)
+                .execute(&mut *tx)
+                .await?;
+        }
         Ok(tx)
+    }
+
+    /// Use `role` for tenant transactions (empty means none).
+    pub fn with_tenant_role(mut self, role: &str) -> Self {
+        self.tenant_role = Some(role.to_string()).filter(|r| !r.is_empty());
+        self
     }
 
     /// Readiness check.

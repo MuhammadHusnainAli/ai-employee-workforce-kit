@@ -210,3 +210,43 @@ async def run_outbox_relay(
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=backoff)
             backoff = min(backoff * 2, max_backoff_s)
+
+
+async def run_inbox_consumer(
+    db: Database,
+    nats_url: str,
+    *,
+    stream: str,
+    consumer: str,
+    subject: str,
+    handler: Handler,
+    stop: asyncio.Event,
+    max_backoff_s: float = 5.0,
+) -> None:
+    """Consume another service's stream until `stop` is set: a durable consumer on `subject`,
+    each event handled once (inbox). Waits for the stream to exist, so start order between
+    services does not matter. Run it as a background task next to the service's server.
+    """
+    import nats
+
+    backoff = 0.2
+    while not stop.is_set():
+        try:
+            nc = await nats.connect(nats_url, connect_timeout=2, max_reconnect_attempts=-1)
+            try:
+                js = nc.jetstream()
+                await js.stream_info(stream)  # retried below until it exists
+                inbox = InboxConsumer(db, js, consumer=consumer, subject=subject, handler=handler)
+                backoff = 0.2
+                while not stop.is_set():
+                    await inbox.process_batch(10, wait_s=1.0)
+            finally:
+                await nc.drain()
+        except Exception as exc:  # NATS, the stream or the database is not there yet
+            log.warning(
+                "inbox consumer paused",
+                extra={"stream": stream, "error": str(exc), "retry_s": backoff},
+            )
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(stop.wait(), timeout=backoff)
+            backoff = min(backoff * 2, max_backoff_s)

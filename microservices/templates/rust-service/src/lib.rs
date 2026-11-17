@@ -21,6 +21,9 @@ use tokio::net::TcpListener;
 use tonic_health::ServingStatus;
 
 pub const SERVICE_NAME: &str = "service-template";
+/// This service's local port (deployments/README.md, port map) and database.
+pub const PORT: u16 = 7020;
+pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/service_template_db";
 
 /// HTTP router: health endpoints now, REST routes from `api` later.
 pub fn http_router(settings: &ServiceSettings, db: Database) -> Router {
@@ -35,7 +38,11 @@ pub fn http_router(settings: &ServiceSettings, db: Database) -> Router {
 /// Connect lazily so the service starts while the database is down; `/readyz` reports it.
 pub fn database(settings: &ServiceSettings) -> anyhow::Result<Database> {
     let pool = crate::platform::db::lazy_pool(&settings.database_url, 10)?;
-    Ok(Database { pool })
+    Ok(Database {
+        pool,
+        tenant_role: None,
+    }
+    .with_tenant_role(&settings.db_tenant_role))
 }
 
 /// HTTP health routes and gRPC services on one router, so they share one port. axum serves

@@ -145,15 +145,12 @@ impl InboxConsumer {
 
     /// Fetch and handle up to `batch` messages, waiting up to `wait` for them.
     /// Returns how many were handled (redelivered duplicates are not counted).
-    pub async fn process_batch<H>(
+    pub async fn process_batch(
         &self,
         batch: usize,
         wait: Duration,
-        handler: &H,
-    ) -> anyhow::Result<usize>
-    where
-        H: AsyncFn(&mut PgConnection, &CloudEvent) -> anyhow::Result<()>,
-    {
+        handler: &dyn EventHandler,
+    ) -> anyhow::Result<usize> {
         let mut messages = self
             .consumer
             .fetch()
@@ -169,10 +166,7 @@ impl InboxConsumer {
         Ok(handled)
     }
 
-    async fn handle<H>(&self, msg: Message, handler: &H) -> anyhow::Result<usize>
-    where
-        H: AsyncFn(&mut PgConnection, &CloudEvent) -> anyhow::Result<()>,
-    {
+    async fn handle(&self, msg: Message, handler: &dyn EventHandler) -> anyhow::Result<usize> {
         let event = match CloudEvent::from_json(&msg.payload) {
             Ok(e) => e,
             Err(e) => {
@@ -197,7 +191,7 @@ impl InboxConsumer {
             .rows_affected()
                 == 1;
             if first_time {
-                handler(&mut tx, &event).await?;
+                handler.handle(&mut tx, &event).await?;
             }
             tx.commit().await?;
             Ok(first_time)
@@ -214,6 +208,125 @@ impl InboxConsumer {
                     .await
                     .map_err(|e| anyhow::anyhow!(e))?;
                 Ok(0)
+            }
+        }
+    }
+}
+
+// ---- long-running loops for a service process ------------------------------------------
+
+const IDLE: Duration = Duration::from_millis(200);
+const MAX_BACKOFF: Duration = Duration::from_secs(5);
+
+/// Handles one event inside the inbox transaction (see [`InboxConsumer`]).
+pub trait EventHandler: Send + Sync + 'static {
+    fn handle<'a>(
+        &'a self,
+        conn: &'a mut PgConnection,
+        event: &'a CloudEvent,
+    ) -> futures::future::BoxFuture<'a, anyhow::Result<()>>;
+}
+
+/// Resolves once `stop` is set (or its sender is gone).
+async fn stopped(mut stop: tokio::sync::watch::Receiver<bool>) {
+    let _ = stop.wait_for(|s| *s).await;
+}
+
+/// Wait for `d`, or less if `stop` flips. Returns true when stopping.
+async fn pause(stop: &mut tokio::sync::watch::Receiver<bool>, d: Duration) -> bool {
+    if *stop.borrow() {
+        return true;
+    }
+    tokio::select! {
+        _ = stop.changed() => {}
+        _ = tokio::time::sleep(d) => {}
+    }
+    *stop.borrow()
+}
+
+/// Publish this service's outbox to its stream until `stop` is set. Connects (and reconnects)
+/// on its own, so the service starts while NATS is down and catches up when it is back:
+/// committed events wait in the outbox, nothing is lost.
+pub async fn run_outbox_relay(
+    db: Database,
+    nats_url: String,
+    stream: String,
+    subjects: Vec<String>,
+    mut stop: tokio::sync::watch::Receiver<bool>,
+) {
+    const BATCH: i64 = 100;
+    let mut backoff = IDLE;
+    loop {
+        let halt = stopped(stop.clone());
+        let session = async {
+            let js = jetstream::new(async_nats::connect(&nats_url).await?);
+            ensure_stream(&js, &stream, subjects.clone()).await?;
+            let relay = OutboxRelay::new(db.clone(), js, BATCH);
+            loop {
+                let sent = relay.publish_pending().await?;
+                if (sent as i64) < BATCH && pause(&mut stop, IDLE).await {
+                    return Ok(());
+                }
+            }
+        };
+        // Stop at once, even mid-batch: the claim transaction rolls back, nothing is lost.
+        let session: anyhow::Result<()> = tokio::select! {
+            r = session => r,
+            () = halt => Ok(()),
+        };
+        match session {
+            Ok(()) => return,
+            Err(e) => {
+                tracing::warn!(error = %e, retry_ms = backoff.as_millis() as u64, "outbox relay paused");
+                if pause(&mut stop, backoff).await {
+                    return;
+                }
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+        }
+    }
+}
+
+/// Consume another service's stream until `stop` is set: a durable consumer `durable` on
+/// `subject`, each event handled once (inbox). Waits for the stream to exist, so start order
+/// between services does not matter.
+pub async fn run_inbox_consumer(
+    db: Database,
+    nats_url: String,
+    stream: String,
+    durable: String,
+    subject: String,
+    handler: std::sync::Arc<dyn EventHandler>,
+    mut stop: tokio::sync::watch::Receiver<bool>,
+) {
+    let mut backoff = IDLE;
+    loop {
+        let halt = stopped(stop.clone());
+        let session = async {
+            let js = jetstream::new(async_nats::connect(&nats_url).await?);
+            let stream = js.get_stream(&stream).await?; // retried below until it exists
+            let consumer = InboxConsumer::new(db.clone(), &stream, &durable, &subject).await?;
+            while !*stop.borrow() {
+                consumer
+                    .process_batch(10, Duration::from_secs(1), handler.as_ref())
+                    .await?;
+            }
+            Ok(())
+        };
+        // Stop at once, even mid-handler: its transaction rolls back and the unacked
+        // message is redelivered later.
+        let session: anyhow::Result<()> = tokio::select! {
+            r = session => r,
+            () = halt => Ok(()),
+        };
+        match session {
+            Ok(()) => return,
+            Err(e) => {
+                tracing::warn!(error = %e, stream = %stream, "inbox consumer paused");
+                if pause(&mut stop, backoff).await {
+                    return;
+                }
+                backoff = (backoff * 2).min(MAX_BACKOFF);
             }
         }
     }

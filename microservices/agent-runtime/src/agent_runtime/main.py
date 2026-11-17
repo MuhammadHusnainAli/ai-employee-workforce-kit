@@ -16,6 +16,9 @@ from agent_runtime.settings import Settings
 
 log = logging.getLogger(__name__)
 
+#: The stream agent-runtime publishes its run.* events to (task-service reads it).
+RUNS_STREAM = "RUNS"
+
 
 async def serve(settings: Settings) -> None:
     """One gRPC server on one port (health included), until SIGINT / SIGTERM."""
@@ -43,14 +46,18 @@ async def serve(settings: Settings) -> None:
 
 
 async def work(settings: Settings, *, prefix: str, model: str) -> None:
-    """Run the Temporal workers (runs, llm, tools queues) until stopped."""
+    """Run the Temporal workers (runs, llm, tools queues) until stopped, with the run outbox
+    relay (run.* to the RUNS stream) and the task inbox (task.* starts and steers runs)."""
     from contextlib import AsyncExitStack
+
+    from wfk_platform.messaging import run_inbox_consumer, run_outbox_relay
 
     from agent_runtime.activities.harness import HarnessActivities
     from agent_runtime.activities.ledger import LedgerActivities
+    from agent_runtime.adapters import tasks
     from agent_runtime.adapters.ledger import Ledger
     from agent_runtime.demo import directory, provider_for, temporal_client
-    from agent_runtime.worker import build_workers
+    from agent_runtime.worker import build_workers, queues
 
     client = await temporal_client(settings)
     db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
@@ -59,11 +66,35 @@ async def work(settings: Settings, *, prefix: str, model: str) -> None:
         employees=directory(model), provider=provider_for(model, settings)
     )
     ledger = LedgerActivities(Ledger(db, f"//{settings.cell_id}/{settings.service_name}"))
-    async with AsyncExitStack() as stack:
-        for worker in build_workers(client, activities, ledger, prefix):
-            await stack.enter_async_context(worker)
-        print("ready", flush=True)  # the demo waits for this line
-        await asyncio.Event().wait()
+    stop = asyncio.Event()
+    loops = [
+        asyncio.create_task(
+            run_outbox_relay(
+                db, settings.nats_url, stream=RUNS_STREAM, subjects=["run.>"], stop=stop
+            )
+        ),
+        asyncio.create_task(
+            run_inbox_consumer(
+                db,
+                settings.nats_url,
+                stream=tasks.STREAM,
+                consumer=tasks.CONSUMER,
+                subject=tasks.SUBJECT,
+                handler=tasks.TaskCommands(client, queues(prefix)[0]),
+                stop=stop,
+            )
+        ),
+    ]
+    try:
+        async with AsyncExitStack() as stack:
+            for worker in build_workers(client, activities, ledger, prefix):
+                await stack.enter_async_context(worker)
+            print("ready", flush=True)  # the demo waits for this line
+            await asyncio.Event().wait()
+    finally:
+        stop.set()
+        await asyncio.gather(*loops, return_exceptions=True)
+        await db.close()
 
 
 def run(argv: list[str] | None = None) -> None:

@@ -1,13 +1,20 @@
 use service_template::platform::{ServiceSettings, init_telemetry, migrate};
-use service_template::{SERVICE_NAME, bind, serve};
+use service_template::{DATABASE, PORT, SERVICE_NAME, bind, serve};
 
 /// `service-template`          run the service
 /// `service-template migrate`  apply pending migrations (creates the database if missing)
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // This service's defaults; the environment overrides any of them.
     let mut vars: Vec<(String, String)> = std::env::vars().collect();
-    if !vars.iter().any(|(k, _)| k == "WFK_SERVICE_NAME") {
-        vars.push(("WFK_SERVICE_NAME".into(), SERVICE_NAME.into()));
+    for (key, value) in [
+        ("WFK_SERVICE_NAME", SERVICE_NAME.to_string()),
+        ("WFK_PORT", PORT.to_string()),
+        ("WFK_DATABASE_URL", DATABASE.to_string()),
+    ] {
+        if !vars.iter().any(|(k, _)| k == key) {
+            vars.push((key.into(), value));
+        }
     }
     let settings = ServiceSettings::from_vars(vars)?;
     let _telemetry = init_telemetry(&settings)?;

@@ -46,6 +46,10 @@ pub struct ServiceSettings {
     pub database_url: String,
     #[serde(default = "d::nats_url")]
     pub nats_url: String,
+    /// Role tenant transactions switch to (`SET LOCAL ROLE`), so row-level security applies
+    /// even when the login role owns the tables. Empty keeps the login role.
+    #[serde(default = "d::db_tenant_role")]
+    pub db_tenant_role: String,
 
     /// Empty disables export (spans are still created, just not sent).
     #[serde(default)]
@@ -121,6 +125,9 @@ mod d {
     }
     pub fn nats_url() -> String {
         "nats://127.0.0.1:7003".into()
+    }
+    pub fn db_tenant_role() -> String {
+        "wfk_app".into()
     }
     pub fn readiness_timeout_ms() -> u64 {
         2000
