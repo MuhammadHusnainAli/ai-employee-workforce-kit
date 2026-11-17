@@ -193,7 +193,7 @@ Notes for later phases:
 
 ---
 
-## Phase 1: The step loop in Agent Runtime, on `agent-harness-adk`
+## Phase 1: The step loop in Agent Runtime, on `agent-harness-adk` - DONE
 
 `agent-harness-adk` is used as a normal PyPI dependency, unchanged ([ADR-0016](architecture/adr/0016-harness-package-as-dependency.md)).
 The loop is built in `microservices/agent-runtime/src/agent_runtime/harness/`, one module per stage, each with
@@ -213,6 +213,28 @@ serialisable inputs and outputs so Phase 2 can run each one as a Temporal activi
 
 **Phase 1 exit:** a test drives an employee one step at a time, serialising `AgentState` to JSON and back between
 every step, and gets the same result as running the loop without interruption.
+
+### Phase 1 outcome
+
+All 9 tasks committed. `agent-harness-adk` 0.2.0 is used from PyPI, unchanged. In `microservices/agent-runtime`,
+`just ci` passes: 92 unit tests (61 of them for the harness) and 15 integration tests, lint, types and licences
+clean.
+
+The exit test (`tests/harness/test_loop.py`) runs one scripted employee twice: uninterrupted, and one step at a
+time with `AgentState` written to JSON and read back before every step and the employee rebuilt each time. The
+model sees identical prompts, each tool runs exactly once with the same idempotency key, and the final states
+match. The scenario covers a repaired invalid call, a parallel-safe read, an approval-gated R2 write and a final
+answer.
+
+Also proven by tests: a leaked secret is redacted before it reaches state; a blocked answer is withheld; the budget
+check stops before any spend; a runaway loop stops at the third identical call; a declined approval is read by the
+model as the call's result.
+
+For Phase 2:
+
+- Each stage maps to one activity: `build_context`, `call_model`, `act`. `decide` and `observe` are pure and can
+  run in the workflow. `model.classify()` already sorts provider errors into retryable and non-retryable.
+- `EmployeeSpec` is built in code today. Phase 2 builds it from the pinned Workforce version.
 
 ---
 
