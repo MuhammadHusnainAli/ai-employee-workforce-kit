@@ -20,3 +20,22 @@ def test_refused(expr: str) -> None:
 
 def test_current_environment_passes() -> None:
     assert main() == 0
+
+
+def test_unreadable_field_falls_back_to_classifiers() -> None:
+    from email.message import Message
+    from typing import Any, cast
+
+    from check_licenses import licence_of
+
+    class Dist:
+        def __init__(self, field: str, classifiers: list[str]) -> None:
+            self.metadata = Message()
+            self.metadata["License"] = field
+            for c in classifiers:
+                self.metadata["Classifier"] = c
+
+    dual = Dist("Dual License", ["License :: OSI Approved :: Apache Software License"])
+    assert licence_of(cast(Any, dual)) == "Apache Software License"
+    gpl = Dist("GPL-3.0-only", [])
+    assert licence_of(cast(Any, gpl)) == "GPL-3.0-only"

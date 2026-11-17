@@ -66,18 +66,25 @@ def expression_allowed(expr: str) -> bool:
 
 
 def licence_of(dist: Distribution) -> str:
+    """The best licence statement in the metadata.
+
+    SPDX `License-Expression` wins. Otherwise the free-text `License` field is used when it is
+    a licence we can read, and the trove classifiers when it is not (a field like "Dual
+    License" says nothing; the classifiers name both licences).
+    """
     meta = dist.metadata
     if expr := meta.get("License-Expression"):
         return expr
-    field = (meta.get("License") or "").strip()
-    if field and "\n" not in field and len(field) < 60:
-        return field
     classifiers = [
         c.split("::")[-1].strip()
         for c in meta.get_all("Classifier") or []
         if c.startswith("License ::")
     ]
-    return " OR ".join(classifiers)
+    field = (meta.get("License") or "").strip()
+    short = bool(field) and len(field.splitlines()) == 1 and len(field) < 60
+    if short and (expression_allowed(field) or not classifiers):
+        return field
+    return " OR ".join(classifiers) or field
 
 
 PROJECT = tomllib.loads(
