@@ -73,3 +73,17 @@ gen:
 # Fail if committed generated code is out of date
 gen-check: gen
     git diff --exit-code -- libs/python/wfk-contracts/src
+
+pg := "postgresql://wfk:wfk@127.0.0.1:5432"
+
+# Apply pending migrations from a folder to a local database (created if missing)
+migrate dir database:
+    uv run wfk-migrate up --dsn {{pg}}/{{database}} --dir {{dir}} --create-db
+
+# Revert the latest migration
+migrate-down dir database:
+    uv run wfk-migrate down --dsn {{pg}}/{{database}} --dir {{dir}}
+
+# Show applied and pending migrations
+migrate-status dir database:
+    uv run wfk-migrate status --dsn {{pg}}/{{database}} --dir {{dir}}

@@ -47,3 +47,14 @@ def test_parses_the_shared_contract_example() -> None:
     assert event.type == "run.completed"
     assert event.time.microsecond == 161893
     assert CloudEvent.from_json(event.to_json()) == event
+
+
+def test_template_migration_matches_library_schema() -> None:
+    """The template's first migration is a copy of the library schema; keep them in step."""
+    from importlib import resources
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[4]
+    template = root / "templates/migrations/0001_platform_outbox_inbox.up.sql"
+    library = resources.files("wfk_platform").joinpath("sql/outbox_inbox.sql")
+    assert template.read_bytes() == library.read_bytes()
