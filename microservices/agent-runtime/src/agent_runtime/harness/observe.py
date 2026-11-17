@@ -178,6 +178,13 @@ def reply(state: AgentState, text: str, *, ts: float = 0.0) -> AgentState:
     return new
 
 
+def fail(state: AgentState, reason: str) -> AgentState:
+    """An activity failed for good. The run ends as failed, with the reason recorded."""
+    new = state.model_copy(deep=True)
+    new.status, new.stop_reason, new.output = "failed", "error", reason
+    return new
+
+
 def budget_stop(state: AgentState, reason: str) -> AgentState:
     """call_model refused to overspend. The run waits for a person to raise the budget."""
     new = state.model_copy(deep=True)

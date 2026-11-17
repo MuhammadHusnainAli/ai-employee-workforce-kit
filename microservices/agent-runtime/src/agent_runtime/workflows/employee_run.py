@@ -1,14 +1,14 @@
 """EmployeeRun: one durable agent run (runtime-flow.md, diagram page 2).
 
 Every iteration is rebuilt from AgentState, which lives in workflow history. Stages that touch
-the outside world are activities; `observe` is pure and runs here, in the workflow. A worker
-that dies mid-run loses nothing: another worker replays the history and carries on from the
-last completed activity.
+the outside world are activities, each called under its contract (timeout, heartbeat, retry
+policy); `observe` is pure and runs here, in the workflow. A worker that dies mid-run loses
+nothing: another worker replays the history and carries on from the last completed activity.
 """
 
 from __future__ import annotations
 
-from datetime import timedelta
+from typing import Any
 
 from temporalio import workflow
 from temporalio.exceptions import ActivityError, ApplicationError
@@ -16,13 +16,12 @@ from temporalio.exceptions import ActivityError, ApplicationError
 with workflow.unsafe.imports_passed_through():
     from agent_harness.types import ModelResponse
 
+    from agent_runtime.activities.contract import CONTRACTS
     from agent_runtime.harness import observe as obs
     from agent_runtime.harness.context import BuiltContext
-    from agent_runtime.harness.state import ActionResult, AgentState, Limits, ToolCalls
+    from agent_runtime.harness.state import ActionResult, AgentState, ToolCalls
     from agent_runtime.workflows.types import (
-        TASK_QUEUE_LLM,
         TASK_QUEUE_RUNS,
-        TASK_QUEUE_TOOLS,
         ActInput,
         DecideInput,
         DecisionEnvelope,
@@ -41,11 +40,27 @@ def _queue(name: str) -> str:
     return prefix + name
 
 
-def _budget_error(exc: ActivityError) -> str | None:
+def _cause(exc: ActivityError) -> tuple[str, str]:
+    """(error type, message) of the failure behind an ActivityError."""
     cause = exc.cause
-    if isinstance(cause, ApplicationError) and cause.type == "BudgetWouldExceed":
-        return cause.message
-    return None
+    if isinstance(cause, ApplicationError):
+        return cause.type or "ApplicationError", cause.message
+    return (type(cause).__name__ if cause else "ActivityError"), str(cause or exc)
+
+
+async def _call(name: str, arg: Any, result_type: Any) -> Any:
+    """Run an activity under its contract. There is no activity call without one."""
+    c = CONTRACTS[name]
+    return await workflow.execute_activity(
+        name,
+        arg,
+        result_type=result_type,
+        task_queue=_queue(c.queue),
+        start_to_close_timeout=c.start_to_close,
+        schedule_to_close_timeout=c.schedule_to_close,
+        heartbeat_timeout=c.heartbeat,
+        retry_policy=c.retry,
+    )
 
 
 @workflow.defn(name="EmployeeRun")
@@ -59,67 +74,63 @@ class EmployeeRun:
 
     @workflow.run
     async def run(self, inp: RunInput) -> RunOutcome:
-        info: EmployeeInfo = await workflow.execute_activity(
-            "load_employee",
-            inp.employee_id,
-            result_type=EmployeeInfo,
-            task_queue=_queue(TASK_QUEUE_RUNS),
-            start_to_close_timeout=timedelta(seconds=10),
-        )
         state = AgentState.start(
             run_id=inp.run_id, tenant_id=inp.tenant_id, employee_id=inp.employee_id, task=inp.task
         )
         self._state = state
+        try:
+            info: EmployeeInfo = await _call("load_employee", inp.employee_id, EmployeeInfo)
+        except ActivityError as exc:
+            kind, message = _cause(exc)
+            self._state = obs.fail(state, f"{kind}: {message}")
+            return RunOutcome(state=self._state)
+
         while state.status == "running":
-            state = await self._step(info, state)
+            try:
+                state = await self._step(info, state)
+            except ActivityError as exc:
+                kind, message = _cause(exc)
+                state = obs.fail(state, f"{kind}: {message}")
             self._state = state
         return RunOutcome(state=state)
 
     async def _step(self, info: EmployeeInfo, state: AgentState) -> AgentState:
-        limits: Limits = info.limits
-        built: BuiltContext = await workflow.execute_activity(
+        limits = info.limits
+        built: BuiltContext = await _call(
             "build_context",
             StepInput(employee_id=info.employee_id, limits=limits, state=state),
-            result_type=BuiltContext,
-            task_queue=_queue(TASK_QUEUE_RUNS),
-            start_to_close_timeout=timedelta(seconds=20),
+            BuiltContext,
         )
         try:
-            response: ModelResponse = await workflow.execute_activity(
+            response: ModelResponse = await _call(
                 "call_model",
                 ModelInput(
                     employee_id=info.employee_id, limits=limits, request=built.request, state=state
                 ),
-                result_type=ModelResponse,
-                task_queue=_queue(TASK_QUEUE_LLM),
-                start_to_close_timeout=timedelta(seconds=180),
+                ModelResponse,
             )
         except ActivityError as exc:
-            reason = _budget_error(exc)
-            if reason is None:
+            kind, message = _cause(exc)
+            if kind != "BudgetWouldExceed":
                 raise
-            return obs.budget_stop(state, reason)
+            return obs.budget_stop(state, message)
 
-        envelope: DecisionEnvelope = await workflow.execute_activity(
+        envelope: DecisionEnvelope = await _call(
             "decide",
             DecideInput(
                 employee_id=info.employee_id, limits=limits, state=state, response=response
             ),
-            result_type=DecisionEnvelope,
-            task_queue=_queue(TASK_QUEUE_RUNS),
-            start_to_close_timeout=timedelta(seconds=10),
+            DecisionEnvelope,
         )
         decision = envelope.decision
         results: list[ActionResult] | None = None
         if isinstance(decision, ToolCalls):
-            results = await workflow.execute_activity(
+            results = await _call(
                 "act",
                 ActInput(
                     employee_id=info.employee_id, limits=limits, state=state, calls=decision.calls
                 ),
-                result_type=list[ActionResult],
-                task_queue=_queue(TASK_QUEUE_TOOLS),
-                start_to_close_timeout=timedelta(seconds=120),
+                list[ActionResult],
             )
         return obs.observe(
             state,

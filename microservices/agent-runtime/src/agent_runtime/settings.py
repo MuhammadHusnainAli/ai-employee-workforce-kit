@@ -12,3 +12,10 @@ class Settings(ServiceSettings):
 
     service_name: str = "agent-runtime"
     database_url: str = "postgresql://wfk:wfk@127.0.0.1:5432/run_db"
+
+    # Claim-check storage for large workflow payloads (SeaweedFS locally).
+    s3_endpoint: str = "http://127.0.0.1:8333"
+    s3_access_key: str = "wfk-local-access"
+    s3_secret_key: str = "wfk-local-secret"  # noqa: S105 - local stack only; set WFK_S3_SECRET_KEY
+    payload_bucket: str = "wfk-payloads"
+    claim_check_threshold_bytes: int = 128 * 1024

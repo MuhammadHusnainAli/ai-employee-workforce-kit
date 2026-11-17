@@ -14,6 +14,7 @@ from agent_harness.types import ModelResponse
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from agent_runtime.activities.heartbeat import heartbeating
 from agent_runtime.employees import EmployeeDirectory, EmployeeNotFound
 from agent_runtime.harness import act as act_stage
 from agent_runtime.harness import context as context_stage
@@ -59,9 +60,10 @@ class HarnessActivities:
     async def call_model(self, inp: ModelInput) -> ModelResponse:
         spec = self._spec(inp.employee_id, inp.limits)
         try:
-            response = await model_stage.call_model(
-                self.provider, inp.request, inp.state, spec.limits
-            )
+            async with heartbeating():
+                response = await model_stage.call_model(
+                    self.provider, inp.request, inp.state, spec.limits
+                )
         except Exception as exc:
             if model_stage.classify(exc) == "non_retryable":
                 raise ApplicationError(
@@ -78,7 +80,10 @@ class HarnessActivities:
 
     @activity.defn(name="act")
     async def act(self, inp: ActInput) -> list[ActionResult]:
-        return await act_stage.act(self._spec(inp.employee_id, inp.limits), inp.state, inp.calls)
+        async with heartbeating():
+            return await act_stage.act(
+                self._spec(inp.employee_id, inp.limits), inp.state, inp.calls
+            )
 
     def all(self) -> list[object]:
         return [self.load_employee, self.build_context, self.call_model, self.decide, self.act]

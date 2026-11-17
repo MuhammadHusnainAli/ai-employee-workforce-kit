@@ -33,6 +33,8 @@ StopReason = Literal[
     "loop",  # the same call repeated too often
     "approval",  # waiting for a person to approve a call
     "guardrail",  # an answer was blocked and could not be repaired
+    "error",  # an activity failed for good (retries exhausted or not retryable)
+    "cancelled",  # a person cancelled the run
 ]
 
 

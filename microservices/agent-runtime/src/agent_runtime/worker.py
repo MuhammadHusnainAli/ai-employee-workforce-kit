@@ -6,10 +6,12 @@ workflow tasks, and each queue scales on its own backlog (KEDA).
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Sequence
 
 from temporalio.client import Client
 from temporalio.contrib.pydantic import pydantic_data_converter
+from temporalio.converter import PayloadCodec
 from temporalio.worker import Worker
 
 from agent_runtime.activities.harness import HarnessActivities
@@ -17,10 +19,17 @@ from agent_runtime.workflows.employee_run import EmployeeRun
 from agent_runtime.workflows.types import TASK_QUEUE_LLM, TASK_QUEUE_RUNS, TASK_QUEUE_TOOLS
 
 
-async def connect(address: str, namespace: str = "default") -> Client:
-    return await Client.connect(
-        address, namespace=namespace, data_converter=pydantic_data_converter
-    )
+async def connect(
+    address: str, namespace: str = "default", *, codec: PayloadCodec | None = None
+) -> Client:
+    """Client with the pydantic converter and, when given, the claim-check codec.
+
+    Workers built from this client inherit its converter, so client and workers always agree.
+    """
+    converter = pydantic_data_converter
+    if codec is not None:
+        converter = dataclasses.replace(converter, payload_codec=codec)
+    return await Client.connect(address, namespace=namespace, data_converter=converter)
 
 
 def queues(prefix: str = "") -> tuple[str, str, str]:
