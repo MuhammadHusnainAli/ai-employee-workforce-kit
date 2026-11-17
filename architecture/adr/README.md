@@ -18,5 +18,6 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 | [0011](0011-brain-service.md) | A dedicated Brain Service with bi-temporal memory in PostgreSQL | Accepted |
 | [0012](0012-gated-brain-evolution.md) | Brain evolution through versioned, evaluated, reversible proposals | Accepted |
 | [0013](0013-rust-and-python.md) | Rust and Python as the two implementation languages (supersedes Go) | Accepted |
-| [0014](0014-agent-harness-adk-step-loop.md) | agent-harness-adk as the agent framework, driven step by step by Temporal | Accepted |
+| [0014](0014-agent-harness-adk-step-loop.md) | agent-harness-adk as the agent framework, driven step by step by Temporal | Superseded by 0016 |
 | [0015](0015-self-contained-microservices.md) | Every microservice is a self-contained project: own manifest, lockfile, platform code and contracts | Accepted |
+| [0016](0016-harness-package-as-dependency.md) | agent-harness-adk used unchanged as a dependency; the step loop lives in Agent Runtime | Accepted |

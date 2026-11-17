@@ -50,38 +50,33 @@ token-budget packing) ships as a PyO3 module built with maturin.
 | Billing | Python | Global, low volume |
 | Web App / Public API | TypeScript (Next.js) | Unchanged |
 
-### D2. `agent-harness-adk` is the agent framework, driven step by step by Temporal
+### D2. `agent-harness-adk` is a dependency; the step loop lives in Agent Runtime
 
-Architecture rule: every harness stage is a Temporal activity, and a crash resumes from the last completed step.
-Today `Agent._drive` in `agent-harness-adk` 0.2.0 runs the whole loop inside one call. We add a **step-level public
-API** to the package (released as 0.3.0) so Temporal can drive one iteration at a time:
+[ADR-0016](architecture/adr/0016-harness-package-as-dependency.md) (supersedes ADR-0014). The package is installed
+from PyPI in the `pyproject.toml` of the services that use it and is never changed from this repo. Agent Runtime
+builds the durable loop from the package's public parts:
 
 ```
-state = AgentState(...)                     # serialisable: messages, plan, budget, step
-ctx   = await agent.build_context(state)    # context engine        -> activity
-resp  = await agent.call_model(ctx)         # model via gateway     -> activity
-dec   = await agent.decide(state, resp)     # validate + repair     -> activity
-      # dec is exactly one of: Final | ToolCalls | AskHuman | GiveUp
-outs  = await agent.act(state, dec, key=f"{run_id}:{step}")   # tool router -> activity
-state = agent.observe(state, dec, outs)     # pure, runs in the workflow
+state = AgentState(...)                                # serialisable: messages, step, usage, status
+req   = await build_context(spec, state)               # ContextAssembler, ContextCompactor  -> activity
+resp  = await call_model(provider, req, state)         # Provider.complete, budget check      -> activity
+dec   = decide(spec, state, resp)                      # Tool.validate, Guardrails, approvals
+      # dec is exactly one of: Final | ToolCalls | AskHuman | GiveUp (or an internal Repair)
+outs  = await act(spec, state, dec.calls)              # Tool.run, key run_id:step:idx       -> activity
+state = observe(state, resp, dec, outs)                # pure, runs in the workflow
 ```
 
-`Agent.run()` is rebuilt on top of these same functions, so local use is unchanged. Approvals, pause, resume and
-cancel become Temporal signals in agent-runtime. The harness's own `Approvals` store is not used there.
-
-How the harness parts map to the platform:
+How the package's parts map to the platform:
 
 | `agent-harness-adk` part | Platform use |
 |---|---|
-| `Agent`, `Tool`, `Skill`, `Prompt`, `PromptLibrary` | Employee definition at run time, built from the pinned Workforce version |
+| `Tool`, `ToolRegistry`, `Prompt` | Employee definition at run time, built from the pinned Workforce version |
 | `OpenAICompatibleProvider` | Pointed at the Model Gateway (LiteLLM). The only path to any LLM |
-| `ContextAssembler`, `ContextCompactor` | Context engine stage, with the token budget split from agent-harness.md |
-| `Guardrails`, `NoSecrets`, `NoPII`, `InjectionDetector` | Output guardrails in the validate stage |
-| `PolicyGate`, `HookEngine` | Local pre-check before the Integration Service authorizes (defence in depth) |
-| `MemoryStore` contract | `BrainMemoryStore` adapter that calls Brain `Recall` and emits `Remember` events |
+| `ContextAssembler`, `ContextCompactor` | Context engine stage |
+| `Guardrails` | Output guardrails in the decide stage |
+| `MemoryStore` contract | `BrainMemoryStore` adapter over Brain `Recall` and `Remember` (Phase 3) |
 | `Evaluator`, `GoldenTask`, `Expect` | Evaluation Service suites and the release gate |
-| `RecordingProvider`, `ReplayProvider`, `FakeProvider` | Deterministic tests and Temporal replay tests |
-| `Tracer` | Bridged to OpenTelemetry |
+| `FakeProvider`, `RecordingProvider`, `ReplayProvider` | Deterministic tests and Temporal replay tests |
 
 ### D3. Tooling
 
@@ -198,23 +193,26 @@ Notes for later phases:
 
 ---
 
-## Phase 1: `agent-harness-adk` 0.3.0, the step-level API
+## Phase 1: The step loop in Agent Runtime, on `agent-harness-adk`
 
-Work happens in the `agent-harness-adk` repository, then this repo pins the new version.
+`agent-harness-adk` is used as a normal PyPI dependency, unchanged ([ADR-0016](architecture/adr/0016-harness-package-as-dependency.md)).
+The loop is built in `microservices/agent-runtime/src/agent_runtime/harness/`, one module per stage, each with
+serialisable inputs and outputs so Phase 2 can run each one as a Temporal activity.
 
 | # | Task | Done when | Commit message |
 |---|---|---|---|
-| 1.1 | Define `AgentState` (pydantic, JSON-serialisable: messages, plan, todos, budget used, step, version) and `Decision` (`Final`, `ToolCalls`, `AskHuman`, `GiveUp`) | Round-trip serialisation tests pass | `Add serialisable AgentState and Decision types` |
-| 1.2 | Extract `build_context(state)` from `_drive` (assembler, compaction, skills, memory recall) | Same prompts as before on the existing test suite | `Extract build_context stage from agent loop` |
-| 1.3 | Extract `call_model(context)` with provider, router fallbacks and budget pre-check | Existing provider tests pass | `Extract call_model stage from agent loop` |
-| 1.4 | Extract `decide(state, response)`: tool-call parsing, schema validation, repair loop (max 2), guardrails, loop detector | Tests for each outcome type pass | `Extract decide stage with repair and guardrails` |
-| 1.5 | Extract `act(state, decision, idempotency_key)`: parallel reads, serial writes, `ToolContext.idempotency_key` | Key reaches tools, ordering tests pass | `Extract act stage with idempotency keys` |
-| 1.6 | Extract pure `observe(state, decision, outcomes)` and stop conditions | Pure function tests pass, no I/O | `Extract pure observe stage and stop checks` |
-| 1.7 | Rebuild `Agent.run()` and `stream()` on the five stages | All 296+ existing tests pass unchanged | `Rebuild agent run loop on step stages` |
-| 1.8 | Docs, example `examples/30_step_api.py`, changelog, release 0.3.0 to PyPI | Package installs from PyPI | `Release step-level API as version 0.3.0` |
-| 1.9 | In this repo, pin `agent-harness-adk>=0.3,<0.4` in the workspace | `uv sync` resolves it | `Pin agent-harness-adk 0.3 in workspace` |
+| 1.1 | ADR-0016 (supersedes ADR-0014), this plan, `CLAUDE.md` with instructions for working in this repo | Docs merged | `Add ADR-0016, Phase 1 plan and CLAUDE.md` |
+| 1.2 | Scaffold `agent-runtime` from the Python template; add `agent-harness-adk>=0.2,<0.3` to its `pyproject.toml` | `just ci` in the service passes, the package imports | `Scaffold agent-runtime with agent-harness-adk dependency` |
+| 1.3 | `AgentState` (messages, step, usage, loop history, status, pending calls) and `Decision` (`Final`, `ToolCalls`, `AskHuman`, `GiveUp`, plus internal `Repair`), plus `EmployeeSpec` | JSON round-trip tests pass | `Add serialisable AgentState and Decision types` |
+| 1.4 | `build_context`: system prompt via `ContextAssembler`, compaction via `ContextCompactor`, open tool calls closed, tool manifest limited to granted tools | Tests: granted tools only, compaction keeps pairs intact | `Add build_context stage on ContextAssembler` |
+| 1.5 | `call_model`: `Provider.complete`, budget pre-check with `estimate_cost` (stops instead of overspending) | Tests on `FakeProvider`, budget stop | `Add call_model stage with budget pre-check` |
+| 1.6 | `decide`: tool-call validation with `Tool.validate`, unknown and denied tools, repair loop (max 2), output guardrails, loop detector (same call 3 times), approval gate (R3 always, R2 unless allowed, `permission="ask"`) | A test per outcome | `Add decide stage with repair and guardrails` |
+| 1.7 | `act`: reads (R0) in parallel up to 5, writes serially in model order, idempotency key `run_id:step:idx` in `ToolContext.state`, results wrapped as untrusted data | Key reaches tools, ordering tests pass | `Add act stage with idempotency keys` |
+| 1.8 | `observe` (pure: no I/O, no clock) and stop conditions (final, max steps, max cost, loop, give up), plus approval resume | Pure function tests pass | `Add pure observe stage and stop checks` |
+| 1.9 | Step driver: `step(state)` and `run(task)`; the exit test | See exit | `Add step driver with serialised state test` |
 
-**Phase 1 exit:** a test drives an agent one step at a time from a serialised state, with identical results to `run()`.
+**Phase 1 exit:** a test drives an employee one step at a time, serialising `AgentState` to JSON and back between
+every step, and gets the same result as running the loop without interruption.
 
 ---
 
@@ -224,7 +222,6 @@ A task goes in, an employee works through it with real model calls and a fake to
 
 | # | Task | Done when | Commit message |
 |---|---|---|---|
-| 2.1 | Scaffold `microservices/agent-runtime` from the Python template | Service runs, `/readyz` green | `Scaffold agent-runtime from Python template` |
 | 2.2 | `run_db` migrations: `runs`, `run_steps`, `outbox`, `inbox`, RLS | Migrations apply and revert | `Add run_db schema with runs and run_steps` |
 | 2.3 | `EmployeeRun` workflow: loop over activities `build_context`, `call_model`, `decide`, `act`; `observe` in workflow code | Workflow completes on `FakeProvider` | `Add EmployeeRun workflow driving harness steps` |
 | 2.4 | Activity contract: timeouts, retry policies and error taxonomy from diagram page 2; large payloads to S3 by reference | Tests per activity for retryable and non-retryable errors | `Add activity timeouts retries and error taxonomy` |
