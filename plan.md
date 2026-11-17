@@ -87,44 +87,49 @@ How the harness parts map to the platform:
 
 | Concern | Choice |
 |---|---|
-| Python | 3.13, `uv` workspace, `ruff`, `pyright`, `pytest`, `pytest-asyncio` |
-| Rust | 1.99.1 pinned in `rust-toolchain.toml`, cargo workspace, `clippy`, `rustfmt`, `cargo-deny` (CI) |
+| Python | 3.13, `uv` per service, `ruff`, `pyright`, `pytest`, `pytest-asyncio` |
+| Rust | 1.99.1 pinned in each service's `rust-toolchain.toml`, one crate per service, `clippy`, `rustfmt`, `cargo-deny` (CI) |
 | Rust stack | `tokio`, `tonic` + `prost` (gRPC), `axum` (health, REST), `sqlx` (Postgres), `async-nats`, `tracing` + `opentelemetry` |
 | Python stack | `temporalio`, `grpcio`, `psycopg` 3 (async), `nats-py`, `opentelemetry`, `pydantic`, `fastapi` (health, REST) |
 | Python and Rust bridge | PyO3 + maturin |
-| Contracts | Protobuf with `buf` (lint and `buf breaking` in CI), CloudEvents + AsyncAPI for events |
-| Migrations | Plain versioned SQL per service, expand then contract, applied with `wfk-migrate` (in `wfk-platform`) for both languages |
+| Contracts | Protobuf per service with `buf` (lint in CI), CloudEvents + AsyncAPI for events. Each service owns its API |
+| Migrations | Plain versioned SQL per service, expand then contract. Python: `wfk-migrate`. Rust: sqlx, built into the binary. Same file format |
 | Task runner | `just` (works on Windows, macOS and Linux) |
 | Local stack | Docker Compose in `deployments/`: Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS (S3), Grafana LGTM |
 
 ---
 
-## Target repository layout
+## Repository layout
+
+Every microservice is a self-contained project ([ADR-0015](architecture/adr/0015-self-contained-microservices.md)):
+no root `pyproject.toml` or `Cargo.toml`, no shared libraries. A service never points outside its own folder.
 
 ```
-architecture/            design docs, ADRs, diagram (exists)
-contracts/
-  proto/<domain>/v1/     gRPC contracts
-  events/                CloudEvents envelope, AsyncAPI per service
-libs/
-  python/wfk-contracts/  generated Python code for contracts/
-  python/wfk-platform/   config, telemetry, health, tenant-scoped db session, outbox, inbox, NATS relay, wfk-migrate
-  rust/wfk-contracts/    generated Rust code for contracts/
-  rust/wfk-platform/     the same, for Rust services
-  rust/brain-core/       recall fusion, ranking, packing (PyO3 module)
-microservices/<name>/    one service each (exists), gains pyproject.toml or Cargo.toml
-deployments/             docker compose for the local stack (docker-compose.yml)
-platform/                Helm and Kustomize for platform components (later)
-cells/<cell-id>/         per-cell Argo CD values (later)
-templates/               service templates for Python and Rust (real workspace members) and migrations
-tools/                   repo scripts: new_service.py, check_licenses.py
-pyproject.toml           uv workspace root
-Cargo.toml               cargo workspace root
-justfile                 common commands
-plan.md                  this file
+architecture/                design docs, ADRs, diagram
+deployments/                 docker compose for the local stack (docker-compose.yml)
+microservices/
+  templates/
+    python-service/          Python template: a real, tested service named service-template
+    rust-service/            Rust template: the same, in Rust
+    new_service.py           copies a template to microservices/<name> and renames it
+  <service>/                 one self-contained project per service:
+    pyproject.toml, uv.lock     (Python)  or  Cargo.toml, Cargo.lock, rust-toolchain.toml (Rust)
+    justfile, Dockerfile        commands and image, run from this folder
+    contracts/                  common types (copied) + this service's own API (owned)
+    migrations/                 versioned SQL
+    src/<service>/              api/, domain/, adapters/
+    src/wfk_platform/           this service's copy of the platform code (Rust: src/platform/)
+    tests/
+platform/                    Helm and Kustomize for platform components (later)
+cells/<cell-id>/             per-cell Argo CD values (later)
+justfile                     the local stack (up, down) and new-service only
+plan.md                      this file
 ```
 
-Shared libraries hold **infrastructure only** (outbox, telemetry, tenancy). Domain logic never goes in `libs/`.
+The Brain's Rust hot path (`brain-core`: fusion, ranking, packing via PyO3) lives inside
+`microservices/brain-service/`, built by that service, not as a shared library.
+
+Platform code holds **infrastructure only** (outbox, telemetry, tenancy). Domain logic never goes in it.
 
 ---
 
@@ -169,6 +174,19 @@ Changes from the plan, and why:
 | MinIO (as named in the request) | SeaweedFS (S3 API) | ADR-0007 already chose it for licence reasons. Any S3 client works |
 | Templates as files to copy | Templates are workspace members, compiled and tested in CI | A broken template cannot be copied into a new service |
 
+### Restructure after Phase 0
+
+The first build used root workspaces (`pyproject.toml`, `Cargo.toml`), shared `libs/`, and root `contracts/`,
+`templates/` and `tools/`. On review this was changed so every microservice is self-contained
+([ADR-0015](architecture/adr/0015-self-contained-microservices.md)): own manifest and lockfile, own copy of the
+platform code, own contracts, own `justfile` and Dockerfile. Templates and the generator moved to
+`microservices/templates/`, and CI now checks each service from its own folder. The task table above records the
+original commits; the layout section above is the current state.
+
+Verified after the restructure: Python template 46 tests, Rust template 25 tests (including a new built-in
+migration test), generator 13 tests, lint and types clean. A service generated from each template passed its own
+`just ci` and built its Docker image from its own folder.
+
 Notes for later phases:
 
 - `psycopg` (the Python Postgres driver) is **LGPL-3.0**. The licence check allows LGPL for libraries used
@@ -176,6 +194,7 @@ Notes for later phases:
 - `cargo-deny` does not build on this Windows machine (its zstd dependency needs a C toolchain). CI runs it on
   Linux. The licence part was checked locally from `cargo metadata`: 326 crates, all on the allow-list.
 - Rust JSON logs do not yet carry `trace_id` the way Python logs do. Add it when the first Rust service ships.
+- Platform code is copied per service. A platform fix goes into the template first, then into each service.
 
 ---
 

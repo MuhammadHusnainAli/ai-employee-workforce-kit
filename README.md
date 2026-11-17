@@ -34,7 +34,10 @@ architecture/     design docs, ADRs and the draw.io diagram
   brain.md          the per-employee brain (memory, recall, learning)
   agent-harness.md  the agent loop in depth
   adr/              architecture decision records
-microservices/    one folder per service, each with its spec (README.md) and layout
+microservices/    one self-contained project per service (own manifest, lockfile, platform code, contracts)
+  templates/        Python and Rust service templates, and the generator
+deployments/      docker compose for the local stack
+plan.md           the phased implementation plan
 LICENSE           Apache License 2.0
 ```
 

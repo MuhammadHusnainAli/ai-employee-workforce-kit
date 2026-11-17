@@ -29,14 +29,22 @@ LiteLLM base image, CloudNativePG) are not microservices we build; they are depl
 
 ## Standard layout
 
+Every service is a self-contained project ([ADR-0015](../architecture/adr/0015-self-contained-microservices.md)).
+It never points outside its own folder. Create one with `just new-service <python|rust> <name>` at the repo root;
+see [templates/](templates/README.md).
+
 ```
 <service>/
-  api/          transport layer (gRPC / REST handlers, request validation)
-  domain/       business logic and invariants; no I/O
-  adapters/     Postgres, NATS, Temporal, external systems
-  migrations/   versioned SQL, expand → contract
-  tests/        unit, integration and contract tests
-  README.md     the service spec: purpose, API, events, database, scaling, failure behaviour
+  README.md        the service spec: purpose, API, events, database, scaling, failure behaviour
+  pyproject.toml   + uv.lock (Python)    or    Cargo.toml + Cargo.lock + rust-toolchain.toml (Rust)
+  justfile         lint, test, migrate, gen, image, ci: run from this folder
+  Dockerfile       build context is this folder
+  contracts/       proto/wfk/common/v1 (copied common types) + proto/wfk/<service>/v1 (its own API)
+  migrations/      versioned SQL, expand then contract
+  src/
+    <service>/     api/ (transport), domain/ (logic, no I/O), adapters/ (Postgres, NATS, Temporal, others)
+    wfk_platform/  this service's copy of the platform code (Rust: src/platform/)
+  tests/           unit, integration and contract tests
 ```
 
 Services with special needs extend this (for example `workflows/` and `harness/` in agent-runtime, `connectors/`
@@ -47,6 +55,7 @@ in integration-service, `evals/` in brain-service).
 1. **One database, one role.** No service reads another service's tables.
 2. **Transactional outbox** for every event, **inbox** dedupe for every consumer.
 3. **Deadlines** on every call, **idempotency keys** on every mutating call.
-4. **Contracts first:** protobuf in `/contracts` (CI runs `buf breaking`), events as CloudEvents + AsyncAPI.
+4. **Contracts first:** each service owns its protobuf API in its own `contracts/` (CI runs `buf lint`), events as
+   CloudEvents + AsyncAPI.
 5. **Health and telemetry:** `/healthz`, `/readyz`, OTLP traces, metrics and logs with `trace_id`.
 6. **Tenant isolation:** `SET LOCAL app.tenant_id` in every transaction; RLS enforced in the database.

@@ -19,3 +19,4 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 | [0012](0012-gated-brain-evolution.md) | Brain evolution through versioned, evaluated, reversible proposals | Accepted |
 | [0013](0013-rust-and-python.md) | Rust and Python as the two implementation languages (supersedes Go) | Accepted |
 | [0014](0014-agent-harness-adk-step-loop.md) | agent-harness-adk as the agent framework, driven step by step by Temporal | Accepted |
+| [0015](0015-self-contained-microservices.md) | Every microservice is a self-contained project: own manifest, lockfile, platform code and contracts | Accepted |

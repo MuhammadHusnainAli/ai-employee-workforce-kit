@@ -133,8 +133,9 @@ for events.
 
 ```
 /architecture            ← this folder
-/contracts               protobuf (gRPC) + AsyncAPI event schemas; CI blocks breaking changes
-/microservices/<name>    one folder per microservice (see microservices/README.md)
+/microservices/<name>    one self-contained project per microservice: own manifest, lockfile, platform code,
+                         contracts (it owns its own API), migrations and Dockerfile (ADR-0015)
+/microservices/templates the Python and Rust service templates and the generator
 /platform                Helm/Kustomize for Temporal, NATS, CNPG clusters, Keycloak, OpenFGA, OpenBao…
 /cells/<cell-id>         per-cell Argo CD Application values (the cell's config is just data)
 /connectors/<tool>       MCP servers for integrations (gmail, slack, hubspot, …)
