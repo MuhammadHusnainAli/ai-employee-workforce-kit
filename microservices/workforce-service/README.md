@@ -37,12 +37,19 @@ Read-heavy; ≥ 3 replicas with version cache.
 Runs pin a version at start, so edits or outages never change in-flight behaviour.
 
 ## Folder layout
+A self-contained Python project ([ADR-0015](../../architecture/adr/0015-self-contained-microservices.md)) on port
+7011 (gRPC, with gRPC health). Teams, schedules and the evaluation gate before publishing come in later phases.
+
 ```
 workforce-service/
-  api/
-  domain/
-  adapters/
-  migrations/
+  pyproject.toml  uv.lock  justfile  Dockerfile
+  contracts/        common types + this service's API (wfk.workforce_service.v1)
+  migrations/       workforce_db: employees, employee_versions (immutable, enforced by a trigger)
+  src/workforce_service/
+    api/            WorkforceService gRPC
+    domain/         version rules: tool grants, tiers, auto-approve, limits
+    adapters/       Postgres repository; events through the outbox, relayed to the EMPLOYEES stream
+  src/wfk_platform/ this service's copy of the platform code
   tests/
 ```
 

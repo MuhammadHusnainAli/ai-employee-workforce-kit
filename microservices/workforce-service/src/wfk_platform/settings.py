@@ -1,0 +1,42 @@
+"""Service settings read from the environment (prefix WFK_)."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ServiceSettings(BaseSettings):
+    """Settings every service has. Services subclass this to add their own.
+
+    Defaults point at the local stack in deployments/docker-compose.yml.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="WFK_", env_file=None, extra="ignore")
+
+    service_name: str = Field(min_length=1)
+    environment: Literal["local", "test", "staging", "production"] = "local"
+    cell_id: str = "cell-local"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    log_json: bool = True
+
+    # One port per service (deployments/README.md, port map). Python services serve gRPC only;
+    # health is the standard gRPC health service on the same port.
+    host: str = "0.0.0.0"  # noqa: S104 - services listen on all interfaces inside their pod
+    port: int = Field(default=7020, ge=1, le=65535)
+
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/wfk"
+    # Role tenant transactions run as, so RLS applies even when the login is a superuser
+    # (the local stack logs in as one). Empty in production: the service logs in as it.
+    db_tenant_role: str | None = "wfk_app"
+    nats_url: str = "nats://127.0.0.1:7003"
+    temporal_address: str = "127.0.0.1:7001"
+    temporal_namespace: str = "default"
+
+    # Empty disables export (spans and metrics are still created, just not sent).
+    otlp_endpoint: str = ""
+
+    # Deadline for each readiness check, in seconds.
+    readiness_timeout_s: float = Field(default=2.0, gt=0)
