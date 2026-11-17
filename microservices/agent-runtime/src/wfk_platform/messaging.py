@@ -10,6 +10,8 @@ Delivery is at least once end to end. Duplicates are removed twice:
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
@@ -167,3 +169,44 @@ class InboxConsumer:
             return 0
         await msg.ack()
         return 1 if first_time else 0
+
+
+async def run_outbox_relay(
+    db: Database,
+    nats_url: str,
+    *,
+    stream: str,
+    subjects: list[str],
+    stop: asyncio.Event,
+    idle_s: float = 0.2,
+    max_backoff_s: float = 5.0,
+) -> None:
+    """Publish this service's outbox to its JetStream stream until `stop` is set.
+
+    Connects (and reconnects) on its own, so a service starts while NATS is down and catches
+    up when it is back: committed events wait in the outbox, nothing is lost. Run it as a
+    background task next to the service's server.
+    """
+    import nats
+
+    backoff = idle_s
+    while not stop.is_set():
+        try:
+            nc = await nats.connect(nats_url, connect_timeout=2, max_reconnect_attempts=-1)
+            try:
+                js = nc.jetstream()
+                await ensure_stream(js, stream, subjects)
+                relay = OutboxRelay(db, js)
+                backoff = idle_s
+                while not stop.is_set():
+                    sent = await relay.publish_pending()
+                    if sent < relay.batch_size:  # caught up: wait a little, or until stopped
+                        with contextlib.suppress(TimeoutError):
+                            await asyncio.wait_for(stop.wait(), timeout=idle_s)
+            finally:
+                await nc.drain()
+        except Exception as exc:  # NATS or the database is down: back off and retry
+            log.warning("outbox relay paused", extra={"error": str(exc), "retry_s": backoff})
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(stop.wait(), timeout=backoff)
+            backoff = min(backoff * 2, max_backoff_s)

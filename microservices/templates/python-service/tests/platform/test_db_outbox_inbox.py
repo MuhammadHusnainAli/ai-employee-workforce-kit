@@ -1,5 +1,6 @@
 """Integration tests against the local stack (just up)."""
 
+import os
 import uuid
 from typing import LiteralString
 
@@ -191,3 +192,40 @@ async def test_tenant_role_keeps_rls_on_for_a_superuser_login(db: Database) -> N
             assert (await cur.fetchone() or {}).get("n") == 2
     finally:
         await as_service.close()
+
+
+async def test_relay_loop_publishes_committed_events_until_stopped(
+    db: Database, nc: NATS, unique: str
+) -> None:
+    import asyncio
+    import contextlib
+
+    from nats.js.errors import NotFoundError
+
+    from wfk_platform.messaging import run_outbox_relay
+
+    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7003")
+
+    stop = asyncio.Event()
+    task = asyncio.create_task(
+        run_outbox_relay(
+            db, nats_url, stream=f"LOOP_{unique}", subjects=[f"loop{unique}.>"], stop=stop
+        )
+    )
+    event = new_event(f"loop{unique}.happened", SOURCE, T1, {"n": 1})
+    async with db.tenant_tx(T1) as conn:
+        await enqueue(conn, event)
+
+    js = nc.jetstream()
+    for _ in range(50):
+        # NotFoundError until the relay connects and creates the stream
+        with contextlib.suppress(NotFoundError):
+            if (await js.stream_info(f"LOOP_{unique}")).state.messages == 1:
+                break
+        await asyncio.sleep(0.1)
+    assert (await js.stream_info(f"LOOP_{unique}")).state.messages == 1
+    (row,) = await outbox_rows(db, event.id)
+    assert row["published_at"] is not None
+
+    stop.set()
+    await asyncio.wait_for(task, timeout=5)  # stops promptly, no hanging connection
