@@ -11,16 +11,26 @@ import uvicorn
 from wfk_platform import configure_logging, setup_telemetry
 from wfk_platform.db import Database
 
+from brain_service.adapters.modelgw.embeddings import Embedder, GatewayEmbedder, HashEmbedder
 from brain_service.app import NOT_SERVING, SERVING, create_app, create_grpc_server
+from brain_service.recall import Recall
 from brain_service.settings import Settings
 
 log = logging.getLogger(__name__)
 
 
+def embedder(settings: Settings) -> Embedder:
+    if settings.embedder == "gateway":
+        return GatewayEmbedder(
+            settings.model_gateway_url, settings.model_gateway_key, settings.embedding_model
+        )
+    return HashEmbedder()
+
+
 async def serve(settings: Settings) -> None:
     configure_logging(settings.service_name, settings.log_level, json_output=settings.log_json)
     telemetry = setup_telemetry(settings)
-    db = Database(settings.database_url)
+    db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
 
     http = uvicorn.Server(
         uvicorn.Config(
@@ -30,7 +40,7 @@ async def serve(settings: Settings) -> None:
             log_config=None,  # keep our JSON logging
         )
     )
-    grpc_server, grpc_health, _ = create_grpc_server(settings)
+    grpc_server, grpc_health, _ = create_grpc_server(settings, Recall(db, embedder(settings)))
     await grpc_server.start()
     await grpc_health.set("", SERVING)
     log.info(

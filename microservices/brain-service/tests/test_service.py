@@ -5,7 +5,9 @@ from grpc_health.v1 import health_pb2, health_pb2_grpc
 
 from wfk_platform.db import Database
 
+from brain_service.adapters.modelgw.embeddings import HashEmbedder
 from brain_service.app import SERVING, create_app, create_grpc_server
+from brain_service.recall import Recall
 from brain_service.settings import Settings
 
 UNREACHABLE = "postgresql://wfk:wfk@127.0.0.1:1/nowhere?connect_timeout=1"
@@ -40,7 +42,9 @@ async def test_ready_with_the_database() -> None:
 
 async def test_grpc_health_reports_serving() -> None:
     settings = Settings(http_host="127.0.0.1")
-    server, health, port = create_grpc_server(settings, port=0)
+    server, health, port = create_grpc_server(
+        settings, Recall(Database(UNREACHABLE), HashEmbedder()), port=0
+    )
     await server.start()
     await health.set("", SERVING)
     try:

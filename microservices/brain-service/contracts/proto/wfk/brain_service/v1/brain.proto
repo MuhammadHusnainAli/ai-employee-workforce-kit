@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package wfk.brain_service.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
+// this file to call it. Later phases add Remember, Feedback, Forget, GetBrain, ProposeChange,
+// ApproveChange, Rollback and Inspect.
+service BrainService {
+  // What this employee should have in mind for one step: the pinned identity core and the
+  // best memories that fit the token budget, each cited. p95 under 300 ms; degrades instead
+  // of failing when a store is slow or down.
+  rpc Recall(RecallRequest) returns (RecallResponse);
+}
+
+// Which stores a step needs (brain.md section 3, the query planner).
+enum StepType {
+  STEP_TYPE_UNSPECIFIED = 0; // treated as ACTING
+  STEP_TYPE_PLANNING = 1;
+  STEP_TYPE_ACTING = 2;
+  STEP_TYPE_REPLYING = 3;
+  STEP_TYPE_LIVE_MEETING = 4;
+}
+
+message RecallRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Where the recall happens, for the recall log and credit assignment.
+  string run_id = 3;
+  int32 step = 4;
+  string query = 5;
+  StepType step_type = 6;
+  // Tokens for identity, rules and memories together. 0 means the server default.
+  int32 token_budget = 7;
+  // Recall as the brain stood at this time. Unset means now.
+  google.protobuf.Timestamp as_of = 8;
+}
+
+message RecalledItem {
+  string memory_id = 1;
+  string kind = 2;
+  string content = 3;
+  double score = 4;
+  string trust = 5;
+  google.protobuf.Timestamp recorded_at = 6;
+  string source_ref = 7;
+}
+
+message RecallResponse {
+  // The recall_log row: cite it in the run ledger.
+  string recall_id = 1;
+  // The pinned identity core. Empty when the employee has no active brain version yet.
+  string identity = 2;
+  int32 identity_version = 3;
+  // In-scope rules, pinned like the identity (populated from Phase 6).
+  repeated string rules = 4;
+  // Memories, best first, that fit the budget left after identity and rules.
+  repeated RecalledItem items = 5;
+  int32 tokens_used = 6;
+  // True when a retriever was skipped (slow or failing); the step should be flagged.
+  bool degraded = 7;
+  repeated string skipped = 8;
+}

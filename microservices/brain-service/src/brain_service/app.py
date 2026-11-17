@@ -13,9 +13,12 @@ from grpc_health.v1 import health_pb2, health_pb2_grpc
 # checkers can see it.
 from grpc_health.v1._async import HealthServicer
 
+from wfk.brain_service.v1 import brain_pb2_grpc
 from wfk_platform import HealthRegistry, health_router
 from wfk_platform.db import Database
 
+from brain_service.api.brain import BrainServicer
+from brain_service.recall import Recall
 from brain_service.settings import Settings
 
 
@@ -39,15 +42,16 @@ def create_app(settings: Settings, db: Database) -> FastAPI:
 
 
 def create_grpc_server(
-    settings: Settings, *, port: int | None = None
+    settings: Settings, recall: Recall, *, port: int | None = None
 ) -> tuple[grpc.aio.Server, HealthServicer, int]:
-    """gRPC server with the standard health service. Register api/ servicers here.
+    """gRPC server: the standard health service and BrainService.
 
     Returns the server, its health servicer and the bound port (`port=0` picks a free one).
     """
     server = grpc.aio.server()
     health_servicer = HealthServicer()
     health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+    brain_pb2_grpc.add_BrainServiceServicer_to_server(BrainServicer(recall), server)
     want = settings.grpc_port if port is None else port
     bound = server.add_insecure_port(f"{settings.http_host}:{want}")
     return server, health_servicer, bound
