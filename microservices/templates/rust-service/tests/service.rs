@@ -55,16 +55,16 @@ async fn ready_with_the_database() {
 }
 
 #[tokio::test]
-async fn serves_http_and_grpc_health_then_shuts_down() {
-    let http = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let grpc = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let (http_addr, grpc_addr) = (http.local_addr().unwrap(), grpc.local_addr().unwrap());
+async fn serves_http_health_and_grpc_on_one_port_then_shuts_down() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
-    let server = tokio::spawn(serve(settings(UNREACHABLE), http, grpc, async {
+    let server = tokio::spawn(serve(settings(UNREACHABLE), listener, async {
         let _ = stopped.await;
     }));
 
-    let channel = tonic::transport::Channel::from_shared(format!("http://{grpc_addr}"))
+    // gRPC (HTTP/2) on the port...
+    let channel = tonic::transport::Channel::from_shared(format!("http://{addr}"))
         .unwrap()
         .connect()
         .await
@@ -80,10 +80,15 @@ async fn serves_http_and_grpc_health_then_shuts_down() {
         .status();
     assert_eq!(status, ServingStatus::Serving);
 
-    let mut tcp = tokio::net::TcpStream::connect(http_addr).await.unwrap();
+    // ...and HTTP/1.1 health on the same port.
+    let mut tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     tokio::io::AsyncWriteExt::write_all(
         &mut tcp,
-        b"GET /healthz HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n",
+        b"GET /healthz HTTP/1.1
+Host: t
+Connection: close
+
+",
     )
     .await
     .unwrap();
@@ -93,6 +98,7 @@ async fn serves_http_and_grpc_health_then_shuts_down() {
         .unwrap();
     assert!(out.starts_with("HTTP/1.1 200"), "{out}");
 
+    drop(client);
     stop.send(()).unwrap();
     tokio::time::timeout(Duration::from_secs(5), server)
         .await

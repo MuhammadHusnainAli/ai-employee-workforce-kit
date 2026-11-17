@@ -38,11 +38,16 @@ pub fn database(settings: &ServiceSettings) -> anyhow::Result<Database> {
     Ok(Database { pool })
 }
 
-/// Serve HTTP and gRPC until `shutdown` resolves.
+/// HTTP health routes and gRPC services on one router, so they share one port. axum serves
+/// HTTP/1.1 and HTTP/2 (h2c) on the same listener; gRPC is HTTP/2.
+pub fn app(settings: &ServiceSettings, db: Database, grpc: tonic::service::Routes) -> Router {
+    http_router(settings, db).merge(grpc.into_axum_router())
+}
+
+/// Serve health and gRPC on one listener until `shutdown` resolves.
 pub async fn serve(
     settings: ServiceSettings,
-    http: TcpListener,
-    grpc: TcpListener,
+    listener: TcpListener,
     shutdown: impl Future<Output = ()> + Send + 'static,
 ) -> anyhow::Result<()> {
     let db = database(&settings)?;
@@ -50,45 +55,21 @@ pub async fn serve(
     reporter
         .set_service_status("", ServingStatus::Serving)
         .await;
-
-    let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
-    tokio::spawn(async move {
-        shutdown.await;
-        let _ = stop_tx.send(true);
-    });
-    let wait = |mut rx: tokio::sync::watch::Receiver<bool>| async move {
-        let _ = rx.wait_for(|stop| *stop).await;
-    };
-
-    tracing::info!(
-        http = %http.local_addr()?,
-        grpc = %grpc.local_addr()?,
-        "started"
-    );
-    let http_server =
-        axum::serve(http, http_router(&settings, db)).with_graceful_shutdown(wait(stop_rx.clone()));
     // Register api/ gRPC services here with `.add_service(...)`.
-    let grpc_server = tonic::transport::Server::builder()
-        .add_service(health_service)
-        .serve_with_incoming_shutdown(
-            tonic::transport::server::TcpIncoming::from(grpc),
-            wait(stop_rx),
-        );
-    let (h, g) = tokio::join!(http_server, grpc_server);
+    let grpc = tonic::service::Routes::new(health_service);
+
+    tracing::info!(addr = %listener.local_addr()?, "started");
+    axum::serve(listener, app(&settings, db, grpc))
+        .with_graceful_shutdown(shutdown)
+        .await?;
     reporter
         .set_service_status("", ServingStatus::NotServing)
         .await;
-    h?;
-    g?;
     Ok(())
 }
 
-/// Bind both listeners from settings.
-pub async fn bind(settings: &ServiceSettings) -> anyhow::Result<(TcpListener, TcpListener)> {
-    let http: SocketAddr = format!("{}:{}", settings.http_host, settings.http_port).parse()?;
-    let grpc: SocketAddr = format!("{}:{}", settings.http_host, settings.grpc_port).parse()?;
-    Ok((
-        TcpListener::bind(http).await?,
-        TcpListener::bind(grpc).await?,
-    ))
+/// Bind the service's one port from settings.
+pub async fn bind(settings: &ServiceSettings) -> anyhow::Result<TcpListener> {
+    let addr: SocketAddr = format!("{}:{}", settings.host, settings.port).parse()?;
+    Ok(TcpListener::bind(addr).await?)
 }

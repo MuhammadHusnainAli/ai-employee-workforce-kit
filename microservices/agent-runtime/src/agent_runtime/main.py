@@ -1,47 +1,44 @@
-"""Entry point: runs the HTTP server (health, REST) and the gRPC server side by side."""
+"""Entry point: one gRPC server on one port (health included), plus subcommands."""
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+import signal
 import sys
-
-import uvicorn
 
 from wfk_platform import configure_logging, setup_telemetry
 from wfk_platform.db import Database
 
-from agent_runtime.app import NOT_SERVING, SERVING, create_app, create_grpc_server
+from agent_runtime.app import create_server
 from agent_runtime.settings import Settings
 
 log = logging.getLogger(__name__)
 
 
 async def serve(settings: Settings) -> None:
+    """One gRPC server on one port (health included), until SIGINT / SIGTERM."""
     configure_logging(settings.service_name, settings.log_level, json_output=settings.log_json)
     telemetry = setup_telemetry(settings)
     db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
+    # Do not wait for the database: the service starts, and readiness says when it is usable.
+    await db.open(wait=False)
+    server, health, port = create_server(settings, db, port=settings.port)
+    await server.start()
+    log.info("started", extra={"port": port})
 
-    http = uvicorn.Server(
-        uvicorn.Config(
-            create_app(settings, db),
-            host=settings.http_host,
-            port=settings.http_port,
-            log_config=None,  # keep our JSON logging
-        )
-    )
-    grpc_server, grpc_health, _ = create_grpc_server(settings, db)
-    await grpc_server.start()
-    await grpc_health.set("", SERVING)
-    log.info(
-        "started",
-        extra={"http_port": settings.http_port, "grpc_port": settings.grpc_port},
-    )
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        with contextlib.suppress(NotImplementedError):  # Windows: Ctrl-C raises instead
+            loop.add_signal_handler(sig, stop.set)
     try:
-        await http.serve()  # returns on SIGINT / SIGTERM
+        await stop.wait()
     finally:
-        await grpc_health.set("", NOT_SERVING)
-        await grpc_server.stop(grace=5)
+        health.shutdown()  # NOT_SERVING first, so traffic drains
+        await server.stop(grace=5)
+        await db.close()
         telemetry.shutdown()
 
 

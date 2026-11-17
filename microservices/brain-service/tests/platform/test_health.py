@@ -1,15 +1,13 @@
 import asyncio
 
-import httpx
-from fastapi import FastAPI
-
-from wfk_platform import HealthRegistry, health_router
-
-
-def app_with(registry: HealthRegistry) -> httpx.AsyncClient:
-    app = FastAPI()
-    app.include_router(health_router(registry))
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t")
+from wfk_platform.health import (
+    LIVENESS,
+    NOT_SERVING,
+    READINESS,
+    SERVING,
+    GrpcHealth,
+    HealthRegistry,
+)
 
 
 async def ok() -> None:
@@ -27,10 +25,8 @@ async def slow() -> None:
 async def test_ready_when_all_checks_pass() -> None:
     reg = HealthRegistry()
     reg.add("db", ok)
-    async with app_with(reg) as c:
-        r = await c.get("/readyz")
-    assert r.status_code == 200
-    assert r.json()["checks"] == {"db": "ok"}
+    assert await reg.readiness() == (True, {"db": "ok"})
+    assert await GrpcHealth(reg).status(READINESS) == SERVING
 
 
 async def test_not_ready_when_a_check_fails_or_times_out() -> None:
@@ -38,18 +34,26 @@ async def test_not_ready_when_a_check_fails_or_times_out() -> None:
     reg.add("db", broken)
     reg.add("nats", slow)
     reg.add("cache", ok)
-    async with app_with(reg) as c:
-        r = await c.get("/readyz")
-    assert r.status_code == 503
-    checks = r.json()["checks"]
+    ready, checks = await reg.readiness()
+    assert not ready
     assert checks["db"] == "error: ConnectionError"
     assert checks["nats"].startswith("timeout")
     assert checks["cache"] == "ok"
+    assert await GrpcHealth(reg).status(READINESS) == NOT_SERVING
 
 
 async def test_liveness_ignores_dependencies() -> None:
     reg = HealthRegistry()
     reg.add("db", broken)
-    async with app_with(reg) as c:
-        r = await c.get("/healthz")
-    assert r.status_code == 200
+    assert await GrpcHealth(reg).status(LIVENESS) == SERVING
+
+
+async def test_shutdown_reports_not_serving_so_traffic_drains() -> None:
+    health = GrpcHealth(HealthRegistry())
+    health.shutdown()
+    assert await health.status(LIVENESS) == NOT_SERVING
+    assert await health.status(READINESS) == NOT_SERVING
+
+
+async def test_unknown_service_has_no_status() -> None:
+    assert await GrpcHealth(HealthRegistry()).status("billing") is None

@@ -8,8 +8,8 @@ just new-service rust <name>     # e.g. just new-service rust task-service
 `new_service.py` copies a template into `microservices/<name>/` and renames `service-template` /
 `service_template`. It keeps the service's existing spec (`README.md`). Nothing else in the repo changes.
 
-A new service starts on its template's ports (Python 7016/7017, Rust 7018/7019). Give it its own free pair from
-the [port map](../../deployments/README.md#port-map-7000-7020) in its settings and Dockerfile.
+A new service starts on the templates' default port, 7020. Give it its own free port from the
+[port map](../../deployments/README.md#port-map-7000-7020) in its settings (`port`) and its Dockerfile's `EXPOSE`.
 
 ## Every service is self-contained
 
@@ -36,10 +36,9 @@ cannot be copied into a new service.
 
 | | Python | Rust |
 |---|---|---|
-| HTTP | FastAPI + uvicorn: `/healthz`, `/readyz` (Postgres check) | axum: `/healthz`, `/readyz` (Postgres check) |
-| gRPC | `grpc.aio` with the standard health service | tonic with `tonic-health` |
+| One port | gRPC only (`grpc.aio`); health is the standard gRPC health service: `""` liveness, `"readiness"` runs the Postgres check | axum and tonic on one listener: HTTP `/healthz`, `/readyz` (Postgres check) and gRPC with `tonic-health` |
 | Database | Pool opens without waiting: the service starts while Postgres is down, `/readyz` reports it | Lazy pool, same behaviour |
-| Shutdown | SIGINT/SIGTERM: gRPC health goes NOT_SERVING, servers drain | Ctrl-C/SIGTERM: same |
+| Shutdown | SIGINT/SIGTERM: health goes NOT_SERVING, the server drains | Ctrl-C/SIGTERM: graceful shutdown |
 
 See [MIGRATIONS.md](MIGRATIONS.md) for the migration rules. Run the generator tests with `uvx pytest tests` from
 this folder.

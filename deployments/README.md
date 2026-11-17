@@ -26,7 +26,9 @@ just nuke    # stop and delete all data
 
 ## Port map (7000-7020)
 
-Everything local listens on 127.0.0.1 in one range, so nothing collides with other projects on the machine.
+Everything local listens on 127.0.0.1 in one range, so nothing collides with other projects on the machine. Each
+service has exactly one port: Rust services serve HTTP `/healthz` and `/readyz` and gRPC on it; Python services serve
+gRPC only, with health as the standard gRPC health service (`""` for liveness, `"readiness"` for readiness).
 
 | Port | What |
 |---|---|
@@ -38,15 +40,19 @@ Everything local listens on 127.0.0.1 in one range, so nothing collides with oth
 | 7007 | Model Gateway (LiteLLM) |
 | 7008 | Grafana |
 | 7009 / 7010 | OTLP gRPC / OTLP HTTP |
-| 7011 | spare |
-| 7012 / 7013 | agent-runtime HTTP / gRPC |
-| 7014 / 7015 | brain-service HTTP / gRPC |
-| 7016 / 7017 | Python service template HTTP / gRPC |
-| 7018 / 7019 | Rust service template HTTP / gRPC |
-| 7020 | spare |
+| 7011 | workforce-service |
+| 7012 | agent-runtime |
+| 7013 | spare |
+| 7014 | brain-service |
+| 7015 | spare |
+| 7016 | task-service |
+| 7017 | integration-service |
+| 7018 | audit-service |
+| 7019 | usage-metering |
+| 7020 | spare; also the templates' default |
 
-A new service takes the next free pair and sets it in its settings (`http_port`, `grpc_port`) and its Dockerfile's
-`EXPOSE`. Stack ports can be changed by copying `.env.example` to `.env` in this folder.
+A new service takes a free port and sets it in its settings (`port`) and its Dockerfile's `EXPOSE`. Stack ports can be
+changed by copying `.env.example` to `.env` in this folder.
 
 ## Notes
 

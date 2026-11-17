@@ -17,5 +17,5 @@ ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     WFK_SERVICE_NAME=agent-runtime
 USER 10001
-EXPOSE 7012 7013
+EXPOSE 7012
 CMD ["agent-runtime"]

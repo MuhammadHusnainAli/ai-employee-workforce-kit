@@ -11,8 +11,7 @@ class Settings(ServiceSettings):
     model_config = SettingsConfigDict(env_prefix="WFK_", extra="ignore")
 
     service_name: str = "service-template"
-    # Local ports, from the 7000-7020 range (deployments/README.md). Give a new service its
-    # own free pair: two services on the same ports cannot run side by side.
-    http_port: int = 7016
-    grpc_port: int = 7017
+    # One local port, from the 7000-7020 range (deployments/README.md). Give a new service its
+    # own free port: two services on the same port cannot run side by side.
+    port: int = 7020
     database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/service_template_db"

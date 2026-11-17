@@ -36,12 +36,11 @@ pub struct ServiceSettings {
     #[serde(default = "d::yes")]
     pub log_json: bool,
 
-    #[serde(default = "d::http_host")]
-    pub http_host: String,
-    #[serde(default = "d::http_port")]
-    pub http_port: u16,
-    #[serde(default = "d::grpc_port")]
-    pub grpc_port: u16,
+    /// One port per service (deployments/README.md, port map): HTTP health and gRPC share it.
+    #[serde(default = "d::host")]
+    pub host: String,
+    #[serde(default = "d::port")]
+    pub port: u16,
 
     #[serde(default = "d::database_url")]
     pub database_url: String,
@@ -85,8 +84,8 @@ impl ServiceSettings {
         if self.service_name.trim().is_empty() {
             return Err(SettingsError::Invalid("WFK_SERVICE_NAME is empty".into()));
         }
-        if self.http_port == 0 || self.grpc_port == 0 {
-            return Err(SettingsError::Invalid("ports must be 1..=65535".into()));
+        if self.port == 0 {
+            return Err(SettingsError::Invalid("port must be 1..=65535".into()));
         }
         let level = self.log_level.to_ascii_uppercase();
         if !["DEBUG", "INFO", "WARNING", "WARN", "ERROR"].contains(&level.as_str()) {
@@ -109,16 +108,13 @@ mod d {
     pub fn yes() -> bool {
         true
     }
-    pub fn http_host() -> String {
+    pub fn host() -> String {
         "0.0.0.0".into()
     }
-    // Local ports, from the 7000-7020 range (deployments/README.md). Give a new service its
-    // own free pair: two services on the same ports cannot run side by side.
-    pub fn http_port() -> u16 {
-        7018
-    }
-    pub fn grpc_port() -> u16 {
-        7019
+    // One local port, from the 7000-7020 range (deployments/README.md). Give a new service its
+    // own free port: two services on the same port cannot run side by side.
+    pub fn port() -> u16 {
+        7020
     }
     pub fn database_url() -> String {
         "postgresql://wfk:wfk@127.0.0.1:7000/wfk".into()

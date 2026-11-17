@@ -19,13 +19,13 @@ fn vars(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
 fn reads_prefixed_variables_with_local_defaults() {
     let s = ServiceSettings::from_vars(vars(&[
         ("WFK_SERVICE_NAME", "task-service"),
-        ("WFK_HTTP_PORT", "9000"),
+        ("WFK_PORT", "9000"),
         ("WFK_ENVIRONMENT", "test"),
         ("UNRELATED", "ignored"),
     ]))
     .unwrap();
     assert_eq!(s.service_name, "task-service");
-    assert_eq!(s.http_port, 9000);
+    assert_eq!(s.port, 9000);
     assert_eq!(s.environment, Environment::Test);
     assert_eq!(s.nats_url, "nats://127.0.0.1:7003");
     assert!(s.otlp_endpoint.is_empty());
@@ -35,8 +35,7 @@ fn reads_prefixed_variables_with_local_defaults() {
 fn rejects_missing_or_invalid_values() {
     assert!(ServiceSettings::from_vars(vars(&[])).is_err());
     assert!(
-        ServiceSettings::from_vars(vars(&[("WFK_SERVICE_NAME", "x"), ("WFK_HTTP_PORT", "0")]))
-            .is_err()
+        ServiceSettings::from_vars(vars(&[("WFK_SERVICE_NAME", "x"), ("WFK_PORT", "0")])).is_err()
     );
     assert!(
         ServiceSettings::from_vars(vars(&[

@@ -13,7 +13,7 @@ from wfk_platform.db import Database
 from brain_service.adapters.modelgw.embeddings import Embedder, HashEmbedder
 from brain_service.adapters.postgres import brain as brain_repo
 from brain_service.adapters.postgres import memories as repo
-from brain_service.app import create_grpc_server
+from brain_service.app import create_server
 from brain_service.domain.memory.identity import Identity
 from brain_service.domain.memory.model import Memory
 from brain_service.recall import Recall
@@ -39,9 +39,7 @@ class FailingEmbedder:
 
 
 async def serve(db: Database, embedder: Embedder) -> tuple[grpc.aio.Server, int]:
-    server, _, port = create_grpc_server(
-        Settings(http_host="127.0.0.1"), Recall(db, embedder), port=0
-    )
+    server, _, port = create_server(Settings(host="127.0.0.1"), Recall(db, embedder), port=0)
     await server.start()
     return server, port
 

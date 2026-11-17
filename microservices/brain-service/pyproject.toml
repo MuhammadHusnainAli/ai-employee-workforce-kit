@@ -5,9 +5,7 @@ description = "Python service template. `just new-service python <name>` copies 
 requires-python = ">=3.13"
 license = "Apache-2.0"
 dependencies = [
-    # HTTP and gRPC
-    "fastapi>=0.115",
-    "uvicorn>=0.32",
+    # gRPC (one port; health is the standard gRPC health service)
     "grpcio>=1.71",
     "grpcio-health-checking>=1.71",
     "protobuf>=6.31",

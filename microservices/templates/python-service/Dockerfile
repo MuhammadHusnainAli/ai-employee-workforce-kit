@@ -17,5 +17,5 @@ ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     WFK_SERVICE_NAME=service-template
 USER 10001
-EXPOSE 7016 7017
+EXPOSE 7020
 CMD ["service-template"]

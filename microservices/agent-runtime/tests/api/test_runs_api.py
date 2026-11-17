@@ -11,7 +11,7 @@ from wfk.common.v1 import common_pb2
 from wfk_platform.db import Database
 
 from agent_runtime.adapters.ledger import Ledger
-from agent_runtime.app import create_grpc_server
+from agent_runtime.app import create_server
 from agent_runtime.settings import Settings
 from agent_runtime.workflows.types import LedgerEntry, StartRecord
 
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 async def stub(run_db: Database) -> AsyncIterator[runs_pb2_grpc.RunServiceStub]:
-    server, _, port = create_grpc_server(Settings(http_host="127.0.0.1"), run_db, port=0)
+    server, _, port = create_server(Settings(host="127.0.0.1"), run_db, port=0)
     await server.start()
     async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         yield runs_pb2_grpc.RunServiceStub(channel)

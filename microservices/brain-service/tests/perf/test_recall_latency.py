@@ -28,7 +28,7 @@ from brain_service.adapters.cache.pinned import ValkeyPinnedCache
 from brain_service.adapters.modelgw.embeddings import HashEmbedder
 from brain_service.adapters.postgres import brain as brain_repo
 from brain_service.adapters.postgres.memories import vector_literal
-from brain_service.app import create_grpc_server
+from brain_service.app import create_server
 from brain_service.domain.memory.identity import Identity
 from brain_service.recall import Recall
 from brain_service.settings import Settings
@@ -110,7 +110,7 @@ async def stub() -> AsyncIterator[brain_pb2_grpc.BrainServiceStub]:
         db, TENANT, EMPLOYEE, Identity(role="Account manager for enterprise customers."), by="perf"
     )
     recall = Recall(db, HashEmbedder(), ValkeyPinnedCache("redis://127.0.0.1:7005/0"))
-    server, _, port = create_grpc_server(Settings(http_host="127.0.0.1"), recall, port=0)
+    server, _, port = create_server(Settings(host="127.0.0.1"), recall, port=0)
     await server.start()
     async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         s = brain_pb2_grpc.BrainServiceStub(channel)

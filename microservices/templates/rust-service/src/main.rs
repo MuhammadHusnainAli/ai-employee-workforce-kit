@@ -20,8 +20,8 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let (http, grpc) = bind(&settings).await?;
-    serve(settings, http, grpc, async {
+    let listener = bind(&settings).await?;
+    serve(settings, listener, async {
         let _ = tokio::signal::ctrl_c().await;
         tracing::info!("shutting down");
     })
