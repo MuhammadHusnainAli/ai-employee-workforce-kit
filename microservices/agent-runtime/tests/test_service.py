@@ -40,7 +40,7 @@ async def test_ready_with_the_database() -> None:
 
 async def test_grpc_health_reports_serving() -> None:
     settings = Settings(http_host="127.0.0.1")
-    server, health, port = create_grpc_server(settings, port=0)
+    server, health, port = create_grpc_server(settings, Database(UNREACHABLE), port=0)
     await server.start()
     await health.set("", SERVING)
     try:

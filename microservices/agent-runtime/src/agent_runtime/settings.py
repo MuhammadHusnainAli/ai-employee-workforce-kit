@@ -13,6 +13,10 @@ class Settings(ServiceSettings):
     service_name: str = "agent-runtime"
     database_url: str = "postgresql://wfk:wfk@127.0.0.1:5432/run_db"
 
+    # Role tenant transactions run as, so RLS applies even when the login is a superuser
+    # (the local stack logs in as one). Empty in production: the service logs in as it.
+    db_tenant_role: str | None = "wfk_app"
+
     # The Model Gateway (LiteLLM): the only path to any LLM.
     model_gateway_url: str = "http://127.0.0.1:4000/v1"
     model_gateway_key: str = "sk-wfk-local"

@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 async def serve(settings: Settings) -> None:
     configure_logging(settings.service_name, settings.log_level, json_output=settings.log_json)
     telemetry = setup_telemetry(settings)
-    db = Database(settings.database_url)
+    db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
 
     http = uvicorn.Server(
         uvicorn.Config(
@@ -30,7 +30,7 @@ async def serve(settings: Settings) -> None:
             log_config=None,  # keep our JSON logging
         )
     )
-    grpc_server, grpc_health, _ = create_grpc_server(settings)
+    grpc_server, grpc_health, _ = create_grpc_server(settings, db)
     await grpc_server.start()
     await grpc_health.set("", SERVING)
     log.info(

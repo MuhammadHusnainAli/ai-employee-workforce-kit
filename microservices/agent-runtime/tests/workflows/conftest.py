@@ -5,7 +5,6 @@ import os
 import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,7 +14,6 @@ from agent_harness.tools import Tool, ToolContext
 from temporalio.client import Client, WorkflowHandle
 
 from wfk_platform.db import Database
-from wfk_platform.migrate import Runner, ensure_database
 
 from agent_runtime.activities.harness import HarnessActivities
 from agent_runtime.activities.ledger import LedgerActivities
@@ -26,8 +24,6 @@ from agent_runtime.worker import build_workers, connect, queues
 
 TEMPORAL = os.environ.get("WFK_TEST_TEMPORAL", "127.0.0.1:7233")
 TENANT = "0193a7c4-0000-7000-8000-000000000001"
-RUN_DB = "postgresql://wfk:wfk@127.0.0.1:5432/agent_runtime_wf_test"
-MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
 
 
 class World:
@@ -63,24 +59,6 @@ class World:
             tiers=tiers,
             limits=limits or Limits(max_steps=10),
         )
-
-
-@pytest.fixture(scope="session")
-async def run_db() -> AsyncIterator[Database]:
-    """A migrated run_db for the whole session (just up)."""
-    import psycopg
-
-    try:
-        with psycopg.connect(RUN_DB.rsplit("/", 1)[0] + "/postgres", autocommit=True) as c:
-            c.execute("DROP DATABASE IF EXISTS agent_runtime_wf_test WITH (FORCE)")
-    except psycopg.OperationalError as exc:
-        pytest.skip(f"Postgres not running (just up): {exc}")
-    ensure_database(RUN_DB)
-    Runner(RUN_DB, MIGRATIONS).up()
-    db = Database(RUN_DB)
-    await db.open()
-    yield db
-    await db.close()
 
 
 @pytest.fixture
