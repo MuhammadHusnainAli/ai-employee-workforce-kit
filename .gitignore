@@ -12,7 +12,7 @@ build/
 target/
 
 # Generated code
-libs/python/wfk-contracts/src/wfk_contracts/gen/
+# Generated Python contracts are committed (see libs/python/wfk-contracts/tools/gen_python.py)
 
 # Local state
 .env

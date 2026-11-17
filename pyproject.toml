@@ -18,6 +18,7 @@ default-groups = ["dev"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+extend-exclude = ["libs/python/wfk-contracts/src/wfk"]  # generated
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "S", "RUF"]
@@ -29,7 +30,7 @@ ignore = ["S101"]  # assert is fine in tests
 [tool.pyright]
 pythonVersion = "3.13"
 typeCheckingMode = "standard"
-exclude = ["**/.venv", "**/target", "**/node_modules", "templates"]
+exclude = ["**/.venv", "**/target", "**/node_modules", "templates", "libs/python/wfk-contracts/src/wfk"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

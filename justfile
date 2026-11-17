@@ -63,3 +63,12 @@ contracts-lint:
 # Check contracts for breaking changes against main
 contracts-breaking:
     cd contracts; {{buf}} breaking --against "../.git#branch=main,subdir=contracts"
+
+# Generate code from contracts (Rust generates in build.rs; this regenerates Python)
+gen:
+    uv run --package wfk-contracts --group dev python libs/python/wfk-contracts/tools/gen_python.py
+    cargo build -p wfk-contracts
+
+# Fail if committed generated code is out of date
+gen-check: gen
+    git diff --exit-code -- libs/python/wfk-contracts/src
