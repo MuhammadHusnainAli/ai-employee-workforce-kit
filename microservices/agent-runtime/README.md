@@ -38,17 +38,23 @@ KEDA per task queue (`runs`, `llm`, `tools`, `sandbox`) on backlog.
 Stateless workers; all state in Temporal history. A crash resumes from the last completed activity.
 
 ## Folder layout
+A self-contained Python project ([ADR-0015](../../architecture/adr/0015-self-contained-microservices.md)), built on
+`agent-harness-adk` from PyPI ([ADR-0016](../../architecture/adr/0016-harness-package-as-dependency.md)).
+
 ```
 agent-runtime/
-  workflows/
-  activities/
-  harness/context/
-  harness/model/
-  harness/validate/
-  harness/act/
-  harness/observe/
-  migrations/
-  tests/replay/
+  pyproject.toml  uv.lock  justfile  Dockerfile
+  contracts/                 common types + this service's API (wfk.agent_runtime.v1)
+  migrations/                run_db: runs, run_steps, outbox, inbox
+  src/agent_runtime/
+    harness/                 the step loop: context, model, validate (decide), act, observe, loop
+    workflows/               EmployeeRun (Temporal)
+    activities/              one activity per harness stage
+    api/ domain/ adapters/
+  src/wfk_platform/          this service's copy of the platform code
+  tests/
+    harness/                 stage and loop tests (FakeProvider, no network)
+    replay/                  Temporal replay tests
 ```
 
 ## Rules (all microservices)

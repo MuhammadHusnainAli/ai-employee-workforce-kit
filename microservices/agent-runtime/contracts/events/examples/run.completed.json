@@ -1,0 +1,12 @@
+{
+  "specversion": "1.0",
+  "id": "0193a7c4-5e10-7b2a-9c4d-2f6e8a1b3c5d",
+  "source": "//cell-local/agent-runtime",
+  "type": "run.completed",
+  "subject": "run/0193a7c4-5e10-7000-8000-000000000042",
+  "time": "2026-11-17T06:19:19.161893Z",
+  "datacontenttype": "application/json",
+  "tenantid": "0193a7c4-0000-7000-8000-000000000001",
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+  "data": { "run_id": "0193a7c4-5e10-7000-8000-000000000042", "status": "completed" }
+}
