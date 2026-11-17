@@ -53,3 +53,13 @@ nuke:
 # Show the local stack
 ps:
     {{compose}} ps
+
+buf := "npx -y @bufbuild/buf@1.47.2"
+
+# Lint protobuf contracts
+contracts-lint:
+    cd contracts; {{buf}} lint
+
+# Check contracts for breaking changes against main
+contracts-breaking:
+    cd contracts; {{buf}} breaking --against "../.git#branch=main,subdir=contracts"
