@@ -62,7 +62,12 @@ def render(template: Path, dest: Path, name: str) -> list[Path]:
             raise GenerateError(f"{target} already exists; refusing to overwrite")
         target.parent.mkdir(parents=True, exist_ok=True)
         try:
-            target.write_text(rename(src.read_text(encoding="utf-8")), encoding="utf-8")
+            # newline="
+": keep LF on Windows too (the repo is LF, see .gitattributes).
+            target.write_text(
+                rename(src.read_text(encoding="utf-8")), encoding="utf-8", newline="
+"
+            )
         except UnicodeDecodeError:
             shutil.copy2(src, target)
         written.append(target)

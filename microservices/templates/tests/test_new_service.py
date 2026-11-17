@@ -73,3 +73,9 @@ def test_refuses_to_overwrite_code(tmp_path: Path) -> None:
 def test_rejects_bad_names(bad: str, tmp_path: Path) -> None:
     with pytest.raises(GenerateError):
         render(TEMPLATES["rust"], tmp_path / "x", bad)
+
+
+def test_writes_lf_line_endings(tmp_path: Path) -> None:
+    dest = tmp_path / "x-service"
+    render(TEMPLATES["python"], dest, "x-service")
+    assert b"\r\n" not in (dest / "pyproject.toml").read_bytes()
