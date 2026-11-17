@@ -1,5 +1,5 @@
 # Model Gateway (LiteLLM) for the local stack. Services call it with the OpenAI format at
-# http://127.0.0.1:4000/v1 and never talk to a provider directly.
+# http://127.0.0.1:7007/v1 and never talk to a provider directly.
 
 model_list:
   # Needs no key: answers with a fixed reply. Proves the whole path through the gateway.

@@ -11,18 +11,21 @@ class Settings(ServiceSettings):
     model_config = SettingsConfigDict(env_prefix="WFK_", extra="ignore")
 
     service_name: str = "agent-runtime"
-    database_url: str = "postgresql://wfk:wfk@127.0.0.1:5432/run_db"
+    # Local ports, from the 7000-7020 range (deployments/README.md).
+    http_port: int = 7012
+    grpc_port: int = 7013
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/run_db"
 
     # Role tenant transactions run as, so RLS applies even when the login is a superuser
     # (the local stack logs in as one). Empty in production: the service logs in as it.
     db_tenant_role: str | None = "wfk_app"
 
     # The Model Gateway (LiteLLM): the only path to any LLM.
-    model_gateway_url: str = "http://127.0.0.1:4000/v1"
+    model_gateway_url: str = "http://127.0.0.1:7007/v1"
     model_gateway_key: str = "sk-wfk-local"
 
     # Claim-check storage for large workflow payloads (SeaweedFS locally).
-    s3_endpoint: str = "http://127.0.0.1:8333"
+    s3_endpoint: str = "http://127.0.0.1:7006"
     s3_access_key: str = "wfk-local-access"
     s3_secret_key: str = "wfk-local-secret"  # noqa: S105 - local stack only; set WFK_S3_SECRET_KEY
     payload_bucket: str = "wfk-payloads"

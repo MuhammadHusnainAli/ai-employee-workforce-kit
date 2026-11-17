@@ -25,17 +25,20 @@ and laptop). The design is in [architecture/](architecture/README.md); decisions
    Add it to the `pyproject.toml` of the service that needs it (`agent-harness-adk>=0.2,<0.3`). Never clone, fork,
    branch or modify that package from here. Build on its public API.
 4. **One task, one commit.** After each task in `plan.md`, commit with a 5 to 10 word imperative message, normally
-   the one listed for the task. Do not add a `Co-Authored-By` trailer (a git hook rejects it). Work on the
-   `build/implementation` branch. Do not push unless asked.
-5. **No em dashes** in any doc, diagram, README or comment you write.
-6. **Done means verified.** A task is done when its checks pass: tests, lint, types. Report failures honestly.
-7. **Ask before anything hard to undo or public:** pushing, publishing packages, deleting data you did not create.
+   the one listed for the task. Do not add a `Co-Authored-By` trailer (a git hook rejects it). `main` holds the
+   latest code; merge work into it at the end of each phase. Do not push unless asked.
+5. **Local ports stay in 7000-7020.** The port map is in `deployments/README.md`. A new service takes the next
+   free pair; never add a port outside the range.
+6. **No em dashes** in any doc, diagram, README or comment you write.
+7. **Done means verified.** A task is done when its checks pass: tests, lint, types. Report failures honestly.
+8. **Ask before anything hard to undo or public:** pushing, publishing packages, deleting data you did not create.
 
 ## Layout
 
 ```
 architecture/                 design docs, ADRs, draw.io diagram
-deployments/docker-compose.yml   local stack: Postgres 18 + pgvector, Temporal, NATS, Valkey, SeaweedFS, Grafana
+deployments/docker-compose.yml   local stack: Postgres 18 + pgvector, Temporal, NATS, Valkey, SeaweedFS,
+                                 LiteLLM, Grafana. All local ports are in 7000-7020 (deployments/README.md)
 microservices/
   templates/python-service/   Python template: a real, tested service named service-template
   templates/rust-service/     Rust template

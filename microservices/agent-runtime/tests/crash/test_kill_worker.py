@@ -65,7 +65,7 @@ async def test_killed_worker_is_replaced_without_repeating_a_tool_effect(run_db:
         )
         c.execute("TRUNCATE crash_effects")
     try:
-        client = await connect("127.0.0.1:7233")
+        client = await connect("127.0.0.1:7001")
     except Exception as exc:
         pytest.skip(f"Temporal not running (just up): {exc}")
 

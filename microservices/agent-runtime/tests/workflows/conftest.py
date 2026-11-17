@@ -23,7 +23,7 @@ from agent_runtime.employees import StaticDirectory
 from agent_runtime.harness.state import AgentState, EmployeeSpec, Limits, Tier
 from agent_runtime.worker import build_workers, connect, queues
 
-TEMPORAL = os.environ.get("WFK_TEST_TEMPORAL", "127.0.0.1:7233")
+TEMPORAL = os.environ.get("WFK_TEST_TEMPORAL", "127.0.0.1:7001")
 TENANT = "0193a7c4-0000-7000-8000-000000000001"
 
 

@@ -26,7 +26,7 @@ services:
       POSTGRES_DB: wfk
     command: ["postgres", "-c", "max_connections=300", "-c", "shared_preload_libraries=pg_stat_statements"]
     ports:
-      - "127.0.0.1:${WFK_PG_PORT:-5432}:5432"
+      - "127.0.0.1:${WFK_PG_PORT:-7000}:5432"
     volumes:
       # PostgreSQL 18 images keep data under /var/lib/postgresql/18/docker.
       - pg-data:/var/lib/postgresql
@@ -54,7 +54,7 @@ services:
       TEMPORAL_BROADCAST_ADDRESS: 127.0.0.1
       DEFAULT_NAMESPACE: default
     ports:
-      - "127.0.0.1:${WFK_TEMPORAL_PORT:-7233}:7233"
+      - "127.0.0.1:${WFK_TEMPORAL_PORT:-7001}:7233"
     healthcheck:
       test: ["CMD-SHELL", "temporal operator cluster health --address 127.0.0.1:7233 | grep -q SERVING"]
       interval: 5s
@@ -70,9 +70,9 @@ services:
         condition: service_healthy
     environment:
       TEMPORAL_ADDRESS: temporal:7233
-      TEMPORAL_CORS_ORIGINS: http://localhost:${WFK_TEMPORAL_UI_PORT:-8233}
+      TEMPORAL_CORS_ORIGINS: http://localhost:${WFK_TEMPORAL_UI_PORT:-7002}
     ports:
-      - "127.0.0.1:${WFK_TEMPORAL_UI_PORT:-8233}:8080"
+      - "127.0.0.1:${WFK_TEMPORAL_UI_PORT:-7002}:8080"
 
   # NATS JetStream: the event bus (outbox relay publishes here).
   nats:
@@ -80,8 +80,8 @@ services:
     image: nats:2.15.3-alpine
     command: ["-js", "-sd", "/data", "-m", "8222", "--name", "wfk-local"]
     ports:
-      - "127.0.0.1:${WFK_NATS_PORT:-4222}:4222"
-      - "127.0.0.1:${WFK_NATS_MONITOR_PORT:-8222}:8222"
+      - "127.0.0.1:${WFK_NATS_PORT:-7003}:4222"
+      - "127.0.0.1:${WFK_NATS_MONITOR_PORT:-7004}:8222"
     volumes:
       - nats-data:/data
     healthcheck:
@@ -96,7 +96,7 @@ services:
     image: valkey/valkey:9.1.3-alpine
     command: ["valkey-server", "--save", "", "--appendonly", "no"]
     ports:
-      - "127.0.0.1:${WFK_VALKEY_PORT:-6379}:6379"
+      - "127.0.0.1:${WFK_VALKEY_PORT:-7005}:6379"
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
@@ -109,7 +109,7 @@ services:
     image: chrislusf/seaweedfs:4.54
     command: ["server", "-dir=/data", "-ip.bind=0.0.0.0", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json"]
     ports:
-      - "127.0.0.1:${WFK_S3_PORT:-8333}:8333"
+      - "127.0.0.1:${WFK_S3_PORT:-7006}:8333"
     volumes:
       - seaweed-data:/data
       - ./local/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
@@ -148,7 +148,7 @@ services:
       LITELLM_MASTER_KEY: ${WFK_LITELLM_MASTER_KEY:-sk-wfk-local}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
-      - "127.0.0.1:${WFK_MODEL_GATEWAY_PORT:-4000}:4000"
+      - "127.0.0.1:${WFK_MODEL_GATEWAY_PORT:-7007}:4000"
     volumes:
       - ./local/litellm/config.yaml:/app/config.yaml:ro
     healthcheck:
@@ -163,9 +163,9 @@ services:
     <<: *restart
     image: grafana/otel-lgtm:0.41.0
     ports:
-      - "127.0.0.1:${WFK_GRAFANA_PORT:-3001}:3000"
-      - "127.0.0.1:${WFK_OTLP_GRPC_PORT:-4317}:4317"
-      - "127.0.0.1:${WFK_OTLP_HTTP_PORT:-4318}:4318"
+      - "127.0.0.1:${WFK_GRAFANA_PORT:-7008}:3000"
+      - "127.0.0.1:${WFK_OTLP_GRPC_PORT:-7009}:4317"
+      - "127.0.0.1:${WFK_OTLP_HTTP_PORT:-7010}:4318"
     volumes:
       - lgtm-data:/data
 

@@ -112,17 +112,19 @@ mod d {
     pub fn http_host() -> String {
         "0.0.0.0".into()
     }
+    // Local ports, from the 7000-7020 range (deployments/README.md). Give a new service its
+    // own free pair: two services on the same ports cannot run side by side.
     pub fn http_port() -> u16 {
-        8080
+        7018
     }
     pub fn grpc_port() -> u16 {
-        50051
+        7019
     }
     pub fn database_url() -> String {
-        "postgresql://wfk:wfk@127.0.0.1:5432/wfk".into()
+        "postgresql://wfk:wfk@127.0.0.1:7000/wfk".into()
     }
     pub fn nats_url() -> String {
-        "nats://127.0.0.1:4222".into()
+        "nats://127.0.0.1:7003".into()
     }
     pub fn readiness_timeout_ms() -> u64 {
         2000

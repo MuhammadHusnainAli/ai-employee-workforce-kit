@@ -8,5 +8,5 @@ RUN cargo build --release --locked -p service-template
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /src/target/release/service-template /service
 ENV WFK_SERVICE_NAME=service-template
-EXPOSE 8080 50051
+EXPOSE 7018 7019
 ENTRYPOINT ["/service"]

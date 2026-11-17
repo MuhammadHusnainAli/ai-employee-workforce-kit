@@ -8,6 +8,9 @@ just new-service rust <name>     # e.g. just new-service rust task-service
 `new_service.py` copies a template into `microservices/<name>/` and renames `service-template` /
 `service_template`. It keeps the service's existing spec (`README.md`). Nothing else in the repo changes.
 
+A new service starts on its template's ports (Python 7016/7017, Rust 7018/7019). Give it its own free pair from
+the [port map](../../deployments/README.md#port-map-7000-7020) in its settings and Dockerfile.
+
 ## Every service is self-contained
 
 A service never points outside its own folder. It carries:

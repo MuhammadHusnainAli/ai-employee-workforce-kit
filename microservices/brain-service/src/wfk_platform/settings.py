@@ -26,9 +26,9 @@ class ServiceSettings(BaseSettings):
     http_port: int = Field(default=8080, ge=1, le=65535)
     grpc_port: int = Field(default=50051, ge=1, le=65535)
 
-    database_url: str = "postgresql://wfk:wfk@127.0.0.1:5432/wfk"
-    nats_url: str = "nats://127.0.0.1:4222"
-    temporal_address: str = "127.0.0.1:7233"
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/wfk"
+    nats_url: str = "nats://127.0.0.1:7003"
+    temporal_address: str = "127.0.0.1:7001"
     temporal_namespace: str = "default"
 
     # Empty disables export (spans and metrics are still created, just not sent).

@@ -66,7 +66,7 @@ def employee(run_db: str) -> EmployeeSpec:
 
 
 async def main(prefix: str, run_db: str) -> None:
-    client = await connect("127.0.0.1:7233")
+    client = await connect("127.0.0.1:7001")
     db = Database(run_db, tenant_role="wfk_app")
     await db.open()
     activities = HarnessActivities(

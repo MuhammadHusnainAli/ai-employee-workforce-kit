@@ -37,7 +37,7 @@ from ..conftest import MIGRATIONS, OTHER_TENANT, TENANT
 
 pytestmark = pytest.mark.integration
 
-PERF_DB = "postgresql://wfk:wfk@127.0.0.1:5432/brain_perf_test"
+PERF_DB = "postgresql://wfk:wfk@127.0.0.1:7000/brain_perf_test"
 EMPLOYEE = "perf-employee"
 P95_BUDGET_MS = 300.0
 CALLS = 200
@@ -109,7 +109,7 @@ async def stub() -> AsyncIterator[brain_pb2_grpc.BrainServiceStub]:
     await brain_repo.activate_identity(
         db, TENANT, EMPLOYEE, Identity(role="Account manager for enterprise customers."), by="perf"
     )
-    recall = Recall(db, HashEmbedder(), ValkeyPinnedCache("redis://127.0.0.1:6379/0"))
+    recall = Recall(db, HashEmbedder(), ValkeyPinnedCache("redis://127.0.0.1:7005/0"))
     server, _, port = create_grpc_server(Settings(http_host="127.0.0.1"), recall, port=0)
     await server.start()
     async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
