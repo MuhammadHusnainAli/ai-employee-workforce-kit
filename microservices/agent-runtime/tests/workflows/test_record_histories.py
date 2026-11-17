@@ -88,4 +88,5 @@ async def test_record(name: str, client: Client) -> None:
     (OUT / f"{name}.json").write_text(
         json.dumps({"workflow_id": handle.id, "history": history.to_json_dict()}, indent=1),
         encoding="utf-8",
+        newline="\n",
     )

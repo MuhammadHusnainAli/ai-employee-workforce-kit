@@ -20,6 +20,7 @@ just nuke    # stop and delete all data
 | NATS JetStream | `nats://127.0.0.1:4222`, monitoring <http://127.0.0.1:8222> | none |
 | Valkey | `redis://127.0.0.1:6379` | none |
 | SeaweedFS (S3 API) | <http://127.0.0.1:8333>, buckets `wfk-artifacts`, `wfk-payloads`, `wfk-backups` | `wfk-local-access` / `wfk-local-secret` |
+| Model Gateway (LiteLLM, OpenAI format) | <http://127.0.0.1:4000/v1>, models `local-mock` (no key), `claude-haiku`, `claude-sonnet` | bearer `sk-wfk-local`; provider keys in `deployments/.env` |
 | Grafana (LGTM) | <http://127.0.0.1:3001> | `admin` / `admin` |
 | OTLP | gRPC `127.0.0.1:4317`, HTTP `127.0.0.1:4318` | none |
 
@@ -33,3 +34,5 @@ Ports can be changed by copying `.env.example` to `.env` in this folder.
 - Object storage is SeaweedFS rather than MinIO, per [ADR-0007](../architecture/adr/0007-open-source-license-policy.md).
   Any S3 client works against it.
 - Valkey runs without persistence on purpose: it holds only data that can be rebuilt.
+- The Model Gateway runs without its database locally, so an unknown key gets 400 rather than 401, and
+  there are no spend logs. Add `ANTHROPIC_API_KEY` to `deployments/.env` (git-ignored) for real model calls.

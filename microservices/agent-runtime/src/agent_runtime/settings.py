@@ -13,6 +13,10 @@ class Settings(ServiceSettings):
     service_name: str = "agent-runtime"
     database_url: str = "postgresql://wfk:wfk@127.0.0.1:5432/run_db"
 
+    # The Model Gateway (LiteLLM): the only path to any LLM.
+    model_gateway_url: str = "http://127.0.0.1:4000/v1"
+    model_gateway_key: str = "sk-wfk-local"
+
     # Claim-check storage for large workflow payloads (SeaweedFS locally).
     s3_endpoint: str = "http://127.0.0.1:8333"
     s3_access_key: str = "wfk-local-access"

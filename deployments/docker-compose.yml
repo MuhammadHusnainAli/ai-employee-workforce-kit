@@ -138,6 +138,26 @@ services:
         echo "buckets ready"
     restart: "no"
 
+  # Model Gateway: LiteLLM proxy, the only path to any LLM. Model names map to providers in
+  # local/litellm/config.yaml; provider keys come from deployments/.env.
+  model-gateway:
+    <<: *restart
+    image: ghcr.io/berriai/litellm:v1.108.10-lts
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: ${WFK_LITELLM_MASTER_KEY:-sk-wfk-local}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "127.0.0.1:${WFK_MODEL_GATEWAY_PORT:-4000}:4000"
+    volumes:
+      - ./local/litellm/config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')\""]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   # Grafana LGTM: OTel collector, Prometheus, Loki, Tempo and Grafana in one container.
   observability:
     <<: *restart

@@ -85,8 +85,10 @@ jobs:
         working-directory: ${{ matrix.service }}/contracts
       - name: Licences (ADR-0007)
         run: uv run python tools/check_licenses.py
-      - name: Start Postgres and NATS
-        run: docker compose -f deployments/docker-compose.yml up -d --wait postgres nats
+      - name: Start the local stack
+        run: |
+          docker compose -f deployments/docker-compose.yml up -d --wait
+          docker compose -f deployments/docker-compose.yml --profile init run --rm seaweedfs-init
         working-directory: .
       - run: uv run pytest -m integration
       - name: Image builds
@@ -129,8 +131,10 @@ jobs:
         working-directory: ${{ matrix.service }}/contracts
       - name: Licences and advisories (ADR-0007)
         run: cargo deny --locked check licenses bans sources advisories
-      - name: Start Postgres and NATS
-        run: docker compose -f deployments/docker-compose.yml up -d --wait postgres nats
+      - name: Start the local stack
+        run: |
+          docker compose -f deployments/docker-compose.yml up -d --wait
+          docker compose -f deployments/docker-compose.yml --profile init run --rm seaweedfs-init
         working-directory: .
       - run: cargo test --locked -- --ignored
       - name: Image builds

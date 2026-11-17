@@ -1,0 +1,26 @@
+# Model Gateway (LiteLLM) for the local stack. Services call it with the OpenAI format at
+# http://127.0.0.1:4000/v1 and never talk to a provider directly.
+
+model_list:
+  # Needs no key: answers with a fixed reply. Proves the whole path through the gateway.
+  - model_name: local-mock
+    litellm_params:
+      model: openai/local-mock
+      api_key: not-needed
+      mock_response: "Hello from the Model Gateway."
+
+  # Real models. They work once the key is set in deployments/.env (ANTHROPIC_API_KEY).
+  - model_name: claude-haiku
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  drop_params: true   # a parameter a provider does not take is dropped, not an error
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
