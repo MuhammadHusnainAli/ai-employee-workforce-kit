@@ -24,6 +24,9 @@ extend-exclude = ["libs/python/wfk-contracts/src/wfk"]  # generated
 select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "S", "RUF"]
 ignore = ["S101"]  # assert is fine in tests
 
+[tool.ruff.lint.isort]
+known-first-party = ["wfk", "wfk_platform"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S105", "S106", "S608"]
 
