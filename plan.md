@@ -238,7 +238,7 @@ For Phase 2:
 
 ---
 
-## Phase 2: Agent Runtime walking skeleton
+## Phase 2: Agent Runtime walking skeleton - DONE
 
 A task goes in, an employee works through it with real model calls and a fake tool, and every step is durable.
 
@@ -256,6 +256,44 @@ A task goes in, an employee works through it with real model calls and a fake to
 
 **Phase 2 exit:** `just demo-run "summarise this text"` runs a durable agent run, survives a worker kill, and shows
 its steps.
+
+### Phase 2 outcome
+
+All tasks committed. In `microservices/agent-runtime`, `just ci` passes: 112 unit tests and 43 integration tests
+(6 skipped: the history recorder, which runs only on purpose, and the real-model test, which needs a key), lint,
+types and licences clean.
+
+Exit: from `microservices/agent-runtime`, `just demo-run "Some text." --kill-worker-after-step 0` starts a worker
+process, kills it without warning in the middle of the next model call, starts a new one, and the run completes. The
+same scenario runs as a test (`tests/crash/test_demo_run.py`).
+
+What is proven by tests:
+
+- **Durability:** a worker process is killed while a tool is half-way through a write. A new worker finishes the
+  run; the tool from the earlier step never runs again; the interrupted tool is retried with the same idempotency
+  key and its effect applies once; the ledger has no duplicates (`tests/crash/test_kill_worker.py`).
+- **Activity contract** (diagram page 2): timeouts, heartbeats and retry policies per activity; a 429 is retried, a
+  bad key is not and fails the run cleanly; large payloads go to S3 and only a reference goes into history.
+- **Signals:** approve, decline (read by the model), reply after a loop, pause and resume, cancel, approval expiry.
+- **Ledger:** every transition is one `run_steps` row plus its outbox event in one transaction; a retried write adds
+  nothing; a failed outbox write leaves nothing half-written.
+- **Replay:** five recorded histories replay deterministically; a careless workflow change is caught.
+- **Model Gateway:** LiteLLM in the local stack; a whole run goes through it with the `local-mock` model.
+- **Read API:** `RunService.GetRun` and `ListSteps` over gRPC; another tenant's run is indistinguishable from no run.
+
+Changes from the plan, and why:
+
+| Planned | Built | Why |
+|---|---|---|
+| Replay tests with `ReplayProvider` | Recorded Temporal histories only | During replay Temporal takes activity results from history; the model is never called |
+| One real model call end to end | Proven with LiteLLM's `local-mock`; the real-model test is written and skipped | No API key on this machine. Add `ANTHROPIC_API_KEY` to `deployments/.env` and run `just demo-run "..." --model claude-haiku` |
+| | `Database(tenant_role=...)` in the platform code | The local stack logs in as a superuser, which RLS ignores. Tenant transactions now switch to the service role, so isolation holds locally exactly as in production |
+
+For later phases:
+
+- The scripted demo model is labelled as not an LLM in its answer; it exists so the kill demo runs without a key.
+- `EmployeeSpec` still comes from a directory in code (`agent_runtime.demo`). Phase 4 reads it from Workforce.
+- Unknown-outcome handling (`reconcile()`, ask a human) arrives with the Integration Service in Phase 4.
 
 ---
 
