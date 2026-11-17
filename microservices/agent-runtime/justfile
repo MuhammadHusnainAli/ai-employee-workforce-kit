@@ -67,3 +67,11 @@ image:
 
 # Everything CI checks
 ci: lint test test-integration contracts-lint gen-check licenses
+
+# Temporal workers for this service (model: scripted, local-mock, claude-haiku)
+worker model="local-mock":
+    uv run agent-runtime worker --model {{model}}
+
+# A durable demo run, e.g.: just demo-run "Some text." --kill-worker-after-step 0
+demo-run text *args:
+    uv run agent-runtime demo-run "{{text}}" {{args}}

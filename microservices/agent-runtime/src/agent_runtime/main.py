@@ -45,11 +45,62 @@ async def serve(settings: Settings) -> None:
         telemetry.shutdown()
 
 
-def run() -> None:
+async def work(settings: Settings, *, prefix: str, model: str) -> None:
+    """Run the Temporal workers (runs, llm, tools queues) until stopped."""
+    from contextlib import AsyncExitStack
+
+    from agent_runtime.activities.harness import HarnessActivities
+    from agent_runtime.activities.ledger import LedgerActivities
+    from agent_runtime.adapters.ledger import Ledger
+    from agent_runtime.demo import directory, provider_for, temporal_client
+    from agent_runtime.worker import build_workers
+
+    client = await temporal_client(settings)
+    db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
+    await db.open()
+    activities = HarnessActivities(
+        employees=directory(model), provider=provider_for(model, settings)
+    )
+    ledger = LedgerActivities(Ledger(db, f"//{settings.cell_id}/{settings.service_name}"))
+    async with AsyncExitStack() as stack:
+        for worker in build_workers(client, activities, ledger, prefix):
+            await stack.enter_async_context(worker)
+        print("ready", flush=True)  # the demo waits for this line
+        await asyncio.Event().wait()
+
+
+def run(argv: list[str] | None = None) -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="agent-runtime")
+    sub = parser.add_subparsers(dest="cmd")
+    sub.add_parser("serve", help="HTTP and gRPC servers (the default)")
+    worker = sub.add_parser("worker", help="Temporal workers")
+    worker.add_argument("--prefix", default="", help="task queue prefix")
+    worker.add_argument("--model", default="local-mock", help="scripted, local-mock, claude-haiku")
+    demo = sub.add_parser("demo-run", help="a durable demo run you can watch")
+    demo.add_argument("text", help="the text to summarise")
+    demo.add_argument("--model", default="scripted", help="scripted, local-mock, claude-haiku")
+    demo.add_argument("--kill-worker-after-step", type=int, default=None, metavar="SEQ")
+    args = parser.parse_args(argv)
+
     settings = Settings()
+    if args.cmd == "worker":
+        main = work(settings, prefix=args.prefix, model=args.model)
+    elif args.cmd == "demo-run":
+        from agent_runtime.demo import run_demo
+
+        main = run_demo(
+            args.text,
+            model=args.model,
+            kill_worker_after_step=args.kill_worker_after_step,
+            settings=settings,
+        )
+    else:
+        main = serve(settings)
     # psycopg's async driver needs a selector loop; Windows defaults to Proactor.
     factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
-    asyncio.run(serve(settings), loop_factory=factory)
+    asyncio.run(main, loop_factory=factory)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":
