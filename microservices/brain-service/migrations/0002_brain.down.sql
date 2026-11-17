@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS recall_log;
+DROP TABLE IF EXISTS episodes;
+DROP TABLE IF EXISTS memories;
+DROP TABLE IF EXISTS brain_versions;

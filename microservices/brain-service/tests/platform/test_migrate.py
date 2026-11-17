@@ -34,28 +34,89 @@ def tables(dsn: str) -> set[str]:
     return {r[0] for r in rows}
 
 
-def test_template_applies_and_reverts(fresh_db: str) -> None:
+BRAIN_TABLES = {"brain_versions", "memories", "episodes", "recall_log"}
+T1, T2 = "0193a7c4-0000-7000-8000-000000000001", "0193a7c4-0000-7000-8000-000000000002"
+
+
+def test_brain_db_applies_and_reverts(fresh_db: str) -> None:
     runner = Runner(fresh_db, TEMPLATE)
     assert runner.up() == [1, 2]
-    assert {"outbox", "inbox", "examples", "schema_migrations"} <= tables(fresh_db)
-    assert runner.up() == []  # idempotent
+    assert BRAIN_TABLES | {"outbox", "inbox"} <= tables(fresh_db)
+    assert runner.up() == []
     assert runner.down(steps=2) == [2, 1]
     assert tables(fresh_db) == {"schema_migrations"}
 
 
-def test_template_example_table_enforces_tenant_isolation(fresh_db: str) -> None:
+def test_retrieval_indexes_exist(fresh_db: str) -> None:
     Runner(fresh_db, TEMPLATE).up()
-    t1, t2 = "0193a7c4-0000-7000-8000-000000000001", "0193a7c4-0000-7000-8000-000000000002"
     with psycopg.connect(fresh_db) as c:
-        c.execute(
-            "INSERT INTO examples (tenant_id, name) VALUES (%s, 'one'), (%s, 'two')", (t1, t2)
-        )
+        defs = {
+            r[0]: r[1] for r in c.execute("SELECT indexname, indexdef FROM pg_indexes").fetchall()
+        }
+    assert "USING hnsw (embedding vector_cosine_ops)" in defs["memories_embedding"]
+    assert "USING gin (tsv)" in defs["memories_tsv"]
+
+
+def insert_memory(c: psycopg.Connection, tenant: str, content: str, **kw: object) -> None:
+    c.execute(
+        "INSERT INTO memories (id, tenant_id, employee_id, scope, kind, content, trust)"
+        " VALUES (gen_random_uuid(), %s, %s, %s, %s, %s, %s)",
+        (tenant, kw.get("employee", "sam"), kw.get("scope", "employee"),
+         kw.get("kind", "semantic"), content, kw.get("trust", "system")),
+    )  # fmt: skip
+
+
+def test_every_brain_table_enforces_tenant_isolation(fresh_db: str) -> None:
+    Runner(fresh_db, TEMPLATE).up()
+    with psycopg.connect(fresh_db) as c:
+        for tenant in (T1, T2):
+            insert_memory(c, tenant, f"fact of {tenant}")
+            c.execute(
+                "INSERT INTO brain_versions (tenant_id, employee_id, version, status, identity,"
+                " identity_text, created_by) VALUES (%s, 'sam', 1, 'active', '{}', 'x', 'test')",
+                (tenant,),
+            )
+            c.execute(
+                "INSERT INTO recall_log (id, tenant_id, employee_id, query)"
+                " VALUES (gen_random_uuid(), %s, 'sam', 'q')",
+                (tenant,),
+            )
         c.commit()
         with c.transaction():
             c.execute("SET LOCAL ROLE wfk_app")
-            c.execute("SELECT set_config('app.tenant_id', %s, true)", (t1,))
-            names = [r[0] for r in c.execute("SELECT name FROM examples").fetchall()]
-    assert names == ["one"]
+            c.execute("SELECT set_config('app.tenant_id', %s, true)", (T1,))
+            for table in ("memories", "brain_versions", "recall_log"):
+                (n,) = c.execute(f"SELECT count(*) FROM {table}").fetchone()  # type: ignore[misc]
+                assert n == 1, table
+            with pytest.raises(psycopg.errors.InsufficientPrivilege, match="row-level security"):
+                insert_memory(c, T2, "sneaky")
+
+
+def test_one_active_identity_version_per_employee(fresh_db: str) -> None:
+    Runner(fresh_db, TEMPLATE).up()
+    with psycopg.connect(fresh_db) as c:
+        sql = (
+            "INSERT INTO brain_versions (tenant_id, employee_id, version, status, identity,"
+            " identity_text, created_by) VALUES (%s, 'sam', %s, %s, '{}', 'x', 'test')"
+        )
+        c.execute(sql, (T1, 1, "active"))
+        c.execute(sql, (T1, 2, "candidate"))
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            c.execute(sql, (T1, 3, "active"))
+
+
+def test_memory_rules_are_enforced(fresh_db: str) -> None:
+    Runner(fresh_db, TEMPLATE).up()
+    with psycopg.connect(fresh_db, autocommit=True) as c:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            insert_memory(c, T1, "x", trust="rumour")
+        with pytest.raises(psycopg.errors.CheckViolation):
+            insert_memory(c, T1, "x", employee=None)  # employee scope needs an employee
+        insert_memory(c, T1, "company holiday on 1 May", employee=None, scope="tenant")
+        with pytest.raises(psycopg.errors.CheckViolation):
+            c.execute("UPDATE memories SET valid_to = valid_from - interval '1 day'")
+        (tsv,) = c.execute("SELECT tsv::text FROM memories").fetchone()  # type: ignore[misc]
+        assert "holiday" in tsv
 
 
 def test_failed_migration_leaves_nothing_behind(fresh_db: str, tmp_path: Path) -> None:
