@@ -297,7 +297,7 @@ For later phases:
 
 ---
 
-## Phase 3: Brain step 1 (identity core, working memory, episodic memory, Recall)
+## Phase 3: Brain step 1 (identity core, working memory, episodic memory, Recall) - DONE
 
 | # | Task | Commit message |
 |---|---|---|
@@ -309,6 +309,38 @@ For later phases:
 | 3.6 | Degrade path: Valkey cache of identity core and rules, skip slow retrievers and flag the step | `Add recall degrade path with Valkey cache` |
 | 3.7 | `BrainMemoryStore` adapter implementing the harness `MemoryStore` contract; agent-runtime uses it in `build_context` | `Connect agent runtime to Brain Recall` |
 | 3.8 | Latency test: p95 under 300 ms on a seeded dataset | `Add Recall latency benchmark and p95 gate` |
+
+### Phase 3 outcome
+
+All 8 tasks committed. `just ci` passes in `microservices/brain-service` (43 unit, 35 integration tests, including
+the latency gate) and in `microservices/agent-runtime` (116 unit, 45 integration).
+
+| | |
+|---|---|
+| brain_db | `brain_versions` (identity core, one active version), bi-temporal `memories` with trust, importance and confidence, pgvector HNSW and full-text GIN indexes, `episodes`, `recall_log`; forced RLS on every table |
+| brain-core | Rust, inside brain-service, built by maturin: RRF fusion, the brain.md score, the token-budget packer. 500 random inputs agree with an independent Python implementation of the formula |
+| Recall | gRPC `Brain.Recall`: planner by step type, vector and full-text retrievers in parallel (150 ms each, skipped and flagged when slow or failing), fusion and packing in Rust, identity always pinned, every recall cited in `recall_log` |
+| Degrade | Recall writes each employee's identity and rules through to Valkey. agent-runtime falls back on it when brain-api is unreachable, and carries on without memory when both are gone. Every fallback is flagged |
+| agent-runtime | `BrainMemoryStore` implements agent-harness-adk's `MemoryStore` contract over Recall and gives `ContextAssembler` its prompt blocks: the pinned identity and memories wrapped as data. Each `run_steps` row cites its recall (`recall_id`, `memory_degraded`) |
+
+Latency (`just bench` in brain-service, 10,000 memories, full gRPC path, hash embeddings):
+
+| | p50 | p95 | p99 |
+|---|---|---|---|
+| One caller at a time | 20 ms | 26 ms | 28 ms |
+| 8 concurrent callers (server and callers share one process) | 78 ms | 97 ms | 132 ms |
+
+Also checked by hand, across real processes: agent-runtime's client recalled the seeded demo brain from a running
+brain-service (`tools/seed_demo.py`), then fell back to the cached identity once brain-service was unreachable.
+
+Notes for later phases:
+
+- Embeddings are 1024-dimensional. Locally and in tests a deterministic hash embedder stands in (no model, no
+  network); production sets `WFK_EMBEDDER=gateway` and an embedding model on the Model Gateway, whose latency the
+  150 ms embedding timeout bounds.
+- Memories are seeded straight into brain_db by tests and `tools/seed_demo.py`. The governed write path
+  (Remember) is Phase 5.
+- agent-runtime calls the brain with step type `planning` on the first step and `acting` after it.
 
 ---
 
