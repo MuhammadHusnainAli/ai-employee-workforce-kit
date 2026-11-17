@@ -1,0 +1,69 @@
+# Commands for this service. Run from this folder. Install just with: uv tool install rust-just
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+name := "service-template"
+db := "service_template_db"
+pg := "postgresql://wfk:wfk@127.0.0.1:5432"
+buf := "npx -y @bufbuild/buf@1.47.2"
+
+default:
+    @just --list
+
+# Install dependencies
+sync:
+    uv sync
+
+# Run the service locally against the stack (just up at the repo root)
+run:
+    uv run {{name}}
+
+# Lint and type-check
+lint:
+    uv run ruff check .
+    uv run ruff format --check .
+    uv run pyright
+
+# Format
+fmt:
+    uv run ruff format .
+    uv run ruff check --fix .
+
+# Unit tests (no docker needed)
+test:
+    uv run pytest -m "not integration"
+
+# Integration tests (needs the stack: just up at the repo root)
+test-integration:
+    uv run pytest -m integration
+
+# Regenerate Python code from contracts/
+gen:
+    uv run python tools/gen_contracts.py
+
+# Fail if committed generated code is out of date
+gen-check: gen
+    git diff --exit-code -- src/wfk
+
+# Lint protobuf contracts
+contracts-lint:
+    cd contracts; {{buf}} lint
+
+# Licence policy (ADR-0007)
+licenses:
+    uv run python tools/check_licenses.py
+
+# Apply pending migrations (creates the database if missing)
+migrate:
+    uv run wfk-migrate up --dsn {{pg}}/{{db}} --dir migrations --create-db
+
+# Revert the latest migration
+migrate-down:
+    uv run wfk-migrate down --dsn {{pg}}/{{db}} --dir migrations
+
+# Build the image (context is this folder)
+image:
+    docker build -t {{name}} .
+
+# Everything CI checks
+ci: lint test test-integration contracts-lint gen-check licenses
