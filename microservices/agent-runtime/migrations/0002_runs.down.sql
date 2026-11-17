@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS run_steps;
+DROP TABLE IF EXISTS runs;

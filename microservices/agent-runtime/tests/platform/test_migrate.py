@@ -34,28 +34,63 @@ def tables(dsn: str) -> set[str]:
     return {r[0] for r in rows}
 
 
-def test_template_applies_and_reverts(fresh_db: str) -> None:
+def test_run_db_applies_and_reverts(fresh_db: str) -> None:
     runner = Runner(fresh_db, TEMPLATE)
     assert runner.up() == [1, 2]
-    assert {"outbox", "inbox", "examples", "schema_migrations"} <= tables(fresh_db)
+    assert {"outbox", "inbox", "runs", "run_steps", "schema_migrations"} <= tables(fresh_db)
     assert runner.up() == []  # idempotent
     assert runner.down(steps=2) == [2, 1]
     assert tables(fresh_db) == {"schema_migrations"}
 
 
-def test_template_example_table_enforces_tenant_isolation(fresh_db: str) -> None:
+T1, T2 = "0193a7c4-0000-7000-8000-000000000001", "0193a7c4-0000-7000-8000-000000000002"
+
+
+def test_runs_and_steps_enforce_tenant_isolation(fresh_db: str) -> None:
     Runner(fresh_db, TEMPLATE).up()
-    t1, t2 = "0193a7c4-0000-7000-8000-000000000001", "0193a7c4-0000-7000-8000-000000000002"
     with psycopg.connect(fresh_db) as c:
-        c.execute(
-            "INSERT INTO examples (tenant_id, name) VALUES (%s, 'one'), (%s, 'two')", (t1, t2)
-        )
+        for run, tenant in (("run-a", T1), ("run-b", T2)):
+            c.execute(
+                "INSERT INTO runs (run_id, tenant_id, employee_id, task, status)"
+                " VALUES (%s, %s, 'e', 'x', 'running')",
+                (run, tenant),
+            )
+            c.execute(
+                "INSERT INTO run_steps (run_id, seq, tenant_id, step, kind, decision, status_after)"
+                " VALUES (%s, 0, %s, 1, 'final', '{}', 'completed')",
+                (run, tenant),
+            )
         c.commit()
         with c.transaction():
             c.execute("SET LOCAL ROLE wfk_app")
-            c.execute("SELECT set_config('app.tenant_id', %s, true)", (t1,))
-            names = [r[0] for r in c.execute("SELECT name FROM examples").fetchall()]
-    assert names == ["one"]
+            c.execute("SELECT set_config('app.tenant_id', %s, true)", (T1,))
+            runs = [r[0] for r in c.execute("SELECT run_id FROM runs").fetchall()]
+            steps = [r[0] for r in c.execute("SELECT run_id FROM run_steps").fetchall()]
+            with pytest.raises(psycopg.errors.InsufficientPrivilege, match="row-level security"):
+                c.execute(
+                    "INSERT INTO runs (run_id, tenant_id, employee_id, task, status)"
+                    " VALUES ('sneaky', %s, 'e', 'x', 'running')",
+                    (T2,),
+                )
+    assert runs == ["run-a"]
+    assert steps == ["run-a"]
+
+
+def test_a_step_is_recorded_once(fresh_db: str) -> None:
+    Runner(fresh_db, TEMPLATE).up()
+    with psycopg.connect(fresh_db) as c:
+        c.execute(
+            "INSERT INTO runs (run_id, tenant_id, employee_id, task, status)"
+            " VALUES ('r', %s, 'e', 'x', 'running')",
+            (T1,),
+        )
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            for _ in range(2):
+                c.execute(
+                    "INSERT INTO run_steps (run_id, seq, tenant_id, step, kind, decision,"
+                    " status_after) VALUES ('r', 0, %s, 1, 'final', '{}', 'completed')",
+                    (T1,),
+                )
 
 
 def test_failed_migration_leaves_nothing_behind(fresh_db: str, tmp_path: Path) -> None:
