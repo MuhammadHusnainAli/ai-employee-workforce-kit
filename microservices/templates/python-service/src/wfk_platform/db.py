@@ -12,7 +12,7 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from psycopg import AsyncConnection
+from psycopg import AsyncConnection, sql
 from psycopg.rows import DictRow, dict_row
 from psycopg_pool import AsyncConnectionPool
 
@@ -21,7 +21,22 @@ Conn = AsyncConnection[DictRow]
 
 
 class Database:
-    def __init__(self, url: str, *, min_size: int = 1, max_size: int = 10) -> None:
+    def __init__(
+        self,
+        url: str,
+        *,
+        min_size: int = 1,
+        max_size: int = 10,
+        tenant_role: str | None = None,
+    ) -> None:
+        """`tenant_role`: the non-superuser role tenant transactions run as.
+
+        Row-level security does not apply to superusers or BYPASSRLS roles. Set this when the
+        connection logs in as such a role (the local stack does), so tenant_tx switches to the
+        service role and RLS still holds. In production the service logs in as that role and
+        this can stay unset.
+        """
+        self.tenant_role = tenant_role
         self.pool = AsyncConnectionPool[Conn](
             url,
             connection_class=Conn,
@@ -51,6 +66,10 @@ class Database:
         """A transaction scoped to one tenant. Commits on success, rolls back on error."""
         tid = str(uuid.UUID(str(tenant_id)))  # rejects anything that is not a UUID
         async with self.pool.connection() as conn, conn.transaction():
+            if self.tenant_role:
+                await conn.execute(
+                    sql.SQL("SET LOCAL ROLE {}").format(sql.Identifier(self.tenant_role))
+                )
             await conn.execute("SELECT set_config('app.tenant_id', %s, true)", (tid,))
             yield conn
 

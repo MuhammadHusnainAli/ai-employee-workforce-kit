@@ -173,3 +173,21 @@ async def test_failed_handler_leaves_event_unprocessed(db: Database, nc: NATS, u
     assert await consumer.process_batch(wait_s=2) == 0  # failed, nak'd, inbox rolled back
     assert await consumer.process_batch(wait_s=5) == 1  # redelivered, now succeeds
     assert calls == 2
+
+
+async def test_tenant_role_keeps_rls_on_for_a_superuser_login(db: Database) -> None:
+    """The local stack logs in as a superuser, which RLS ignores. tenant_role switches each
+    tenant transaction to the service role, so isolation holds anyway."""
+    async with db.tx() as conn:
+        await conn.execute("GRANT SELECT ON notes TO wfk_rls_test")
+    as_service = Database(str(db.pool.conninfo), tenant_role="wfk_rls_test")
+    await as_service.open()
+    try:
+        async with as_service.tenant_tx(T1) as conn:
+            cur = await conn.execute("SELECT body FROM notes")
+            assert [r["body"] for r in await cur.fetchall()] == ["tenant one"]
+        async with db.tenant_tx(T1) as conn:  # no role: the superuser sees everything
+            cur = await conn.execute("SELECT count(*) AS n FROM notes")
+            assert (await cur.fetchone() or {}).get("n") == 2
+    finally:
+        await as_service.close()
