@@ -31,8 +31,10 @@ class Database:
             kwargs={"row_factory": dict_row, "autocommit": False},
         )
 
-    async def open(self) -> None:
-        await self.pool.open(wait=True)
+    async def open(self, *, wait: bool = True) -> None:
+        """Open the pool. With wait=False a service starts even while the database is down;
+        readiness then reports it until the database comes back."""
+        await self.pool.open(wait=wait)
 
     async def close(self) -> None:
         await self.pool.close()

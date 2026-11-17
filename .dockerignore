@@ -1,0 +1,10 @@
+# Service images build from the repo root (they need libs/ and contracts/).
+.git
+target
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+architecture
+deployments
+*.log

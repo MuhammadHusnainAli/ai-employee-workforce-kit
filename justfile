@@ -87,3 +87,7 @@ migrate-down dir database:
 # Show applied and pending migrations
 migrate-status dir database:
     uv run wfk-migrate status --dsn {{pg}}/{{database}} --dir {{dir}}
+
+# Create a service from a template: just new-service rust task-service
+new-service lang name:
+    uv run python tools/new_service.py {{lang}} {{name}}

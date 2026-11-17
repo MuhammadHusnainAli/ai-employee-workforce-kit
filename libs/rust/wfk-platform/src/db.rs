@@ -21,6 +21,14 @@ pub struct Database {
     pub pool: PgPool,
 }
 
+/// A pool that connects on first use, so a service can start while the database is down.
+pub fn lazy_pool(url: &str, max_connections: u32) -> sqlx::Result<PgPool> {
+    PgPoolOptions::new()
+        .max_connections(max_connections)
+        .acquire_timeout(Duration::from_secs(5))
+        .connect_lazy(url)
+}
+
 impl Database {
     pub async fn connect(url: &str, max_connections: u32) -> sqlx::Result<Self> {
         let pool = PgPoolOptions::new()

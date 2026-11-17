@@ -1,0 +1,27 @@
+[package]
+name = "service-template"
+version = "0.1.0"
+description = "Rust service template. `just new-service rust <name>` copies and renames it."
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+wfk-platform = { path = "../../libs/rust/wfk-platform" }
+wfk-contracts = { path = "../../libs/rust/wfk-contracts" }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+axum = { workspace = true }
+futures = { workspace = true }
+tonic = { workspace = true }
+tonic-health = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tower = { workspace = true }
+http-body-util = { workspace = true }
+
+[lints]
+workspace = true

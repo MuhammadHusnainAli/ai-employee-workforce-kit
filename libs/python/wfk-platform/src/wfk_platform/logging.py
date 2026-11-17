@@ -13,7 +13,13 @@ from typing import Any
 
 from opentelemetry import trace
 
-_RESERVED = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime", "taskName"}
+# color_message: uvicorn adds a copy of msg with terminal colour codes.
+_RESERVED = set(logging.makeLogRecord({}).__dict__) | {
+    "message",
+    "asctime",
+    "taskName",
+    "color_message",
+}
 
 
 class JsonFormatter(logging.Formatter):
