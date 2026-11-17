@@ -1,5 +1,11 @@
 name: CI
 
+# Every microservice is its own project. This workflow finds them and checks each one from
+# inside its own folder, exactly as `just ci` does locally:
+#   Python services: microservices/**/pyproject.toml
+#   Rust services:   microservices/**/Cargo.toml
+# The templates in microservices/templates are real services and are checked the same way.
+
 on:
   push:
     branches: [main]
@@ -15,106 +21,121 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  UV_LOCKED: "1" # fail if uv.lock is out of date
+  BUF: npx -y @bufbuild/buf@1.47.2
 
 jobs:
-  python:
-    name: Python lint, types, unit tests
+  discover:
+    name: Find services
     runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.find.outputs.python }}
+      rust: ${{ steps.find.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: |
+          list() { find microservices -name "$1" -not -path '*/target/*' -not -path '*/.venv/*' \
+                     -exec dirname {} \; | sort | jq -R . | jq -cs .; }
+          echo "python=$(list pyproject.toml)" >> "$GITHUB_OUTPUT"
+          echo "rust=$(list Cargo.toml)" >> "$GITHUB_OUTPUT"
+          echo "python: $(list pyproject.toml)"
+          echo "rust:   $(list Cargo.toml)"
+
+  generator:
+    name: Service generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uvx pytest tests -q
+        working-directory: microservices/templates
+
+  python:
+    name: Python ${{ matrix.service }}
+    needs: discover
+    if: needs.discover.outputs.python != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.discover.outputs.python) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv sync --all-packages
+          cache-dependency-glob: ${{ matrix.service }}/uv.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pyright
       - run: uv run pytest -m "not integration"
-      - name: Generated Python contracts are up to date
+      - name: Generated contract code is up to date
         run: |
-          uv run --package wfk-contracts --group dev python libs/python/wfk-contracts/tools/gen_python.py
-          git diff --exit-code -- libs/python/wfk-contracts/src
-      - name: Python licences (ADR-0007)
+          uv run python tools/gen_contracts.py
+          git diff --exit-code -- src/wfk
+      - name: Protobuf lint
+        run: $BUF lint
+        working-directory: ${{ matrix.service }}/contracts
+      - name: Licences (ADR-0007)
         run: uv run python tools/check_licenses.py
-
-  rust:
-    name: Rust fmt, clippy, unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # rust-toolchain.toml pins the version; rustup on the runner installs it on first use.
-      - run: rustup show active-toolchain
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - run: cargo test --workspace --locked
-
-  licences-rust:
-    name: Rust licences and advisories (ADR-0007)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-deny
-      - run: cargo deny --locked check licenses bans sources advisories
-
-  contracts:
-    name: Protobuf lint and breaking changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npx -y @bufbuild/buf@1.47.2 lint
-        working-directory: contracts
-      - name: buf breaking (against the base branch)
-        if: github.event_name == 'pull_request'
-        working-directory: contracts
-        run: |
-          if git cat-file -e "origin/${{ github.base_ref }}:contracts/buf.yaml" 2>/dev/null; then
-            npx -y @bufbuild/buf@1.47.2 breaking --against "../.git#branch=origin/${{ github.base_ref }},subdir=contracts"
-          else
-            echo "No contracts on the base branch yet; nothing to compare."
-          fi
-
-  integration:
-    name: Integration tests (docker compose stack)
-    runs-on: ubuntu-latest
-    needs: [python, rust]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-      - uses: Swatinem/rust-cache@v2
       - name: Start Postgres and NATS
         run: docker compose -f deployments/docker-compose.yml up -d --wait postgres nats
-      - run: uv sync --all-packages
+        working-directory: .
       - run: uv run pytest -m integration
-      - run: cargo test --workspace --locked -- --ignored
+      - name: Image builds
+        run: docker build -t ci-image .
       - name: Stack logs on failure
         if: failure()
         run: docker compose -f deployments/docker-compose.yml logs --no-color
+        working-directory: .
 
-  images:
-    name: Service template images build
+  rust:
+    name: Rust ${{ matrix.service }}
+    needs: discover
+    if: needs.discover.outputs.rust != '[]'
     runs-on: ubuntu-latest
-    needs: [python, rust]
     strategy:
+      fail-fast: false
       matrix:
-        lang: [python, rust]
+        service: ${{ fromJSON(needs.discover.outputs.rust) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      # The service's rust-toolchain.toml pins the version; rustup installs it on first use.
+      - run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
         with:
-          context: .
-          file: templates/${{ matrix.lang }}-service/Dockerfile
-          push: false
-          cache-from: type=gha,scope=${{ matrix.lang }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.lang }}
+          workspaces: ${{ matrix.service }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - name: Protobuf lint
+        run: $BUF lint
+        working-directory: ${{ matrix.service }}/contracts
+      - name: Licences and advisories (ADR-0007)
+        run: cargo deny --locked check licenses bans sources advisories
+      - name: Start Postgres and NATS
+        run: docker compose -f deployments/docker-compose.yml up -d --wait postgres nats
+        working-directory: .
+      - run: cargo test --locked -- --ignored
+      - name: Image builds
+        run: docker build -t ci-image .
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f deployments/docker-compose.yml logs --no-color
+        working-directory: .
