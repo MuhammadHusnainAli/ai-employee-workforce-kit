@@ -17,3 +17,4 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 | [0010](0010-ai-employees-are-disclosed.md) | AI employees work like colleagues but are always disclosed as AI | Accepted |
 | [0011](0011-brain-service.md) | A dedicated Brain Service with bi-temporal memory in PostgreSQL | Accepted |
 | [0012](0012-gated-brain-evolution.md) | Brain evolution through versioned, evaluated, reversible proposals | Accepted |
+| [0013](0013-rust-and-python.md) | Rust and Python as the two implementation languages (supersedes Go) | Accepted |
