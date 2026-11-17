@@ -95,7 +95,7 @@ How the harness parts map to the platform:
 | Contracts | Protobuf with `buf` (lint and `buf breaking` in CI), CloudEvents + AsyncAPI for events |
 | Migrations | Plain versioned SQL per service, expand then contract, applied with `sqlx migrate` for both languages |
 | Task runner | `just` (works on Windows, macOS and Linux) |
-| Local stack | Docker Compose: Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS, OTel Collector, Grafana LGTM |
+| Local stack | Docker Compose in `deployments/`: Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS (S3), Grafana LGTM |
 
 ---
 
@@ -111,7 +111,7 @@ libs/
   rust/wfk-platform/     the same, for Rust services
   rust/brain-core/       recall fusion, ranking, packing (PyO3 module)
 microservices/<name>/    one service each (exists), gains pyproject.toml or Cargo.toml
-deploy/local/            docker compose for the local stack
+deployments/             docker compose for the local stack (docker-compose.yml)
 platform/                Helm and Kustomize for platform components (later)
 cells/<cell-id>/         per-cell Argo CD values (later)
 templates/               service templates for Python and Rust
@@ -139,7 +139,7 @@ No business features yet.
 | 0.5 | Add root `pyproject.toml` (uv workspace), `Cargo.toml` (cargo workspace), `rust-toolchain.toml`, `.editorconfig`, `.gitignore`, `justfile` | `uv sync` and `cargo check` succeed on an empty workspace | `Add uv and cargo workspace roots` |
 | 0.6 | Add `contracts/` with `buf.yaml`, `common/v1` (TenantContext, IdempotencyKey, ErrorDetail, PageRequest) and the CloudEvents envelope | `buf lint` passes | `Add protobuf contracts skeleton with buf config` |
 | 0.7 | Add contract codegen: `prost`/`tonic` via `build.rs` crate `wfk-contracts`, Python stubs package `wfk-contracts` | `just gen` builds both, a test imports a generated type in each language | `Add Rust and Python codegen for contracts` |
-| 0.8 | Add `deploy/local/compose.yaml` with Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS, OTel Collector, Grafana LGTM | `just up` starts all, health checks green | `Add local docker compose development stack` |
+| 0.8 | Add `deployments/docker-compose.yml` with Postgres 18 + pgvector, Temporal, NATS JetStream, Valkey, SeaweedFS, OTel Collector, Grafana LGTM | `just up` starts all, health checks green | `Add local docker compose development stack` |
 | 0.9 | Python `wfk-platform`: settings, structured logging, OTel setup, `/healthz` and `/readyz` | Unit tests pass | `Add Python platform lib config telemetry health` |
 | 0.10 | Python `wfk-platform`: tenant-scoped db session (`SET LOCAL app.tenant_id`), outbox writer, inbox dedupe, NATS outbox relay | Integration tests against compose Postgres and NATS pass, including the rollback-publishes-nothing case | `Add Python outbox inbox and tenant session` |
 | 0.11 | Rust `wfk-platform`: config, tracing and OTel, health router | Unit tests pass | `Add Rust platform crate config tracing health` |

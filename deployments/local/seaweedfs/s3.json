@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "wfk-local",
+      "credentials": [
+        { "accessKey": "wfk-local-access", "secretKey": "wfk-local-secret" }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

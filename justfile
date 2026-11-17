@@ -40,7 +40,8 @@ test-integration:
 
 # Start the local stack
 up:
-    {{compose}} up -d --wait
+    {{compose}} up -d --wait --remove-orphans
+    {{compose}} --profile init run --rm seaweedfs-init
 
 # Stop the local stack (keeps data)
 down:
