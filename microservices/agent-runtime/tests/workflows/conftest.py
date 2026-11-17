@@ -17,6 +17,7 @@ from wfk_platform.db import Database
 
 from agent_runtime.activities.harness import HarnessActivities
 from agent_runtime.activities.ledger import LedgerActivities
+from agent_runtime.adapters.brain import BrainClient
 from agent_runtime.adapters.ledger import Ledger
 from agent_runtime.employees import StaticDirectory
 from agent_runtime.harness.state import AgentState, EmployeeSpec, Limits, Tier
@@ -81,11 +82,12 @@ async def running_workers(
     *,
     employee: Callable[[], EmployeeSpec] | None = None,
     db: Database | None = None,
+    brain: BrainClient | None = None,
 ) -> AsyncIterator[str]:
     """Run all three workers on fresh queues. Yields the `runs` queue to start workflows on."""
     prefix = uuid.uuid4().hex[:8] + "-"
     directory = StaticDirectory({"sam": employee or world.employee})
-    activities = HarnessActivities(employees=directory, provider=provider)
+    activities = HarnessActivities(employees=directory, provider=provider, brain=brain)
     database = db or _shared_db()
     ledger = LedgerActivities(Ledger(database, source="//cell-local/agent-runtime"))
     async with AsyncExitStack() as stack:

@@ -27,27 +27,27 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from wfk.common.v1 import common_pb2 as wfk_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fwfk/agent_runtime/v1/runs.proto\x12\x14wfk.agent_runtime.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1awfk/common/v1/common.proto\"\xcf\x02\n\x03Run\x12\x0e\n\x06run_id\x18\x01 \x01(\t\x12\x11\n\ttenant_id\x18\x02 \x01(\t\x12\x13\n\x0b\x65mployee_id\x18\x03 \x01(\t\x12\x0c\n\x04task\x18\x04 \x01(\t\x12/\n\x06status\x18\x05 \x01(\x0e\x32\x1f.wfk.agent_runtime.v1.RunStatus\x12\x13\n\x0bstop_reason\x18\x06 \x01(\t\x12\x0e\n\x06output\x18\x07 \x01(\t\x12\r\n\x05steps\x18\x08 \x01(\x05\x12\x14\n\x0cinput_tokens\x18\t \x01(\x03\x12\x15\n\routput_tokens\x18\n \x01(\x03\x12\x10\n\x08\x63ost_usd\x18\x0b \x01(\t\x12.\n\ncreated_at\x18\x0c \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12.\n\nupdated_at\x18\r \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xce\x02\n\x04Step\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0c\n\x04step\x18\x02 \x01(\x05\x12\x0c\n\x04kind\x18\x03 \x01(\t\x12\x35\n\x0cstatus_after\x18\x04 \x01(\x0e\x32\x1f.wfk.agent_runtime.v1.RunStatus\x12\r\n\x05model\x18\x05 \x01(\t\x12\x13\n\x0bprompt_hash\x18\x06 \x01(\t\x12\x14\n\x0cinput_tokens\x18\x07 \x01(\x05\x12\x15\n\routput_tokens\x18\x08 \x01(\x05\x12\x10\n\x08\x63ost_usd\x18\t \x01(\t\x12)\n\x08\x64\x65\x63ision\x18\n \x01(\x0b\x32\x17.google.protobuf.Struct\x12(\n\x07results\x18\x0b \x03(\x0b\x32\x17.google.protobuf.Struct\x12.\n\ncreated_at\x18\x0c \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"M\n\rGetRunRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x0e\n\x06run_id\x18\x02 \x01(\t\"8\n\x0eGetRunResponse\x12&\n\x03run\x18\x01 \x01(\x0b\x32\x19.wfk.agent_runtime.v1.Run\"z\n\x10ListStepsRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x0e\n\x06run_id\x18\x02 \x01(\t\x12(\n\x04page\x18\x03 \x01(\x0b\x32\x1a.wfk.common.v1.PageRequest\"i\n\x11ListStepsResponse\x12)\n\x05steps\x18\x01 \x03(\x0b\x32\x1a.wfk.agent_runtime.v1.Step\x12)\n\x04page\x18\x02 \x01(\x0b\x32\x1b.wfk.common.v1.PageResponse*\x8e\x01\n\tRunStatus\x12\x1a\n\x16RUN_STATUS_UNSPECIFIED\x10\x00\x12\x16\n\x12RUN_STATUS_RUNNING\x10\x01\x12\x1c\n\x18RUN_STATUS_WAITING_HUMAN\x10\x02\x12\x18\n\x14RUN_STATUS_COMPLETED\x10\x03\x12\x15\n\x11RUN_STATUS_FAILED\x10\x04\x32\xbf\x01\n\nRunService\x12S\n\x06GetRun\x12#.wfk.agent_runtime.v1.GetRunRequest\x1a$.wfk.agent_runtime.v1.GetRunResponse\x12\\\n\tListSteps\x12&.wfk.agent_runtime.v1.ListStepsRequest\x1a\'.wfk.agent_runtime.v1.ListStepsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fwfk/agent_runtime/v1/runs.proto\x12\x14wfk.agent_runtime.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1awfk/common/v1/common.proto\"\xcf\x02\n\x03Run\x12\x0e\n\x06run_id\x18\x01 \x01(\t\x12\x11\n\ttenant_id\x18\x02 \x01(\t\x12\x13\n\x0b\x65mployee_id\x18\x03 \x01(\t\x12\x0c\n\x04task\x18\x04 \x01(\t\x12/\n\x06status\x18\x05 \x01(\x0e\x32\x1f.wfk.agent_runtime.v1.RunStatus\x12\x13\n\x0bstop_reason\x18\x06 \x01(\t\x12\x0e\n\x06output\x18\x07 \x01(\t\x12\r\n\x05steps\x18\x08 \x01(\x05\x12\x14\n\x0cinput_tokens\x18\t \x01(\x03\x12\x15\n\routput_tokens\x18\n \x01(\x03\x12\x10\n\x08\x63ost_usd\x18\x0b \x01(\t\x12.\n\ncreated_at\x18\x0c \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12.\n\nupdated_at\x18\r \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xfa\x02\n\x04Step\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0c\n\x04step\x18\x02 \x01(\x05\x12\x0c\n\x04kind\x18\x03 \x01(\t\x12\x35\n\x0cstatus_after\x18\x04 \x01(\x0e\x32\x1f.wfk.agent_runtime.v1.RunStatus\x12\r\n\x05model\x18\x05 \x01(\t\x12\x13\n\x0bprompt_hash\x18\x06 \x01(\t\x12\x14\n\x0cinput_tokens\x18\x07 \x01(\x05\x12\x15\n\routput_tokens\x18\x08 \x01(\x05\x12\x10\n\x08\x63ost_usd\x18\t \x01(\t\x12)\n\x08\x64\x65\x63ision\x18\n \x01(\x0b\x32\x17.google.protobuf.Struct\x12(\n\x07results\x18\x0b \x03(\x0b\x32\x17.google.protobuf.Struct\x12.\n\ncreated_at\x18\x0c \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x11\n\trecall_id\x18\r \x01(\t\x12\x17\n\x0fmemory_degraded\x18\x0e \x01(\x08\"M\n\rGetRunRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x0e\n\x06run_id\x18\x02 \x01(\t\"8\n\x0eGetRunResponse\x12&\n\x03run\x18\x01 \x01(\x0b\x32\x19.wfk.agent_runtime.v1.Run\"z\n\x10ListStepsRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x0e\n\x06run_id\x18\x02 \x01(\t\x12(\n\x04page\x18\x03 \x01(\x0b\x32\x1a.wfk.common.v1.PageRequest\"i\n\x11ListStepsResponse\x12)\n\x05steps\x18\x01 \x03(\x0b\x32\x1a.wfk.agent_runtime.v1.Step\x12)\n\x04page\x18\x02 \x01(\x0b\x32\x1b.wfk.common.v1.PageResponse*\x8e\x01\n\tRunStatus\x12\x1a\n\x16RUN_STATUS_UNSPECIFIED\x10\x00\x12\x16\n\x12RUN_STATUS_RUNNING\x10\x01\x12\x1c\n\x18RUN_STATUS_WAITING_HUMAN\x10\x02\x12\x18\n\x14RUN_STATUS_COMPLETED\x10\x03\x12\x15\n\x11RUN_STATUS_FAILED\x10\x04\x32\xbf\x01\n\nRunService\x12S\n\x06GetRun\x12#.wfk.agent_runtime.v1.GetRunRequest\x1a$.wfk.agent_runtime.v1.GetRunResponse\x12\\\n\tListSteps\x12&.wfk.agent_runtime.v1.ListStepsRequest\x1a\'.wfk.agent_runtime.v1.ListStepsResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'wfk.agent_runtime.v1.runs_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_RUNSTATUS']._serialized_start=1192
-  _globals['_RUNSTATUS']._serialized_end=1334
+  _globals['_RUNSTATUS']._serialized_start=1236
+  _globals['_RUNSTATUS']._serialized_end=1378
   _globals['_RUN']._serialized_start=149
   _globals['_RUN']._serialized_end=484
   _globals['_STEP']._serialized_start=487
-  _globals['_STEP']._serialized_end=821
-  _globals['_GETRUNREQUEST']._serialized_start=823
-  _globals['_GETRUNREQUEST']._serialized_end=900
-  _globals['_GETRUNRESPONSE']._serialized_start=902
-  _globals['_GETRUNRESPONSE']._serialized_end=958
-  _globals['_LISTSTEPSREQUEST']._serialized_start=960
-  _globals['_LISTSTEPSREQUEST']._serialized_end=1082
-  _globals['_LISTSTEPSRESPONSE']._serialized_start=1084
-  _globals['_LISTSTEPSRESPONSE']._serialized_end=1189
-  _globals['_RUNSERVICE']._serialized_start=1337
-  _globals['_RUNSERVICE']._serialized_end=1528
+  _globals['_STEP']._serialized_end=865
+  _globals['_GETRUNREQUEST']._serialized_start=867
+  _globals['_GETRUNREQUEST']._serialized_end=944
+  _globals['_GETRUNRESPONSE']._serialized_start=946
+  _globals['_GETRUNRESPONSE']._serialized_end=1002
+  _globals['_LISTSTEPSREQUEST']._serialized_start=1004
+  _globals['_LISTSTEPSREQUEST']._serialized_end=1126
+  _globals['_LISTSTEPSRESPONSE']._serialized_start=1128
+  _globals['_LISTSTEPSRESPONSE']._serialized_end=1233
+  _globals['_RUNSERVICE']._serialized_start=1381
+  _globals['_RUNSERVICE']._serialized_end=1572
 # @@protoc_insertion_point(module_scope)

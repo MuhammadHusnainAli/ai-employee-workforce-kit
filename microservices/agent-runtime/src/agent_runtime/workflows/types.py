@@ -102,6 +102,8 @@ class LedgerEntry(BaseModel):
     results: list[dict[str, Any]] = Field(default_factory=list)
     model: str | None = None
     prompt_hash: str | None = None
+    recall_id: str | None = None  # the brain recall this step's prompt cited
+    memory_degraded: bool = False
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0

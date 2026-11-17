@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Protocol
 
 from agent_harness.context import ContextAssembler, ContextCompactor, close_open_tool_calls
 from agent_harness.llm_providers import CompletionRequest
@@ -24,6 +25,14 @@ DISCLOSURE = (
 )
 
 
+class StepMemory(Protocol):
+    """What build_context needs from memory: prompt blocks for a query, and which recall it
+    was. agent_runtime.adapters.brain.BrainMemoryStore is the real one."""
+
+    async def prompt_blocks(self, query: str = "") -> list[str]: ...
+    def recall_info(self) -> tuple[str, bool]: ...
+
+
 class BuiltContext(BaseModel):
     """What build_context hands to call_model, plus the history it settled on."""
 
@@ -35,6 +44,10 @@ class BuiltContext(BaseModel):
     #: SHA-256 of exactly what the model is sent. Recorded per step, so any step can be
     #: reproduced and two identical prompts are recognisable.
     prompt_hash: str = ""
+    #: The brain recall cited in this prompt, and whether memory was degraded (brain or a
+    #: retriever unavailable). Empty and False when the employee has no brain attached.
+    recall_id: str = ""
+    memory_degraded: bool = False
 
 
 def identity(spec: EmployeeSpec) -> str:
@@ -48,7 +61,9 @@ def last_user_text(messages: list[Message]) -> str:
     return ""
 
 
-async def build_context(spec: EmployeeSpec, state: AgentState) -> BuiltContext:
+async def build_context(
+    spec: EmployeeSpec, state: AgentState, memory: StepMemory | None = None
+) -> BuiltContext:
     messages = close_open_tool_calls(list(state.messages))
 
     compactor = ContextCompactor(max_tokens=spec.limits.context_tokens)
@@ -57,9 +72,9 @@ async def build_context(spec: EmployeeSpec, state: AgentState) -> BuiltContext:
         messages = await compactor.compact(messages)
 
     tool_names = spec.tools.names
-    system = await ContextAssembler(identity(spec), instructions=spec.instructions).build(
-        query=last_user_text(messages), tool_names=tool_names
-    )
+    system = await ContextAssembler(
+        identity(spec), instructions=spec.instructions, memory=memory
+    ).build(query=last_user_text(messages), tool_names=tool_names)
     # model_validate rather than the constructor: same validation, and type checkers read
     # the package's Field(None, ...) defaults correctly this way.
     request = CompletionRequest.model_validate(
@@ -72,8 +87,14 @@ async def build_context(spec: EmployeeSpec, state: AgentState) -> BuiltContext:
             "metadata": {"run_id": state.run_id, "step": state.step, "tenant_id": state.tenant_id},
         }
     )
+    recall_id, degraded = memory.recall_info() if memory is not None else ("", False)
     return BuiltContext(
-        request=request, messages=messages, compacted=compacted, prompt_hash=prompt_hash(request)
+        request=request,
+        messages=messages,
+        compacted=compacted,
+        prompt_hash=prompt_hash(request),
+        recall_id=recall_id,
+        memory_degraded=degraded,
     )
 
 

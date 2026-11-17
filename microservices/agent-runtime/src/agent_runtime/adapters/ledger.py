@@ -53,14 +53,15 @@ class Ledger:
             cur = await conn.execute(
                 """
                 INSERT INTO run_steps (run_id, seq, tenant_id, step, kind, decision, results,
-                    model, prompt_hash, input_tokens, output_tokens, cost_usd, status_after)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    model, prompt_hash, input_tokens, output_tokens, cost_usd, status_after,
+                    recall_id, memory_degraded)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (run_id, seq) DO NOTHING
                 """,
                 (
                     e.run_id, e.seq, e.tenant_id, e.step, e.kind, Jsonb(e.decision),
                     Jsonb(e.results), e.model, e.prompt_hash, e.input_tokens, e.output_tokens,
-                    e.cost_usd, e.status,
+                    e.cost_usd, e.status, e.recall_id, e.memory_degraded,
                 ),
             )  # fmt: skip
             if cur.rowcount != 1:

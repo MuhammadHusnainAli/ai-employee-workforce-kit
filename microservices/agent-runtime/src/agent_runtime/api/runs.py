@@ -139,6 +139,8 @@ class RunServicer(runs_pb2_grpc.RunServiceServicer):
                 decision=_struct(r["decision"]),
                 results=[_struct(x) for x in r["results"]],
                 created_at=_ts(r["created_at"]),
+                recall_id=str(r["recall_id"]) if r["recall_id"] else "",
+                memory_degraded=r["memory_degraded"],
             )
             for r in rows
         ]

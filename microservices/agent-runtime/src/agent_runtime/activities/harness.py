@@ -15,6 +15,7 @@ from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
 from agent_runtime.activities.heartbeat import heartbeating
+from agent_runtime.adapters.brain import BrainClient, BrainMemoryStore
 from agent_runtime.employees import EmployeeDirectory, EmployeeNotFound
 from agent_runtime.harness import act as act_stage
 from agent_runtime.harness import context as context_stage
@@ -35,6 +36,8 @@ from agent_runtime.workflows.types import (
 class HarnessActivities:
     employees: EmployeeDirectory
     provider: Provider
+    #: The employee's brain. None: runs without long-term memory.
+    brain: BrainClient | None = None
 
     def _spec(self, employee_id: str, limits: Limits | None = None) -> EmployeeSpec:
         try:
@@ -54,7 +57,19 @@ class HarnessActivities:
 
     @activity.defn(name="build_context")
     async def build_context(self, inp: StepInput) -> context_stage.BuiltContext:
-        return await context_stage.build_context(self._spec(inp.employee_id, inp.limits), inp.state)
+        memory = None
+        if self.brain is not None:
+            memory = BrainMemoryStore(
+                self.brain,
+                tenant_id=inp.state.tenant_id,
+                employee_id=inp.employee_id,
+                run_id=inp.state.run_id,
+                step=inp.state.step,
+                step_type="planning" if inp.state.step == 0 else "acting",
+            )
+        return await context_stage.build_context(
+            self._spec(inp.employee_id, inp.limits), inp.state, memory
+        )
 
     @activity.defn(name="call_model")
     async def call_model(self, inp: ModelInput) -> ModelResponse:

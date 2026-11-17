@@ -82,6 +82,8 @@ class Facts:
     results: list[ActionResult] = field(default_factory=list)
     response: ModelResponse | None = None
     prompt_hash: str | None = None
+    recall_id: str | None = None
+    memory_degraded: bool = False
 
 
 @workflow.defn(name="EmployeeRun")
@@ -198,6 +200,8 @@ class EmployeeRun:
             results=[r.model_dump(mode="json") for r in facts.results],
             model=response.model if response else None,
             prompt_hash=facts.prompt_hash,
+            recall_id=facts.recall_id,
+            memory_degraded=facts.memory_degraded,
             input_tokens=response.usage.input_tokens if response else 0,
             output_tokens=response.usage.output_tokens if response else 0,
             cost_usd=response.usage.cost_usd if response else 0.0,
@@ -276,7 +280,13 @@ class EmployeeRun:
             kind, message = _cause(exc)
             if kind != "BudgetWouldExceed":
                 raise
-            facts = Facts("budget", {"reason": message}, prompt_hash=built.prompt_hash)
+            facts = Facts(
+                "budget",
+                {"reason": message},
+                prompt_hash=built.prompt_hash,
+                recall_id=built.recall_id or None,
+                memory_degraded=built.memory_degraded,
+            )
             return obs.budget_stop(state, message), facts
 
         envelope: DecisionEnvelope = await _call(
@@ -310,5 +320,7 @@ class EmployeeRun:
             results=results,
             response=response,
             prompt_hash=built.prompt_hash,
+            recall_id=built.recall_id or None,
+            memory_degraded=built.memory_degraded,
         )
         return new, facts

@@ -57,6 +57,10 @@ message Step {
   google.protobuf.Struct decision = 10;
   repeated google.protobuf.Struct results = 11;
   google.protobuf.Timestamp created_at = 12;
+  // The brain recall this step's prompt cited (brain-service recall_log id). Empty if none.
+  string recall_id = 13;
+  // True when the step ran with degraded memory (brain or a retriever unavailable).
+  bool memory_degraded = 14;
 }
 
 message GetRunRequest {

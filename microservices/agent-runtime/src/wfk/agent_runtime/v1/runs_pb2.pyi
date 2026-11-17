@@ -56,7 +56,7 @@ class Run(_message.Message):
     def __init__(self, run_id: _Optional[str] = ..., tenant_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., task: _Optional[str] = ..., status: _Optional[_Union[RunStatus, str]] = ..., stop_reason: _Optional[str] = ..., output: _Optional[str] = ..., steps: _Optional[int] = ..., input_tokens: _Optional[int] = ..., output_tokens: _Optional[int] = ..., cost_usd: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., updated_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class Step(_message.Message):
-    __slots__ = ("seq", "step", "kind", "status_after", "model", "prompt_hash", "input_tokens", "output_tokens", "cost_usd", "decision", "results", "created_at")
+    __slots__ = ("seq", "step", "kind", "status_after", "model", "prompt_hash", "input_tokens", "output_tokens", "cost_usd", "decision", "results", "created_at", "recall_id", "memory_degraded")
     SEQ_FIELD_NUMBER: _ClassVar[int]
     STEP_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
@@ -69,6 +69,8 @@ class Step(_message.Message):
     DECISION_FIELD_NUMBER: _ClassVar[int]
     RESULTS_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    RECALL_ID_FIELD_NUMBER: _ClassVar[int]
+    MEMORY_DEGRADED_FIELD_NUMBER: _ClassVar[int]
     seq: int
     step: int
     kind: str
@@ -81,7 +83,9 @@ class Step(_message.Message):
     decision: _struct_pb2.Struct
     results: _containers.RepeatedCompositeFieldContainer[_struct_pb2.Struct]
     created_at: _timestamp_pb2.Timestamp
-    def __init__(self, seq: _Optional[int] = ..., step: _Optional[int] = ..., kind: _Optional[str] = ..., status_after: _Optional[_Union[RunStatus, str]] = ..., model: _Optional[str] = ..., prompt_hash: _Optional[str] = ..., input_tokens: _Optional[int] = ..., output_tokens: _Optional[int] = ..., cost_usd: _Optional[str] = ..., decision: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., results: _Optional[_Iterable[_Union[_struct_pb2.Struct, _Mapping]]] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    recall_id: str
+    memory_degraded: bool
+    def __init__(self, seq: _Optional[int] = ..., step: _Optional[int] = ..., kind: _Optional[str] = ..., status_after: _Optional[_Union[RunStatus, str]] = ..., model: _Optional[str] = ..., prompt_hash: _Optional[str] = ..., input_tokens: _Optional[int] = ..., output_tokens: _Optional[int] = ..., cost_usd: _Optional[str] = ..., decision: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., results: _Optional[_Iterable[_Union[_struct_pb2.Struct, _Mapping]]] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., recall_id: _Optional[str] = ..., memory_degraded: _Optional[bool] = ...) -> None: ...
 
 class GetRunRequest(_message.Message):
     __slots__ = ("tenant", "run_id")
