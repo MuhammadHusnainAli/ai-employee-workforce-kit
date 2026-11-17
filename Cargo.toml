@@ -1,0 +1,32 @@
+# Cargo workspace root. Every Rust library and service is a member.
+[workspace]
+resolver = "3"
+members = []  # listed explicitly as crates are added
+
+[workspace.package]
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.99"
+publish = false
+
+# One version of each shared dependency for the whole workspace.
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

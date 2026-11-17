@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Rust
+target/
+
+# Generated code
+libs/python/wfk-contracts/src/wfk_contracts/gen/
+
+# Local state
+.env
+.env.*
+!.env.example
+.harness/
+*.log
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
