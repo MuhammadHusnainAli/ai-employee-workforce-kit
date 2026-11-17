@@ -6,6 +6,8 @@ workflow history exactly as sent.
 
 from __future__ import annotations
 
+from typing import Any
+
 from agent_harness.llm_providers import CompletionRequest
 from agent_harness.types import ModelResponse, ToolUseBlock
 from pydantic import BaseModel, Field
@@ -76,3 +78,38 @@ class ApprovalAnswer(BaseModel):
 class RunOutcome(BaseModel):
     state: AgentState
     ledger_entries: int = Field(default=0, description="steps written to run_steps")
+
+
+# ---- the run ledger ----------------------------------------------------------------------
+
+
+class StartRecord(BaseModel):
+    run_id: str
+    tenant_id: str
+    employee_id: str
+    task: str
+
+
+class LedgerEntry(BaseModel):
+    """One recorded transition of a run: a step, an approval, a cancel. Written once."""
+
+    run_id: str
+    tenant_id: str
+    employee_id: str
+    seq: int  # assigned by the workflow, so a retried write finds its own row
+    kind: str  # decision kind, or approved / declined / reply / budget / error / cancelled
+    decision: dict[str, Any] = Field(default_factory=dict)
+    results: list[dict[str, Any]] = Field(default_factory=list)
+    model: str | None = None
+    prompt_hash: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
+    # the run after this entry
+    step: int
+    status: str
+    stop_reason: str = ""
+    output: str | None = None
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_cost_usd: float = 0.0

@@ -8,6 +8,9 @@ cannot call.
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 from agent_harness.context import ContextAssembler, ContextCompactor, close_open_tool_calls
 from agent_harness.llm_providers import CompletionRequest
 from agent_harness.types import Message
@@ -29,6 +32,9 @@ class BuiltContext(BaseModel):
     #: state when `compacted` is true, so the next step starts from the shorter history.
     messages: list[Message]
     compacted: bool = False
+    #: SHA-256 of exactly what the model is sent. Recorded per step, so any step can be
+    #: reproduced and two identical prompts are recognisable.
+    prompt_hash: str = ""
 
 
 def identity(spec: EmployeeSpec) -> str:
@@ -66,4 +72,17 @@ async def build_context(spec: EmployeeSpec, state: AgentState) -> BuiltContext:
             "metadata": {"run_id": state.run_id, "step": state.step, "tenant_id": state.tenant_id},
         }
     )
-    return BuiltContext(request=request, messages=messages, compacted=compacted)
+    return BuiltContext(
+        request=request, messages=messages, compacted=compacted, prompt_hash=prompt_hash(request)
+    )
+
+
+def prompt_hash(request: CompletionRequest) -> str:
+    """Hash of what the model sees: model, system prompt, messages and tools. Message
+    timestamps are left out: they are bookkeeping, not part of the prompt."""
+    seen = request.model_dump(
+        mode="json",
+        include={"model", "system", "messages", "tools"},
+        exclude={"messages": {"__all__": {"ts"}}},
+    )
+    return hashlib.sha256(json.dumps(seen, sort_keys=True).encode()).hexdigest()

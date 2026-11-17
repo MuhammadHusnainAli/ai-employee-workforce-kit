@@ -15,6 +15,7 @@ from temporalio.converter import PayloadCodec
 from temporalio.worker import Worker
 
 from agent_runtime.activities.harness import HarnessActivities
+from agent_runtime.activities.ledger import LedgerActivities
 from agent_runtime.workflows.employee_run import EmployeeRun
 from agent_runtime.workflows.types import TASK_QUEUE_LLM, TASK_QUEUE_RUNS, TASK_QUEUE_TOOLS
 
@@ -38,7 +39,10 @@ def queues(prefix: str = "") -> tuple[str, str, str]:
 
 
 def build_workers(
-    client: Client, activities: HarnessActivities, prefix: str = ""
+    client: Client,
+    activities: HarnessActivities,
+    ledger: LedgerActivities,
+    prefix: str = "",
 ) -> Sequence[Worker]:
     runs, llm, tools = queues(prefix)
     return [
@@ -46,7 +50,13 @@ def build_workers(
             client,
             task_queue=runs,
             workflows=[EmployeeRun],
-            activities=[activities.load_employee, activities.build_context, activities.decide],
+            activities=[
+                activities.load_employee,
+                activities.build_context,
+                activities.decide,
+                ledger.record_start,
+                ledger.record_step,
+            ],
         ),
         Worker(client, task_queue=llm, activities=[activities.call_model]),
         Worker(client, task_queue=tools, activities=[activities.act]),

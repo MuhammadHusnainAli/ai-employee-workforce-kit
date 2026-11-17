@@ -81,3 +81,20 @@ async def test_compaction_shrinks_history_and_keeps_tool_pairs_intact() -> None:
                 seen_calls.add(b.id)
             if isinstance(b, ToolResultBlock):
                 assert b.tool_use_id in seen_calls, "a tool result lost its tool call"
+
+
+async def test_prompt_hash_identifies_the_exact_prompt() -> None:
+    a = await build_context(spec(), state())
+    b = await build_context(spec(), state())
+    c = await build_context(spec(), state("Where is order 43?"))
+    assert len(a.prompt_hash) == 64
+    assert a.prompt_hash == b.prompt_hash
+    assert a.prompt_hash != c.prompt_hash
+
+
+async def test_prompt_hash_ignores_message_timestamps() -> None:
+    s1, s2 = state(), state()
+    s2.messages[0] = s2.messages[0].model_copy(update={"ts": 12345.0})
+    assert (await build_context(spec(), s1)).prompt_hash == (
+        await build_context(spec(), s2)
+    ).prompt_hash

@@ -8,6 +8,7 @@ nothing: another worker replays the history and carries on from the last complet
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
@@ -28,9 +29,11 @@ with workflow.unsafe.imports_passed_through():
         DecideInput,
         DecisionEnvelope,
         EmployeeInfo,
+        LedgerEntry,
         ModelInput,
         RunInput,
         RunOutcome,
+        StartRecord,
         StepInput,
     )
 
@@ -70,6 +73,17 @@ async def _call(name: str, arg: Any, result_type: Any) -> Any:
     )
 
 
+@dataclass
+class Facts:
+    """What happened in one transition, for the ledger."""
+
+    kind: str
+    decision: dict[str, Any] = field(default_factory=dict)
+    results: list[ActionResult] = field(default_factory=list)
+    response: ModelResponse | None = None
+    prompt_hash: str | None = None
+
+
 @workflow.defn(name="EmployeeRun")
 class EmployeeRun:
     """Signals record what a person said; the run loop applies it at a safe point.
@@ -83,6 +97,7 @@ class EmployeeRun:
 
     def __init__(self) -> None:
         self._state: AgentState | None = None
+        self._seq = 0  # next ledger entry number
         self._paused = False
         self._cancel_reason: str | None = None
         self._approval: ApprovalAnswer | None = None
@@ -126,36 +141,80 @@ class EmployeeRun:
             run_id=inp.run_id, tenant_id=inp.tenant_id, employee_id=inp.employee_id, task=inp.task
         )
         self._state = state
+        await _call(
+            "record_start",
+            StartRecord(
+                run_id=inp.run_id,
+                tenant_id=inp.tenant_id,
+                employee_id=inp.employee_id,
+                task=inp.task,
+            ),
+            bool,
+        )
         try:
             info: EmployeeInfo = await _call("load_employee", inp.employee_id, EmployeeInfo)
         except ActivityError as exc:
             kind, message = _cause(exc)
-            self._state = obs.fail(state, f"{kind}: {message}")
-            return RunOutcome(state=self._state)
+            state = obs.fail(state, f"{kind}: {message}")
+            self._state = state
+            await self._record(state, Facts("error", {"error": f"{kind}: {message}"}))
+            return RunOutcome(state=state, ledger_entries=self._seq)
 
         while not state.done:
             await workflow.wait_condition(lambda: not self._paused or self._cancelled)
+            facts: Facts | None
             if self._cancelled:
-                state = obs.cancel(state, self._cancel_reason or "cancelled")
+                reason = self._cancel_reason or "cancelled"
+                state, facts = obs.cancel(state, reason), Facts("cancelled", {"reason": reason})
             else:
                 try:
                     if state.status == "running":
-                        state = await self._step(info, state)
+                        state, facts = await self._step(info, state)
                     else:
-                        state = await self._wait_for_person(info, state, inp.wait_timeout_s)
+                        state, facts = await self._wait_for_person(info, state, inp.wait_timeout_s)
                 except ActivityError as exc:
                     kind, message = _cause(exc)
                     state = obs.fail(state, f"{kind}: {message}")
+                    facts = Facts("error", {"error": f"{kind}: {message}"})
             self._state = state
-        return RunOutcome(state=state)
+            if facts is not None:
+                await self._record(state, facts)
+        return RunOutcome(state=state, ledger_entries=self._seq)
 
     @property
     def _cancelled(self) -> bool:
         return self._cancel_reason is not None
 
+    async def _record(self, state: AgentState, facts: Facts) -> None:
+        """Write one ledger entry. Its seq makes a retried write a no-op."""
+        response = facts.response
+        entry = LedgerEntry(
+            run_id=state.run_id,
+            tenant_id=state.tenant_id,
+            employee_id=state.employee_id,
+            seq=self._seq,
+            kind=facts.kind,
+            decision=facts.decision,
+            results=[r.model_dump(mode="json") for r in facts.results],
+            model=response.model if response else None,
+            prompt_hash=facts.prompt_hash,
+            input_tokens=response.usage.input_tokens if response else 0,
+            output_tokens=response.usage.output_tokens if response else 0,
+            cost_usd=response.usage.cost_usd if response else 0.0,
+            step=state.step,
+            status=state.status,
+            stop_reason=state.stop_reason,
+            output=state.output,
+            total_input_tokens=state.usage.input_tokens,
+            total_output_tokens=state.usage.output_tokens,
+            total_cost_usd=state.usage.cost_usd,
+        )
+        await _call("record_step", entry, bool)
+        self._seq += 1
+
     async def _wait_for_person(
         self, info: EmployeeInfo, state: AgentState, timeout_s: float
-    ) -> AgentState:
+    ) -> tuple[AgentState, Facts | None]:
         """Wait durably for the answer this run needs. Other answers are ignored."""
         approval_wait = state.stop_reason == "approval"
 
@@ -168,18 +227,21 @@ class EmployeeRun:
             await workflow.wait_condition(answered, timeout=timedelta(seconds=timeout_s))
         except TimeoutError:
             if approval_wait:  # an approval nobody gave is a no
-                return obs.decline(
+                new = obs.decline(
                     state, info.limits, by="expiry", note="nobody answered in time", ts=_now()
                 )
-            return obs.fail(state, f"nobody answered within {timeout_s:.0f} s")
+                return new, Facts("declined", {"by": "expiry"})
+            new = obs.fail(state, f"nobody answered within {timeout_s:.0f} s")
+            return new, Facts("expired", {"waited_s": timeout_s})
         if self._cancelled:
-            return state  # the loop applies the cancel
+            return state, None  # the loop applies and records the cancel
 
         if approval_wait:
             answer, self._approval = self._approval, None
             assert answer is not None
             if not answer.approved:
-                return obs.decline(state, info.limits, by=answer.by, note=answer.note, ts=_now())
+                new = obs.decline(state, info.limits, by=answer.by, note=answer.note, ts=_now())
+                return new, Facts("declined", answer.model_dump())
             running, calls = obs.approve(state)
             results: list[ActionResult] = await _call(
                 "act",
@@ -188,13 +250,14 @@ class EmployeeRun:
                 ),
                 list[ActionResult],
             )
-            return obs.record_approved(running, info.limits, calls, results, ts=_now())
+            new = obs.record_approved(running, info.limits, calls, results, ts=_now())
+            return new, Facts("approved", answer.model_dump(), results=results)
 
         text, self._reply = self._reply, None
         assert text is not None
-        return obs.reply(state, text, ts=_now())
+        return obs.reply(state, text, ts=_now()), Facts("reply", {"text": text})
 
-    async def _step(self, info: EmployeeInfo, state: AgentState) -> AgentState:
+    async def _step(self, info: EmployeeInfo, state: AgentState) -> tuple[AgentState, Facts]:
         limits = info.limits
         built: BuiltContext = await _call(
             "build_context",
@@ -213,7 +276,8 @@ class EmployeeRun:
             kind, message = _cause(exc)
             if kind != "BudgetWouldExceed":
                 raise
-            return obs.budget_stop(state, message)
+            facts = Facts("budget", {"reason": message}, prompt_hash=built.prompt_hash)
+            return obs.budget_stop(state, message), facts
 
         envelope: DecisionEnvelope = await _call(
             "decide",
@@ -223,7 +287,7 @@ class EmployeeRun:
             DecisionEnvelope,
         )
         decision = envelope.decision
-        results: list[ActionResult] | None = None
+        results: list[ActionResult] = []
         if isinstance(decision, ToolCalls):
             results = await _call(
                 "act",
@@ -232,11 +296,19 @@ class EmployeeRun:
                 ),
                 list[ActionResult],
             )
-        return obs.observe(
+        new = obs.observe(
             state,
             limits,
             response=response,
             decision=decision,
-            results=results,
+            results=results if isinstance(decision, ToolCalls) else None,
             history=built.messages if built.compacted else None,
         )
+        facts = Facts(
+            decision.kind,
+            decision.model_dump(mode="json"),
+            results=results,
+            response=response,
+            prompt_hash=built.prompt_hash,
+        )
+        return new, facts

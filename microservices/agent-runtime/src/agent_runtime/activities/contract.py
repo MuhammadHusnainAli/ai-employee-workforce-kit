@@ -87,11 +87,14 @@ CONTRACTS: dict[str, Contract] = {
             non_retryable_error_types=["ValidationError", "UnknownOutcome", "EmployeeNotFound"],
         ),
     ),
-    # The run ledger write: 10 s, 1 s -> 30 s until 5 min (a database blip must not fail a run).
-    "record_step": Contract(
-        queue=TASK_QUEUE_RUNS,
-        start_to_close=_s(10),
-        schedule_to_close=timedelta(minutes=5),
-        retry=RetryPolicy(initial_interval=_s(1), maximum_interval=_s(30), maximum_attempts=0),
-    ),
 }
+
+# The run ledger writes: 10 s, 1 s -> 30 s until 5 min (a database blip must not fail a run).
+_LEDGER = Contract(
+    queue=TASK_QUEUE_RUNS,
+    start_to_close=_s(10),
+    schedule_to_close=timedelta(minutes=5),
+    retry=RetryPolicy(initial_interval=_s(1), maximum_interval=_s(30), maximum_attempts=0),
+)
+CONTRACTS["record_start"] = _LEDGER
+CONTRACTS["record_step"] = _LEDGER
