@@ -1,5 +1,6 @@
 """Fixtures for workflow tests: the local Temporal server (just up), isolated task queues."""
 
+import asyncio
 import os
 import uuid
 from collections.abc import AsyncIterator, Callable
@@ -10,11 +11,11 @@ import pytest
 from agent_harness import FakeProvider
 from agent_harness.llm_providers import Provider
 from agent_harness.tools import Tool, ToolContext
-from temporalio.client import Client
+from temporalio.client import Client, WorkflowHandle
 
 from agent_runtime.activities.harness import HarnessActivities
 from agent_runtime.employees import StaticDirectory
-from agent_runtime.harness.state import EmployeeSpec, Limits, Tier
+from agent_runtime.harness.state import AgentState, EmployeeSpec, Limits, Tier
 from agent_runtime.worker import build_workers, connect, queues
 
 TEMPORAL = os.environ.get("WFK_TEST_TEMPORAL", "127.0.0.1:7233")
@@ -88,3 +89,22 @@ async def running_workers(
 
 def fake(*script: Any, **kw: Any) -> FakeProvider:
     return FakeProvider(list(script), **kw)
+
+
+async def wait_for(
+    handle: WorkflowHandle[Any, Any],
+    condition: Callable[[AgentState], bool],
+    timeout_s: float = 20,
+) -> AgentState:
+    """Poll the run's state query until `condition` holds."""
+    from agent_runtime.workflows.employee_run import EmployeeRun
+
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout_s
+    while True:
+        state = await handle.query(EmployeeRun.state)
+        if state is not None and condition(state):
+            return state
+        if loop.time() > deadline:
+            raise AssertionError(f"condition not met; last state: {state}")
+        await asyncio.sleep(0.1)

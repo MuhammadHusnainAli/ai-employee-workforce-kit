@@ -185,6 +185,14 @@ def fail(state: AgentState, reason: str) -> AgentState:
     return new
 
 
+def cancel(state: AgentState, reason: str) -> AgentState:
+    """A person cancelled the run. Nothing pending runs."""
+    new = state.model_copy(deep=True)
+    new.status, new.stop_reason, new.output = "failed", "cancelled", reason
+    new.pending, new.pending_reason = [], ""
+    return new
+
+
 def budget_stop(state: AgentState, reason: str) -> AgentState:
     """call_model refused to overspend. The run waits for a person to raise the budget."""
     new = state.model_copy(deep=True)

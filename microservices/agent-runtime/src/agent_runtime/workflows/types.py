@@ -22,6 +22,9 @@ class RunInput(BaseModel):
     tenant_id: str
     employee_id: str
     task: str
+    #: How long the run waits for a person before it gives up waiting. An approval that
+    #: expires counts as declined; an unanswered question fails the run.
+    wait_timeout_s: float = Field(default=7 * 24 * 3600, gt=0)
 
 
 class EmployeeInfo(BaseModel):
