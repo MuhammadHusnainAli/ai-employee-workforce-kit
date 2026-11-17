@@ -77,7 +77,7 @@ COMMIT;
   a JSON Schema before writing.
 - **Partitioning:** `run_steps`, `audit_events`, `usage_events`, `outbox` and `inbox` are range-partitioned by month
   with **pg_partman**. Old partitions are detached and archived to object storage, not deleted with `DELETE`.
-- **Migrations:** versioned SQL (goose for Go, Alembic for Python), applied by an Argo CD PreSync Job. Every change
+- **Migrations:** versioned plain SQL (`wfk-migrate`, the same tool for Rust and Python services), applied by an Argo CD PreSync Job. Every change
   follows **expand → migrate → contract** across at least two releases, so the old and new versions of a service
   can run side by side during a rolling deploy. `CREATE INDEX CONCURRENTLY` only. `lock_timeout = '3s'` on
   migration sessions.

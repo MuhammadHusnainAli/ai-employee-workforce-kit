@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Python |
 | **Database** | `workforce_db` on `pg-app` |
 
 ## Purpose

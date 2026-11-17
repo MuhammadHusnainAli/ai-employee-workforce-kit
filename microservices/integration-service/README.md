@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Rust |
 | **Database** | `integration_db` on `pg-app` |
 
 ## Purpose

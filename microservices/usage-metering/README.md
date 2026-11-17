@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Rust |
 | **Database** | `usage_db` on `pg-ledger` |
 
 ## Purpose

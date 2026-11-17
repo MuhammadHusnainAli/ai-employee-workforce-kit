@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Rust |
 | **Database** | none (stateless; inputs/outputs are S3 refs) |
 
 ## Purpose

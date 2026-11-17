@@ -196,7 +196,7 @@ services/brain/
     temporal/     workflows, activities, schedules
     nats/         outbox relay, inbox consumers
     cache/        Valkey recall cache
-  migrations/     goose / Alembic, expand → contract
+  migrations/     plain versioned SQL (wfk-migrate), expand → contract
   evals/          golden sets per role, regression and safety suites
 ```
 

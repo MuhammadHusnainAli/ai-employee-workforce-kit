@@ -121,8 +121,11 @@ These rules are not negotiable. Every design choice below follows from one of th
 | Meeting platforms | adapters: Zoom Meeting SDK · Teams Graph media bot · Meet Media API · browser bot fallback | vendor SDKs behind our interface | One adapter interface, so the voice pipeline is platform-agnostic |
 | Own laptop | **Kata Containers** / KubeVirt microVM, KasmVNC, code-server, Playwright | Apache-2.0 / GPL-2.0 / MIT | A persistent, hardware-isolated workstation per employee. Humans can watch live and take over |
 
-Languages: **Go** for the transactional services (Task, Workforce, Channel, Integration, Audit, Usage, Directory).
-**Python** for Agent Runtime and Brain, where the LLM and Temporal Python SDK ecosystems are strongest.
+Languages ([ADR-0013](adr/0013-rust-and-python.md)): **Rust** for the throughput-heavy and latency-critical
+services (Channel, Task, Integration, Sandbox, Audit, Usage, Workspace, Identity & Accounts) and for hot-path modules
+called from Python through PyO3. **Python** for every Temporal workflow, the Agent Runtime (built on
+[agent-harness-adk](adr/0014-agent-harness-adk-step-loop.md)), Brain, Model Gateway, Meetings, Voice, Evaluation and
+the light control-plane services (Workforce, Directory, Billing).
 Contracts are **Protobuf (gRPC)** with `buf breaking` in CI for synchronous calls, and **CloudEvents + AsyncAPI**
 for events.
 

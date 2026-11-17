@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Rust |
 | **Database** | `identity_db` on `pg-app` (secrets only in OpenBao) |
 
 ## Purpose

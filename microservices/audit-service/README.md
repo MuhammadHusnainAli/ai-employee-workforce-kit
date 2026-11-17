@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | cell |
-| **Language** | Go |
+| **Language** | Rust |
 | **Database** | `audit_db` on `pg-ledger` (role has INSERT + SELECT only) |
 
 ## Purpose

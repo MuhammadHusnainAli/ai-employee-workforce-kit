@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | global |
-| **Language** | Go |
+| **Language** | Python |
 | **Database** | `directory_db` on `pg-global` |
 
 ## Purpose
