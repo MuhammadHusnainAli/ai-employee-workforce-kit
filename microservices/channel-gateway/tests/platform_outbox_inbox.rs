@@ -323,7 +323,7 @@ async fn migrations_apply_isolate_tenants_and_revert() {
     migrate::ensure_database(&url).await.unwrap();
     let pool = sqlx::PgPool::connect(&url).await.unwrap();
 
-    assert_eq!(migrate::up(&pool).await.unwrap(), 2);
+    assert_eq!(migrate::up(&pool).await.unwrap(), 3);
     assert_eq!(migrate::up(&pool).await.unwrap(), 0, "idempotent");
 
     // The bindings table enforces tenant isolation for the service role.

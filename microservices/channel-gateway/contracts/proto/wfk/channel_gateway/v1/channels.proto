@@ -16,6 +16,9 @@ service ChannelService {
   rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
   // Stop accepting messages on a binding (its webhook answers 404 from then on).
   rpc DisableBinding(DisableBindingRequest) returns (DisableBindingResponse);
+  // Post a message into a channel thread (called by run activities). Queued and sent with
+  // retries; idempotent on idempotency_key. channel.message_delivered when it is out.
+  rpc DeliverMessage(DeliverMessageRequest) returns (DeliverMessageResponse);
 }
 
 enum ChannelKind {
@@ -82,4 +85,18 @@ message DisableBindingRequest {
 
 message DisableBindingResponse {
   Binding binding = 1;
+}
+
+message DeliverMessageRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string binding_id = 3;
+  // Where to post: a thread the binding received a message in (or the provider's own thread
+  // reference, such as "C123:171.2" for Slack).
+  string thread = 4;
+  string text = 5;
+}
+
+message DeliverMessageResponse {
+  string delivery_id = 1;
 }

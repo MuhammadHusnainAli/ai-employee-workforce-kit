@@ -40,7 +40,7 @@ pub struct BindingRow {
 }
 
 impl BindingRow {
-    fn from_row(r: &sqlx::postgres::PgRow) -> Result<Self, ChannelError> {
+    pub fn from_row(r: &sqlx::postgres::PgRow) -> Result<Self, ChannelError> {
         let kind: String = r.try_get("kind")?;
         let outbound: serde_json::Value = r.try_get("outbound")?;
         Ok(Self {
@@ -194,6 +194,47 @@ impl Channels {
         Ok(row)
     }
 
+    /// Queue a message for a thread. Idempotent on `key`: the delivery id comes from it.
+    pub async fn deliver(
+        &self,
+        tenant: Uuid,
+        binding: Uuid,
+        key: &str,
+        thread: &str,
+        text: &str,
+    ) -> Result<Uuid, ChannelError> {
+        let id = Uuid::new_v5(&binding, format!("deliver/{key}").as_bytes());
+        let mut tx = self.db.tenant_tx(tenant).await?;
+        let b = fetch(&mut tx, binding).await?;
+        if !b.active {
+            return Err(ChannelError::NotFound(format!(
+                "binding {binding} is disabled"
+            )));
+        }
+        let new = sqlx::query(
+            "INSERT INTO deliveries (id, tenant_id, binding_id, thread, purpose, text)
+             VALUES ($1, $2, $3, $4, 'message', $5) ON CONFLICT (id) DO NOTHING",
+        )
+        .bind(id)
+        .bind(tenant)
+        .bind(binding)
+        .bind(thread)
+        .bind(text)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected()
+            == 1;
+        if new {
+            sqlx::query("INSERT INTO delivery_queue (delivery_id, tenant_id) VALUES ($1, $2)")
+                .bind(id)
+                .bind(tenant)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(id)
+    }
+
     /// The binding a webhook URL names, if it exists, is active and is of that kind.
     pub async fn binding_for_hook(
         &self,
@@ -213,7 +254,8 @@ impl Channels {
         Ok(Some(row).filter(|b| b.active && b.kind == kind))
     }
 
-    /// Store a message once (per binding and provider message id), with its event.
+    /// Store a message once (per binding and provider message id), with its event, and queue it
+    /// to become a task.
     pub async fn record_inbound(
         &self,
         b: &BindingRow,
@@ -239,6 +281,11 @@ impl Channels {
         .rows_affected()
             == 1;
         if new {
+            sqlx::query("INSERT INTO forward_queue (inbound_id, tenant_id) VALUES ($1, $2)")
+                .bind(id)
+                .bind(b.tenant_id)
+                .execute(&mut *tx)
+                .await?;
             let data = json!({"inbound_id": id, "binding_id": b.id, "kind": b.kind.as_str(),
                               "employee_id": b.employee_id, "thread": m.thread,
                               "sender": m.sender});

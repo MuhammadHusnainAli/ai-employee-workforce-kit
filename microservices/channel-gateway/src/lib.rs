@@ -9,15 +9,17 @@ pub mod adapters;
 pub mod api;
 pub mod contracts;
 pub mod domain;
+pub mod flows;
 pub mod platform;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 
 use crate::adapters::{Channels, GOOGLE_CHAT_JWKS, GoogleTokens};
 use crate::api::{ChannelApi, HookState};
 use crate::contracts::wfk::channel_gateway::v1::channel_service_server::ChannelServiceServer;
-use crate::platform::messaging::run_outbox_relay;
+use crate::platform::messaging::{run_inbox_consumer, run_outbox_relay};
 use crate::platform::{Database, HealthRegistry, ServiceSettings, health_router};
 use axum::Router;
 use futures::FutureExt;
@@ -31,6 +33,9 @@ pub const PORT: u16 = 7013;
 pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/channel_db";
 /// The stream this service publishes to (channel.*).
 pub const STREAM: &str = "CHANNELS";
+/// agent-runtime's run events: answers go back to the thread a task came from.
+pub const RUNS_STREAM: &str = "RUNS";
+pub const RUNS_CONSUMER: &str = "channel-gateway-runs";
 
 /// HTTP router: health endpoints now, REST routes from `api` later.
 pub fn http_router(settings: &ServiceSettings, db: Database) -> Router {
@@ -73,21 +78,41 @@ pub async fn serve(
     let grpc = tonic::service::Routes::new(health_service)
         .add_service(ChannelServiceServer::new(ChannelApi(channels.clone())));
     let hooks = api::hooks(HookState {
-        channels,
+        channels: channels.clone(),
         google: GoogleTokens::new(
             std::env::var("WFK_GOOGLE_CHAT_JWKS_URL").unwrap_or_else(|_| GOOGLE_CHAT_JWKS.into()),
         ),
     });
 
-    // Publish this service's events (channel.*) to its stream.
+    // Background loops: publish channel.*, forward messages to task-service, turn run events
+    // into replies, and send the replies.
     let (stop_tx, stop) = watch::channel(false);
-    let relay = tokio::spawn(run_outbox_relay(
-        db.clone(),
-        settings.nats_url.clone(),
-        STREAM.into(),
-        vec!["channel.>".into()],
-        stop,
-    ));
+    let task_service =
+        std::env::var("WFK_TASK_SERVICE_ADDR").unwrap_or_else(|_| "http://127.0.0.1:7016".into());
+    let loops = [
+        tokio::spawn(run_outbox_relay(
+            db.clone(),
+            settings.nats_url.clone(),
+            STREAM.into(),
+            vec!["channel.>".into()],
+            stop.clone(),
+        )),
+        tokio::spawn(flows::run_forwarder(
+            channels.clone(),
+            task_service,
+            stop.clone(),
+        )),
+        tokio::spawn(flows::run_sender(channels.clone(), stop.clone())),
+        tokio::spawn(run_inbox_consumer(
+            db.clone(),
+            settings.nats_url.clone(),
+            RUNS_STREAM.into(),
+            RUNS_CONSUMER.into(),
+            "run.>".into(),
+            Arc::new(flows::RunAnswers(channels.clone())),
+            stop,
+        )),
+    ];
 
     tracing::info!(addr = %listener.local_addr()?, "started");
     let served = axum::serve(listener, app(&settings, db, grpc).merge(hooks))
@@ -97,7 +122,9 @@ pub async fn serve(
         .set_service_status("", ServingStatus::NotServing)
         .await;
     let _ = stop_tx.send(true);
-    let _ = relay.await;
+    for handle in loops {
+        let _ = handle.await;
+    }
     Ok(served?)
 }
 

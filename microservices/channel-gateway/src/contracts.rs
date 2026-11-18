@@ -9,6 +9,11 @@ pub mod wfk {
             tonic::include_proto!("wfk.common.v1");
         }
     }
+    pub mod task_service {
+        pub mod v1 {
+            tonic::include_proto!("wfk.task_service.v1");
+        }
+    }
     pub mod channel_gateway {
         pub mod v1 {
             tonic::include_proto!("wfk.channel_gateway.v1");

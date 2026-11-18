@@ -274,4 +274,32 @@ impl ChannelService for ChannelApi {
             binding: Some(binding_pb(b)),
         }))
     }
+
+    async fn deliver_message(
+        &self,
+        req: Request<pb::DeliverMessageRequest>,
+    ) -> Result<RpcResponse<pb::DeliverMessageResponse>, Status> {
+        let r = req.into_inner();
+        let (tenant, _) = tenant(r.tenant.as_ref())?;
+        let key = r
+            .idempotency_key
+            .map(|k| k.value.trim().to_string())
+            .filter(|k| !k.is_empty() && k.len() <= 200)
+            .ok_or_else(|| bad("idempotency_key is required (at most 200 characters)"))?;
+        let binding =
+            Uuid::parse_str(&r.binding_id).map_err(|_| bad("binding_id must be a UUID"))?;
+        if r.thread.trim().is_empty() {
+            return Err(bad("thread is required"));
+        }
+        if r.text.trim().is_empty() || r.text.len() > 40_000 {
+            return Err(bad("text is required (at most 40,000 characters)"));
+        }
+        let id = self
+            .0
+            .deliver(tenant, binding, &key, &r.thread, &r.text)
+            .await?;
+        Ok(RpcResponse::new(pb::DeliverMessageResponse {
+            delivery_id: id.to_string(),
+        }))
+    }
 }
