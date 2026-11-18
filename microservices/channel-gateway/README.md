@@ -5,6 +5,7 @@
 | **Scope** | cell |
 | **Language** | Rust |
 | **Database** | `channel_db` on `pg-app` |
+| **Local port** | 7013 (HTTP webhooks and health, gRPC) |
 
 ## Purpose
 Inbound and outbound conversation channels: email, Slack, Microsoft Teams, Google Chat and webhooks. Turns external messages into tasks and task replies into messages.
@@ -15,14 +16,25 @@ Inbound and outbound conversation channels: email, Slack, Microsoft Teams, Googl
 - delivery receipts
 
 ## API
-- webhook endpoints `/hooks/{tenant_slug}/…` (signature-verified)
-- `DeliverMessage` (called by run activities)
+- Webhooks: `POST /hooks/{kind}/{binding_id}`, checked the provider's way (src/domain.rs):
+
+  | kind | check |
+  |---|---|
+  | `slack` | `X-Slack-Signature` v0 HMAC over timestamp and body, 5 minute replay window; URL-verification challenge |
+  | `teams` | outgoing webhook `Authorization: HMAC` (key: the base64 security token) |
+  | `google_chat` | Google's RS256 bearer JWT: Chat's issuer, the app's project number as audience, keys from Google's JWKS |
+  | `email` | `X-WFK-Signature: sha256=` HMAC from the mail relay |
+  | `webhook` | the same `X-WFK-Signature` |
+
+  Unknown, disabled or mismatched bindings answer 404; bad signatures 401. A message is stored once per
+  binding and provider message id, so a webhook delivered twice is one message.
+- gRPC `ChannelService` (`contracts/proto/wfk/channel_gateway/v1/channels.proto`): `CreateBinding` (idempotent),
+  `ListBindings`, `DisableBinding`. Secrets and tokens are never returned.
 
 ## Events
-| Direction | Subjects |
-|---|---|
-| In | `task.state_changed`, `approval.requested` (notifications) |
-| Out | `channel.message_received` · `channel.message_delivered` |
+| Direction | Stream | Subjects |
+|---|---|---|
+| Out | `CHANNELS` | `channel.binding_created` · `channel.message_received` |
 
 ## Depends on
 - Task Service (`CreateTask`)
@@ -37,14 +49,12 @@ Provider message ID has a unique index: duplicate webhooks are no-ops. Outbound 
 ## Folder layout
 ```
 channel-gateway/
-  api/
-  domain/
-  adapters/email/
-  adapters/slack/
-  adapters/teams/
-  adapters/google-chat/
-  migrations/
-  tests/
+  src/domain.rs     provider protocols: signatures, payloads, replies (no I/O)
+  src/adapters.rs   channel_db, Google's token check
+  src/api.rs        webhooks and ChannelService
+  src/platform/     copied platform code
+  migrations/       0001 outbox/inbox, 0002 bindings, hook_routes, inbound_messages, deliveries
+  tests/            hooks.rs covers every provider's check, dedupe and tenancy
 ```
 
 ## Rules (all microservices)

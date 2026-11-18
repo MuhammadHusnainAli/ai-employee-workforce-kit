@@ -72,14 +72,14 @@ gRPC only, with health as the standard gRPC health service (`""` for liveness, `
 | 7009 / 7010 | OTLP gRPC / OTLP HTTP |
 | 7011 | workforce-service |
 | 7012 | agent-runtime |
-| 7013 | spare |
+| 7013 | channel-gateway |
 | 7014 | brain-service |
-| 7015 | spare |
+| 7015 | sandbox-runner |
 | 7016 | task-service |
 | 7017 | integration-service |
 | 7018 | audit-service |
 | 7019 | usage-metering |
-| 7020 | spare; also the templates' default |
+| 7020 | web-app (also the templates' default: a new service picks its own) |
 
 A new service takes a free port and sets it in its settings (`port`) and its Dockerfile's `EXPOSE`. Stack ports can be
 changed by copying `.env.example` to `.env` in this folder.

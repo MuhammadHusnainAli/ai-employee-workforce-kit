@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package wfk.channel_gateway.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// Conversation channels for employees. Owned by channel-gateway; callers copy this file.
+//
+// A binding connects one channel (a Slack app, a Teams outgoing webhook, a Google Chat app, a
+// mail relay or a generic webhook) to one employee. Its webhook URL is
+// POST /hooks/{kind}/{binding_id} on this service's port, signed the provider's way.
+service ChannelService {
+  // Idempotent on idempotency_key.
+  rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+  // Stop accepting messages on a binding (its webhook answers 404 from then on).
+  rpc DisableBinding(DisableBindingRequest) returns (DisableBindingResponse);
+}
+
+enum ChannelKind {
+  CHANNEL_KIND_UNSPECIFIED = 0;
+  CHANNEL_KIND_SLACK = 1;
+  CHANNEL_KIND_TEAMS = 2;
+  CHANNEL_KIND_GOOGLE_CHAT = 3;
+  CHANNEL_KIND_EMAIL = 4;
+  CHANNEL_KIND_WEBHOOK = 5;
+}
+
+message Outbound {
+  // Where replies are posted: Slack chat.postMessage, a Teams or Chat incoming webhook, the mail
+  // relay, or the customer's webhook.
+  string url = 1;
+  // Slack bot token.
+  string token = 2;
+  // Mail relay: the address replies come from.
+  string from = 3;
+}
+
+message Binding {
+  string binding_id = 1;
+  ChannelKind kind = 2;
+  string employee_id = 3;
+  string name = 4;
+  Outbound outbound = 5;
+  bool active = 6;
+  // The path to give the provider: /hooks/{kind}/{binding_id}
+  string webhook_path = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message CreateBindingRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  ChannelKind kind = 3;
+  string employee_id = 4;
+  string name = 5;
+  // Verifies inbound requests: the signing secret (Slack, email, webhook), the base64 security
+  // token (Teams) or the app's project number (Google Chat). Never returned.
+  string secret = 6;
+  Outbound outbound = 7;
+}
+
+message CreateBindingResponse {
+  Binding binding = 1;
+}
+
+message ListBindingsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // Empty means every employee.
+  string employee_id = 2;
+}
+
+message ListBindingsResponse {
+  repeated Binding bindings = 1;
+}
+
+message DisableBindingRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string binding_id = 2;
+}
+
+message DisableBindingResponse {
+  Binding binding = 1;
+}

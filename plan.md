@@ -435,6 +435,15 @@ Notes for later phases:
 Channel Gateway (Rust): email, Slack, Teams, Google Chat, webhooks. Sandbox Runner (Rust): gVisor pods. Web app and
 public API (Next.js) with tasks, runs, approvals and the Brain Inspector.
 
+| # | Task | Commit message |
+|---|---|---|
+| 7.1 | Channel Gateway (Rust, 7013): bindings, signed inbound webhooks for Slack, Teams, Google Chat, email and generic webhooks, deduplicated by provider message id | `Add Rust channel gateway with signed webhooks` |
+| 7.2 | Channel to task and back: inbound messages become tasks (idempotent `CreateTask`); a run's answer or approval request goes back to the thread; delivery receipts | `Turn channel messages into tasks and replies` |
+| 7.3 | Sandbox Runner (Rust, 7015): `RunSandbox` with hard limits; hardened Docker locally, gVisor pod spec for Kubernetes; `usage.sandbox` | `Add Rust sandbox runner with hardened containers` |
+| 7.4 | Web app (Next.js, 7020): public REST API over the task, run and brain gRPC APIs, OpenAPI, server-sent task updates | `Add web app public API with OpenAPI and SSE` |
+| 7.5 | Web app pages: tasks, task detail with live run steps, approvals, Brain Inspector (memories, review, proposals, rules) | `Add web app pages for tasks and brain` |
+| 7.6 | All three in docker compose, and an end-to-end check: webhook to task to reply, a sandbox run, the web API | `Add end to end channel and web app test` |
+
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills
