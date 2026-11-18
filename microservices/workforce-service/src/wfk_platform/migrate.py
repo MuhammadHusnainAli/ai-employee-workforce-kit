@@ -12,7 +12,7 @@ Rules:
 - An applied migration must never change. Its checksum is stored and checked on every run;
   a mismatch stops the run. Fix forward with a new migration (expand, then contract).
 
-    wfk-migrate up     --dsn postgresql://wfk:wfk@127.0.0.1:7000/run_db --dir migrations --create-db
+    wfk-migrate up     --dsn postgresql://wfk:wfk@127.0.0.1:7017/run_db --dir migrations --create-db
     wfk-migrate down   --dsn ... --dir migrations --steps 1
     wfk-migrate status --dsn ... --dir migrations
 """

@@ -33,7 +33,7 @@ let shared: Promise<NatsConnection> | undefined;
 
 function nats(): Promise<NatsConnection> {
     shared ??= connect({
-        servers: process.env.WFK_NATS_URL ?? "nats://127.0.0.1:7003",
+        servers: process.env.WFK_NATS_URL ?? "nats://127.0.0.1:7020",
         maxReconnectAttempts: -1,
         name: "web-app",
     }).catch((err: unknown) => {

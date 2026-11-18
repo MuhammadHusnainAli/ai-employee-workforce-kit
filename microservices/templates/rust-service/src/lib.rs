@@ -22,8 +22,8 @@ use tonic_health::ServingStatus;
 
 pub const SERVICE_NAME: &str = "service-template";
 /// This service's local port (deployments/README.md, port map) and database.
-pub const PORT: u16 = 7020;
-pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/service_template_db";
+pub const PORT: u16 = 7016;
+pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7017/service_template_db";
 
 /// HTTP router: health endpoints now, REST routes from `api` later.
 pub fn http_router(settings: &ServiceSettings, db: Database) -> Router {

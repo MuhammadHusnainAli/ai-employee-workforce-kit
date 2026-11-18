@@ -30,9 +30,9 @@ grpc() {  # grpc <proto dir> <proto file> <address> <method> <json>
   docker run --rm --network wfk_default -v "$1:/protos" fullstorydev/grpcurl:v1.9.3 \
     -plaintext -import-path /protos -proto "$2" -d "$5" "$3" "$4"
 }
-task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7016 \
+task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7004 \
   "wfk.task_service.v1.TaskService/$1" "$2"; }
-brain() { grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7014 \
+brain() { grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7003 \
   "wfk.brain_service.v1.BrainService/$1" "$2"; }
 sql() { "${COMPOSE[@]}" exec -T postgres psql -U wfk -d "$1" -Atc "$2"; }
 field() { grep -o "\"$1\": \"[^\"]*\"" | head -1 | cut -d'"' -f4; }

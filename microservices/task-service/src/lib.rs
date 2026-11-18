@@ -29,8 +29,8 @@ use tonic_health::ServingStatus;
 
 pub const SERVICE_NAME: &str = "task-service";
 /// This service's local port (deployments/README.md, port map) and database.
-pub const PORT: u16 = 7016;
-pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/task_db";
+pub const PORT: u16 = 7004;
+pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7017/task_db";
 /// The stream this service publishes to (task.*), and the one it reads run events from.
 pub const STREAM: &str = "TASKS";
 pub const RUNS_STREAM: &str = "RUNS";

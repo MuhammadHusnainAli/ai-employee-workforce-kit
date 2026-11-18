@@ -115,16 +115,16 @@ mod d {
     pub fn host() -> String {
         "0.0.0.0".into()
     }
-    // One local port, from the 7000-7020 range (deployments/README.md). Give a new service its
+    // One local port, from the 7000-7030 range (deployments/README.md). Give a new service its
     // own free port: two services on the same port cannot run side by side.
     pub fn port() -> u16 {
-        7020
+        7000
     }
     pub fn database_url() -> String {
-        "postgresql://wfk:wfk@127.0.0.1:7000/wfk".into()
+        "postgresql://wfk:wfk@127.0.0.1:7017/wfk".into()
     }
     pub fn nats_url() -> String {
-        "nats://127.0.0.1:7003".into()
+        "nats://127.0.0.1:7020".into()
     }
     pub fn db_tenant_role() -> String {
         "wfk_app".into()

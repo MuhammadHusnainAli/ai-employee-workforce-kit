@@ -77,7 +77,7 @@ services:
       POSTGRES_DB: wfk
     command: ["postgres", "-c", "max_connections=300", "-c", "shared_preload_libraries=pg_stat_statements"]
     ports:
-      - "127.0.0.1:${WFK_PG_PORT:-7000}:5432"
+      - "127.0.0.1:${WFK_PG_PORT:-7017}:5432"
     volumes:
       # PostgreSQL 18 images keep data under /var/lib/postgresql/18/docker.
       - pg-data:/var/lib/postgresql
@@ -105,7 +105,7 @@ services:
       TEMPORAL_BROADCAST_ADDRESS: 127.0.0.1
       DEFAULT_NAMESPACE: default
     ports:
-      - "127.0.0.1:${WFK_TEMPORAL_PORT:-7001}:7233"
+      - "127.0.0.1:${WFK_TEMPORAL_PORT:-7018}:7233"
     healthcheck:
       test: ["CMD-SHELL", "temporal operator cluster health --address 127.0.0.1:7233 | grep -q SERVING"]
       interval: 5s
@@ -121,9 +121,9 @@ services:
         condition: service_healthy
     environment:
       TEMPORAL_ADDRESS: temporal:7233
-      TEMPORAL_CORS_ORIGINS: http://localhost:${WFK_TEMPORAL_UI_PORT:-7002}
+      TEMPORAL_CORS_ORIGINS: http://localhost:${WFK_TEMPORAL_UI_PORT:-7019}
     ports:
-      - "127.0.0.1:${WFK_TEMPORAL_UI_PORT:-7002}:8080"
+      - "127.0.0.1:${WFK_TEMPORAL_UI_PORT:-7019}:8080"
 
   # NATS JetStream: the event bus (outbox relay publishes here).
   nats:
@@ -131,8 +131,8 @@ services:
     image: nats:2.15.3-alpine
     command: ["-js", "-sd", "/data", "-m", "8222", "--name", "wfk-local"]
     ports:
-      - "127.0.0.1:${WFK_NATS_PORT:-7003}:4222"
-      - "127.0.0.1:${WFK_NATS_MONITOR_PORT:-7004}:8222"
+      - "127.0.0.1:${WFK_NATS_PORT:-7020}:4222"
+      - "127.0.0.1:${WFK_NATS_MONITOR_PORT:-7021}:8222"
     volumes:
       - nats-data:/data
     healthcheck:
@@ -147,7 +147,7 @@ services:
     image: valkey/valkey:9.1.3-alpine
     command: ["valkey-server", "--save", "", "--appendonly", "no"]
     ports:
-      - "127.0.0.1:${WFK_VALKEY_PORT:-7005}:6379"
+      - "127.0.0.1:${WFK_VALKEY_PORT:-7022}:6379"
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
@@ -160,7 +160,7 @@ services:
     image: chrislusf/seaweedfs:4.54
     command: ["server", "-dir=/data", "-ip.bind=0.0.0.0", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json"]
     ports:
-      - "127.0.0.1:${WFK_S3_PORT:-7006}:8333"
+      - "127.0.0.1:${WFK_S3_PORT:-7023}:8333"
     volumes:
       - seaweed-data:/data
       - ./local/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
@@ -199,7 +199,7 @@ services:
       LITELLM_MASTER_KEY: ${WFK_LITELLM_MASTER_KEY:-sk-wfk-local}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
-      - "127.0.0.1:${WFK_MODEL_GATEWAY_PORT:-7007}:4000"
+      - "127.0.0.1:${WFK_MODEL_GATEWAY_PORT:-7024}:4000"
     volumes:
       - ./local/litellm/config.yaml:/app/config.yaml:ro
     healthcheck:
@@ -214,9 +214,9 @@ services:
     <<: *restart
     image: grafana/otel-lgtm:0.41.0
     ports:
-      - "127.0.0.1:${WFK_GRAFANA_PORT:-7008}:3000"
-      - "127.0.0.1:${WFK_OTLP_GRPC_PORT:-7009}:4317"
-      - "127.0.0.1:${WFK_OTLP_HTTP_PORT:-7010}:4318"
+      - "127.0.0.1:${WFK_GRAFANA_PORT:-7025}:3000"
+      - "127.0.0.1:${WFK_OTLP_GRPC_PORT:-7026}:4317"
+      - "127.0.0.1:${WFK_OTLP_HTTP_PORT:-7027}:4318"
     volumes:
       - lgtm-data:/data
 
@@ -243,10 +243,10 @@ services:
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/workforce_db
     ports:
-      - "127.0.0.1:${WFK_WORKFORCE_PORT:-7011}:7011"
+      - "127.0.0.1:${WFK_WORKFORCE_PORT:-7001}:7001"
     healthcheck:
       <<: *grpc-health
-      test: ["CMD", "python", "-c", *grpc-probe, "7011"]
+      test: ["CMD", "python", "-c", *grpc-probe, "7001"]
 
   agent-runtime-migrate:
     <<: *migrate
@@ -265,12 +265,13 @@ services:
     environment: &agent-runtime-env
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
-      WFK_BRAIN_ADDRESS: brain-service:7014
+      WFK_BRAIN_ADDRESS: brain-service:7003
+      WFK_WORKFORCE_ADDRESS: workforce-service:7001
     ports:
-      - "127.0.0.1:${WFK_AGENT_RUNTIME_PORT:-7012}:7012"
+      - "127.0.0.1:${WFK_AGENT_RUNTIME_PORT:-7002}:7002"
     healthcheck:
       <<: *grpc-health
-      test: ["CMD", "python", "-c", *grpc-probe, "7012"]
+      test: ["CMD", "python", "-c", *grpc-probe, "7002"]
 
   # Temporal workers, the run outbox relay (RUNS) and the task inbox (TASKS). No port.
   # The model is local-mock through the gateway; set WFK_WORKER_MODEL=claude-haiku for a real one.
@@ -298,10 +299,10 @@ services:
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
     ports:
-      - "127.0.0.1:${WFK_BRAIN_PORT:-7014}:7014"
+      - "127.0.0.1:${WFK_BRAIN_PORT:-7003}:7003"
     healthcheck:
       <<: *grpc-health
-      test: ["CMD", "python", "-c", *grpc-probe, "7014"]
+      test: ["CMD", "python", "-c", *grpc-probe, "7003"]
 
   # The write path: finished runs (RUNS stream) become memories through BrainIngest on the
   # Temporal queue brain-ingest. No port. WFK_BRAIN_EXTRACTOR=gateway adds facts, preferences
@@ -339,7 +340,7 @@ services:
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
     ports:
-      - "127.0.0.1:${WFK_TASK_PORT:-7016}:7016"
+      - "127.0.0.1:${WFK_TASK_PORT:-7004}:7004"
     healthcheck:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
@@ -372,7 +373,7 @@ services:
     environment:
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/eval_db
-      WFK_BRAIN_ADDRESS: brain-service:7014
+      WFK_BRAIN_ADDRESS: brain-service:7003
     command: ["evaluation-service"]
 
   channel-migrate:
@@ -384,7 +385,7 @@ services:
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
 
   # Webhooks from Slack, Teams, Google Chat, mail relays and others become tasks; answers go
-  # back to the thread. Providers post to http://<host>:7013/hooks/{kind}/{binding_id}.
+  # back to the thread. Providers post to http://<host>:7005/hooks/{kind}/{binding_id}.
   channel-gateway:
     <<: *service
     image: wfk/channel-gateway:local
@@ -395,9 +396,9 @@ services:
     environment:
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
-      WFK_TASK_SERVICE_ADDR: http://task-service:7016
+      WFK_TASK_SERVICE_ADDR: http://task-service:7004
     ports:
-      - "127.0.0.1:${WFK_CHANNEL_PORT:-7013}:7013"
+      - "127.0.0.1:${WFK_CHANNEL_PORT:-7005}:7005"
     healthcheck:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
@@ -428,12 +429,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "127.0.0.1:${WFK_SANDBOX_PORT:-7015}:7015"
+      - "127.0.0.1:${WFK_SANDBOX_PORT:-7006}:7006"
     healthcheck:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
 
-  # The web app and public REST API: http://127.0.0.1:7020
+  # The web app and public REST API: http://127.0.0.1:7000
   web-app:
     <<: *service
     image: wfk/web-app:local
@@ -445,18 +446,21 @@ services:
         condition: service_healthy
       brain-service:
         condition: service_healthy
+      workforce-service:
+        condition: service_healthy
     environment:
-      WFK_TASK_SERVICE_ADDR: task-service:7016
-      WFK_RUN_SERVICE_ADDR: agent-runtime:7012
-      WFK_BRAIN_SERVICE_ADDR: brain-service:7014
+      WFK_TASK_SERVICE_ADDR: task-service:7004
+      WFK_RUN_SERVICE_ADDR: agent-runtime:7002
+      WFK_BRAIN_SERVICE_ADDR: brain-service:7003
+      WFK_WORKFORCE_SERVICE_ADDR: workforce-service:7001
       WFK_NATS_URL: nats://nats:4222
       WFK_AUTH_MODE: dev
       WFK_API_TOKEN: ${WFK_API_TOKEN:-}
     ports:
-      - "127.0.0.1:${WFK_WEB_PORT:-7020}:7020"
+      - "127.0.0.1:${WFK_WEB_PORT:-7000}:7000"
     healthcheck:
       <<: *grpc-health
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7020/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7000/healthz >/dev/null"]
 
 volumes:
   pg-data:

@@ -19,7 +19,7 @@ const TEST_DB: &str = "service_template_rs_test"; // also spelled out in db()
 
 fn admin_url() -> String {
     std::env::var("WFK_TEST_ADMIN_URL")
-        .unwrap_or_else(|_| "postgresql://wfk:wfk@127.0.0.1:7000/postgres".into())
+        .unwrap_or_else(|_| "postgresql://wfk:wfk@127.0.0.1:7017/postgres".into())
 }
 
 fn db_url() -> String {
@@ -28,7 +28,7 @@ fn db_url() -> String {
 }
 
 fn nats_url() -> String {
-    std::env::var("WFK_TEST_NATS_URL").unwrap_or_else(|_| "nats://127.0.0.1:7003".into())
+    std::env::var("WFK_TEST_NATS_URL").unwrap_or_else(|_| "nats://127.0.0.1:7020".into())
 }
 
 static CREATED: OnceCell<()> = OnceCell::const_new();

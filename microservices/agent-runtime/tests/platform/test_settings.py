@@ -14,7 +14,7 @@ def test_reads_prefixed_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_defaults_point_at_local_stack() -> None:
     s = ServiceSettings(service_name="x")
-    assert s.temporal_address == "127.0.0.1:7001"
+    assert s.temporal_address == "127.0.0.1:7018"
     assert s.database_url.startswith("postgresql://")
     assert s.otlp_endpoint == ""
 

@@ -13,7 +13,7 @@ use task_service::platform::ServiceSettings;
 use task_service::{SERVICE_NAME, database, http_router, serve};
 
 const UNREACHABLE: &str = "postgresql://wfk:wfk@127.0.0.1:1/nowhere";
-const LOCAL: &str = "postgresql://wfk:wfk@127.0.0.1:7000/postgres";
+const LOCAL: &str = "postgresql://wfk:wfk@127.0.0.1:7017/postgres";
 
 fn settings(db_url: &str) -> ServiceSettings {
     ServiceSettings::from_vars([

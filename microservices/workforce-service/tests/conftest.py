@@ -10,7 +10,7 @@ from wfk_platform.migrate import Runner, ensure_database
 
 TENANT = "0193a7c4-0000-7000-8000-000000000001"
 OTHER_TENANT = "0193a7c4-0000-7000-8000-000000000002"
-WORKFORCE_DB = "postgresql://wfk:wfk@127.0.0.1:7000/workforce_service_test"
+WORKFORCE_DB = "postgresql://wfk:wfk@127.0.0.1:7017/workforce_service_test"
 MIGRATIONS = Path(__file__).resolve().parents[1] / "migrations"
 
 

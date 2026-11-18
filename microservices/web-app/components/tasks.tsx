@@ -15,8 +15,23 @@ const FILTERS: { value: TaskStatus | ""; label: string }[] = [
     { value: "failed", label: "Failed" },
 ];
 
-function NewTask({ onCreated }: { onCreated: (t: Task) => void }) {
-    const [employee, setEmployee] = useState("summariser");
+/** The built-in demo employee, always available alongside the ones you create. */
+const DEMO = { id: "summariser", name: "Summariser (built-in demo)" };
+
+function NewTask({
+    onCreated,
+    employees,
+    preset,
+}: {
+    onCreated: (t: Task) => void;
+    employees: { id: string; name: string; status: string }[];
+    preset: string;
+}) {
+    const choices = [
+        ...employees.filter((e) => e.status !== "paused"),
+        ...(employees.some((e) => e.id === DEMO.id) ? [] : [DEMO]),
+    ];
+    const [employee, setEmployee] = useState(preset || choices[0]?.id || DEMO.id);
     const [input, setInput] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -47,7 +62,13 @@ function NewTask({ onCreated }: { onCreated: (t: Task) => void }) {
         <form className="compose" onSubmit={submit}>
             <label>
                 <span>Employee</span>
-                <input value={employee} onChange={(e) => setEmployee(e.target.value)} required />
+                <select value={employee} onChange={(e) => setEmployee(e.target.value)} required>
+                    {choices.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name}
+                        </option>
+                    ))}
+                </select>
             </label>
             <label>
                 <span>What should they do?</span>
@@ -69,7 +90,15 @@ function NewTask({ onCreated }: { onCreated: (t: Task) => void }) {
     );
 }
 
-export function TasksView({ initial }: { initial: Task[] | null }) {
+export function TasksView({
+    initial,
+    employees,
+    preset,
+}: {
+    initial: Task[] | null;
+    employees: { id: string; name: string; status: string }[];
+    preset: string;
+}) {
     const [tasks, setTasks] = useState<Task[] | null>(initial);
     const [filter, setFilter] = useState<TaskStatus | "">("");
     const [error, setError] = useState<string | null>(null);
@@ -97,7 +126,11 @@ export function TasksView({ initial }: { initial: Task[] | null }) {
                     </p>
                 </div>
             </header>
-            <NewTask onCreated={(t) => setTasks((ts) => [t, ...(ts ?? [])])} />
+            <NewTask
+                employees={employees}
+                preset={preset}
+                onCreated={(t) => setTasks((ts) => [t, ...(ts ?? [])])}
+            />
             <div className="filters" role="group" aria-label="Show">
                 {FILTERS.map((f) => (
                     <button

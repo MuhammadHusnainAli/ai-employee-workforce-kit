@@ -5,7 +5,7 @@
 | **Scope**      | cell (served at the edge)         |
 | **Language**   | TypeScript (Next.js 16, React 19) |
 | **Database**   | none                              |
-| **Local port** | 7020                              |
+| **Local port** | 7000                              |
 
 ## Purpose
 
@@ -20,12 +20,13 @@ Frontend for tenants and the public REST API. The web app uses the same public A
 REST/JSON at `/api/v1`, described by `contracts/openapi.json` (served at `/api/v1/openapi.json`). The document is
 the contract: `tests/contract.test.ts` fails when a route exists without it or it lists a route that does not exist.
 
-|                    |                                                                                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tasks              | `GET/POST /tasks`, `GET /tasks/{id}` (with its run), `GET /tasks/{id}/steps`, `POST /tasks/{id}/cancel`, `/approval`, `/reply`                   |
-| Live updates       | `GET /tasks/stream`: server-sent events (`event: task`) for your tenant, from the `TASKS` stream                                                 |
-| Brain Inspector    | `GET /employees/{employee}/memories`, `GET/DELETE /memories/{id}`, `POST /memories/{id}/correct`, `/review`                                      |
-| Feedback and rules | `POST /employees/{employee}/feedback`, `GET /employees/{employee}/proposals`, `/rules`, `POST /proposals/{id}/decide`, `POST /rules/{id}/revoke` |
+|                    |                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Employees          | `GET/POST /employees` (create and publish the first version), `GET /employees/{employee}`, `POST /employees/{employee}/versions`, `/pause`, `/resume` |
+| Tasks              | `GET/POST /tasks`, `GET /tasks/{id}` (with its run), `GET /tasks/{id}/steps`, `POST /tasks/{id}/cancel`, `/approval`, `/reply`                        |
+| Live updates       | `GET /tasks/stream`: server-sent events (`event: task`) for your tenant, from the `TASKS` stream                                                      |
+| Brain Inspector    | `GET /employees/{employee}/memories`, `GET/DELETE /memories/{id}`, `POST /memories/{id}/correct`, `/review`                                           |
+| Feedback and rules | `POST /employees/{employee}/feedback`, `GET /employees/{employee}/proposals`, `/rules`, `POST /proposals/{id}/decide`, `POST /rules/{id}/revoke`      |
 
 - Writes that create something or answer a run need an `Idempotency-Key` header; a retry with the same key changes
   nothing twice.
@@ -38,6 +39,7 @@ the contract: `tests/contract.test.ts` fails when a route exists without it or i
 
 | Page          | For                                                                                                                                                            |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/employees`  | Create employees (name, role, instructions, model, tools, limits), see each one's current version, change it (a new version), pause or resume                  |
 | `/tasks`      | Assign work to an employee and watch every task change live                                                                                                    |
 | `/tasks/{id}` | What was asked, the run step by step (growing live), the answer; approve, decline, reply or stop                                                               |
 | `/approvals`  | Everything waiting for a person, oldest first, with approve and decline in place                                                                               |
@@ -61,12 +63,13 @@ acts as one tenant (`WFK_DEV_TENANT`) and `X-WFK-Actor` names the person; set `W
 
 ## Depends on
 
-|                      | Setting                  | Default                 |
-| -------------------- | ------------------------ | ----------------------- |
-| task-service         | `WFK_TASK_SERVICE_ADDR`  | `127.0.0.1:7016`        |
-| agent-runtime (runs) | `WFK_RUN_SERVICE_ADDR`   | `127.0.0.1:7012`        |
-| brain-service        | `WFK_BRAIN_SERVICE_ADDR` | `127.0.0.1:7014`        |
-| NATS                 | `WFK_NATS_URL`           | `nats://127.0.0.1:7003` |
+|                      | Setting                      | Default                 |
+| -------------------- | ---------------------------- | ----------------------- |
+| workforce-service    | `WFK_WORKFORCE_SERVICE_ADDR` | `127.0.0.1:7001`        |
+| task-service         | `WFK_TASK_SERVICE_ADDR`      | `127.0.0.1:7004`        |
+| agent-runtime (runs) | `WFK_RUN_SERVICE_ADDR`       | `127.0.0.1:7002`        |
+| brain-service        | `WFK_BRAIN_SERVICE_ADDR`     | `127.0.0.1:7003`        |
+| NATS                 | `WFK_NATS_URL`               | `nats://127.0.0.1:7020` |
 
 The contracts are this app's copies (`contracts/proto`), like every other caller.
 

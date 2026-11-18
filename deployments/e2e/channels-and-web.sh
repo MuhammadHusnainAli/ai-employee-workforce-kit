@@ -17,8 +17,8 @@ export MSYS_NO_PATHCONV=1  # Git Bash on Windows: keep container paths as they a
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TENANT="0193a7c4-0000-7000-8000-00000000d3e0"
-WEB="http://127.0.0.1:7020"
-HOOKS="http://127.0.0.1:7013"
+WEB="http://127.0.0.1:7000"
+HOOKS="http://127.0.0.1:7005"
 SECRET="e2e-signing-secret-$RANDOM$RANDOM"
 RECEIVER="wfk-e2e-receiver"
 T="\"tenant\":{\"tenant_id\":\"$TENANT\",\"actor\":{\"kind\":\"ACTOR_KIND_HUMAN\",\"id\":\"e2e\"}}"
@@ -56,7 +56,7 @@ http.server.HTTPServer(("0.0.0.0", 8080), H).serve_forever()
 echo "   $RECEIVER listening"
 
 echo "2. a webhook binding for the summariser"
-B=$(grpc "$CHANNEL_PROTOS" wfk/channel_gateway/v1/channels.proto channel-gateway:7013 \
+B=$(grpc "$CHANNEL_PROTOS" wfk/channel_gateway/v1/channels.proto channel-gateway:7005 \
   wfk.channel_gateway.v1.ChannelService/CreateBinding \
   "{$T,\"idempotency_key\":{\"value\":\"e2e-$SECRET\"},\"kind\":\"CHANNEL_KIND_WEBHOOK\",\"employee_id\":\"summariser\",\"name\":\"e2e\",\"secret\":\"$SECRET\",\"outbound\":{\"url\":\"http://$RECEIVER:8080/reply\"}}")
 HOOK=$(echo "$B" | field webhookPath)
@@ -118,7 +118,7 @@ assert d['run'] and d['run']['status'] == 'completed', d
 print('   page 200, ready, run', d['run']['status'])"
 
 echo "7. the sandbox"
-OUT=$(grpc "$SANDBOX_PROTOS" wfk/sandbox_runner/v1/sandbox.proto sandbox-runner:7015 \
+OUT=$(grpc "$SANDBOX_PROTOS" wfk/sandbox_runner/v1/sandbox.proto sandbox-runner:7006 \
   wfk.sandbox_runner.v1.SandboxService/RunSandbox \
   "{\"tenant\":{\"tenant_id\":\"$TENANT\"},\"idempotency_key\":{\"value\":\"e2e-$RANDOM$RANDOM\"},\"image\":\"python-3.13\",\"code\":\"import socket\\ntry:\\n    socket.create_connection(('1.1.1.1', 53), timeout=3)\\n    print('ONLINE')\\nexcept OSError:\\n    print('offline', 6 * 7)\"}")
 echo "$OUT" | grep -q 'offline 42' || fail "sandbox: $OUT"

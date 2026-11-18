@@ -21,6 +21,7 @@ export function NavLinks() {
     });
 
     const links = [
+        { href: "/employees", label: "Employees" },
         { href: "/tasks", label: "Tasks" },
         { href: "/approvals", label: "Waiting for you", count: waiting },
         { href: "/brain", label: "Brain" },

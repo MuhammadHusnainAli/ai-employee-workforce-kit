@@ -697,3 +697,77 @@ button.danger {
     padding: 0.2rem 0.65rem;
     font-size: var(--step--1);
 }
+
+/* ---- employees -------------------------------------------------------------------------------- */
+
+.employee-form {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 52rem;
+}
+
+.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 760px) {
+    .two {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tools {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.tools legend {
+    font-size: var(--step--1);
+    color: var(--ink-soft);
+    padding: 0 0.25rem;
+}
+
+.check {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.check input {
+    width: auto;
+}
+
+.employee-head {
+    all: unset;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem 1rem;
+    width: 100%;
+}
+
+.employee-head:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+}
+
+.employee-head:hover .task-title {
+    color: var(--teal);
+}
+
+.employee-body {
+    margin-top: 1rem;
+    display: grid;
+    gap: 1rem;
+}

@@ -29,7 +29,7 @@ const SECRET: &str = "s3cret-signing-key";
 
 fn admin_url() -> String {
     std::env::var("WFK_TEST_ADMIN_URL")
-        .unwrap_or_else(|_| "postgresql://wfk:wfk@127.0.0.1:7000/postgres".into())
+        .unwrap_or_else(|_| "postgresql://wfk:wfk@127.0.0.1:7017/postgres".into())
 }
 
 fn db_url() -> String {

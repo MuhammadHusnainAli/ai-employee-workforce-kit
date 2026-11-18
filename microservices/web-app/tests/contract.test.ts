@@ -48,6 +48,8 @@ describe("the OpenAPI contract", () => {
             "replyToTask",
             "giveFeedback",
             "correctMemory",
+            "createEmployee",
+            "publishVersion",
         ];
         for (const ops of Object.values(spec.paths as Record<string, Record<string, unknown>>)) {
             for (const op of Object.values(ops) as {

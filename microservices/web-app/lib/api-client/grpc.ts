@@ -15,6 +15,7 @@ const FILES = [
     "wfk/task_service/v1/tasks.proto",
     "wfk/agent_runtime/v1/runs.proto",
     "wfk/brain_service/v1/brain.proto",
+    "wfk/workforce_service/v1/workforce.proto",
 ];
 
 type Unary = (
@@ -82,6 +83,7 @@ export interface Backends {
     tasks: Service;
     runs: Service;
     brain: Service;
+    workforce: Service;
 }
 
 let backends: Backends | undefined;
@@ -92,15 +94,19 @@ export function realBackends(): Backends {
         backends = {
             tasks: service(
                 "wfk.task_service.v1.TaskService",
-                env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7016",
+                env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7004",
             ),
             runs: service(
                 "wfk.agent_runtime.v1.RunService",
-                env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7012",
+                env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7002",
             ),
             brain: service(
                 "wfk.brain_service.v1.BrainService",
-                env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7014",
+                env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7003",
+            ),
+            workforce: service(
+                "wfk.workforce_service.v1.WorkforceService",
+                env.WFK_WORKFORCE_SERVICE_ADDR ?? "127.0.0.1:7001",
             ),
         };
     }

@@ -437,10 +437,10 @@ public API (Next.js) with tasks, runs, approvals and the Brain Inspector.
 
 | # | Task | Commit message |
 |---|---|---|
-| 7.1 | Channel Gateway (Rust, 7013): bindings, signed inbound webhooks for Slack, Teams, Google Chat, email and generic webhooks, deduplicated by provider message id | `Add Rust channel gateway with signed webhooks` |
+| 7.1 | Channel Gateway (Rust, 7005): bindings, signed inbound webhooks for Slack, Teams, Google Chat, email and generic webhooks, deduplicated by provider message id | `Add Rust channel gateway with signed webhooks` |
 | 7.2 | Channel to task and back: inbound messages become tasks (idempotent `CreateTask`); a run's answer or approval request goes back to the thread; delivery receipts | `Turn channel messages into tasks and replies` |
-| 7.3 | Sandbox Runner (Rust, 7015): `RunSandbox` with hard limits; hardened Docker locally, gVisor pod spec for Kubernetes; `usage.sandbox` | `Add Rust sandbox runner with hardened containers` |
-| 7.4 | Web app (Next.js, 7020): public REST API over the task, run and brain gRPC APIs, OpenAPI, server-sent task updates | `Add web app public API with OpenAPI and SSE` |
+| 7.3 | Sandbox Runner (Rust, 7006): `RunSandbox` with hard limits; hardened Docker locally, gVisor pod spec for Kubernetes; `usage.sandbox` | `Add Rust sandbox runner with hardened containers` |
+| 7.4 | Web app (Next.js, 7000): public REST API over the task, run and brain gRPC APIs, OpenAPI, server-sent task updates | `Add web app public API with OpenAPI and SSE` |
 | 7.5 | Web app pages: tasks, task detail with live run steps, approvals, Brain Inspector (memories, review, proposals, rules) | `Add web app pages for tasks and brain` |
 | 7.6 | All three in docker compose, and an end-to-end check: webhook to task to reply, a sandbox run, the web API | `Add end to end channel and web app test` |
 
@@ -451,10 +451,10 @@ All 6 tasks committed. `just ci` passes in `microservices/channel-gateway`, `mic
 
 | | |
 |---|---|
-| Channel Gateway | Rust, port 7013, `channel_db`. Webhooks at `/hooks/{kind}/{binding_id}`, each checked the provider's way: Slack v0 HMAC with a 5 minute replay window, Teams HMAC, Google Chat's RS256 token against Google's keys and the app's audience, `X-WFK-Signature` for mail relays and generic webhooks. A message is stored once per provider message id, becomes a task through `CreateTask` (idempotent, retried with backoff), and the run's answer, approval request or failure goes back to its thread, signed, with a receipt. `DeliverMessage` posts into a thread directly |
-| Sandbox Runner | Rust, port 7015. `RunSandbox` runs allowlisted images (Python 3.13, Node 22) with no network, a read-only root, every capability dropped, user 65534, and memory, CPU, pids and time limits; idempotent on the key; `usage.sandbox` through the outbox. Locally the Docker API (runc, or `runsc` when installed); in production the gVisor pod spec, unit-tested but not run here |
+| Channel Gateway | Rust, port 7005, `channel_db`. Webhooks at `/hooks/{kind}/{binding_id}`, each checked the provider's way: Slack v0 HMAC with a 5 minute replay window, Teams HMAC, Google Chat's RS256 token against Google's keys and the app's audience, `X-WFK-Signature` for mail relays and generic webhooks. A message is stored once per provider message id, becomes a task through `CreateTask` (idempotent, retried with backoff), and the run's answer, approval request or failure goes back to its thread, signed, with a receipt. `DeliverMessage` posts into a thread directly |
+| Sandbox Runner | Rust, port 7006. `RunSandbox` runs allowlisted images (Python 3.13, Node 22) with no network, a read-only root, every capability dropped, user 65534, and memory, CPU, pids and time limits; idempotent on the key; `usage.sandbox` through the outbox. Locally the Docker API (runc, or `runsc` when installed); in production the gVisor pod spec, unit-tested but not run here |
 | Public API | Next.js route handlers at `/api/v1` over task-service, agent-runtime and brain-service, described by `contracts/openapi.json` (a test keeps routes and document identical), idempotency keys on writes, gRPC errors as HTTP statuses with retry guidance, server-sent task events per tenant |
-| Web app | Port 7020. Tasks (assign, live list), a task's page with its run step by step and the controls when it waits for a person, an inbox of everything waiting, and the Brain Inspector (what it knows and why, held memories, proposed rules, rules, corrections). Pages render their first data on the server and stay live through one shared event stream |
+| Web app | Port 7000. Tasks (assign, live list), a task's page with its run step by step and the controls when it waits for a person, an inbox of everything waiting, and the Brain Inspector (what it knows and why, held memories, proposed rules, rules, corrections). Pages render their first data on the server and stay live through one shared event stream |
 | End to end | `deployments/e2e/channels-and-web.sh`: a forged webhook is refused; a signed one sent twice becomes one task, which completes; its answer reaches the sender once with a valid signature; the web app serves the task; the sandbox runs Python with no network |
 
 Notes for later phases:

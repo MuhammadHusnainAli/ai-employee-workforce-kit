@@ -11,7 +11,7 @@ default:
 sync:
     npm ci
 
-# Run the app locally on port 7020 against the stack (just up-all, or the services on their ports)
+# Run the app locally on port 7000 against the stack (just up-all, or the services on their ports)
 run:
     npm run dev
 

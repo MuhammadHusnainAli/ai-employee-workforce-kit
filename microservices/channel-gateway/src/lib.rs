@@ -29,8 +29,8 @@ use tonic_health::ServingStatus;
 
 pub const SERVICE_NAME: &str = "channel-gateway";
 /// This service's local port (deployments/README.md, port map) and database.
-pub const PORT: u16 = 7013;
-pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/channel_db";
+pub const PORT: u16 = 7005;
+pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7017/channel_db";
 /// The stream this service publishes to (channel.*).
 pub const STREAM: &str = "CHANNELS";
 /// agent-runtime's run events: answers go back to the thread a task came from.
@@ -88,7 +88,7 @@ pub async fn serve(
     // into replies, and send the replies.
     let (stop_tx, stop) = watch::channel(false);
     let task_service =
-        std::env::var("WFK_TASK_SERVICE_ADDR").unwrap_or_else(|_| "http://127.0.0.1:7016".into());
+        std::env::var("WFK_TASK_SERVICE_ADDR").unwrap_or_else(|_| "http://127.0.0.1:7004".into());
     let loops = [
         tokio::spawn(run_outbox_relay(
             db.clone(),

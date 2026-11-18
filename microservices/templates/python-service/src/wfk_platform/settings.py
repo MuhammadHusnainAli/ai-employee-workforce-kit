@@ -25,14 +25,14 @@ class ServiceSettings(BaseSettings):
     # One port per service (deployments/README.md, port map). Python services serve gRPC only;
     # health is the standard gRPC health service on the same port.
     host: str = "0.0.0.0"  # noqa: S104 - services listen on all interfaces inside their pod
-    port: int = Field(default=7020, ge=1, le=65535)
+    port: int = Field(default=7016, ge=1, le=65535)
 
-    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/wfk"
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7017/wfk"
     # Role tenant transactions run as, so RLS applies even when the login is a superuser
     # (the local stack logs in as one). Empty in production: the service logs in as it.
     db_tenant_role: str | None = "wfk_app"
-    nats_url: str = "nats://127.0.0.1:7003"
-    temporal_address: str = "127.0.0.1:7001"
+    nats_url: str = "nats://127.0.0.1:7020"
+    temporal_address: str = "127.0.0.1:7018"
     temporal_namespace: str = "default"
 
     # Empty disables export (spans and metrics are still created, just not sent).

@@ -32,6 +32,7 @@ from agent_runtime.claim_check import ClaimCheckCodec, S3BlobStore
 from agent_runtime.employees import StaticDirectory
 from agent_runtime.harness.state import EmployeeSpec, Limits
 from agent_runtime.settings import Settings
+from agent_runtime.tool_catalog import word_count
 from agent_runtime.worker import connect, queues
 from agent_runtime.workflows.employee_run import EmployeeRun
 from agent_runtime.workflows.types import RunInput, RunOutcome
@@ -41,15 +42,6 @@ SCRIPTED = "scripted"
 
 
 # ---- the demo employee -------------------------------------------------------------------
-
-
-def word_count(text: str) -> int:
-    """Count the words in a text.
-
-    Args:
-        text: the text to count.
-    """
-    return len(text.split())
 
 
 def summariser(model: str) -> EmployeeSpec:

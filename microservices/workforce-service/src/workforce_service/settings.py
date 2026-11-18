@@ -11,6 +11,6 @@ class Settings(ServiceSettings):
     model_config = SettingsConfigDict(env_prefix="WFK_", extra="ignore")
 
     service_name: str = "workforce-service"
-    # One local port, from the 7000-7020 range (deployments/README.md).
-    port: int = 7011
-    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/workforce_db"
+    # One local port, from the 7000-7030 range (deployments/README.md).
+    port: int = 7001
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7017/workforce_db"

@@ -27,7 +27,7 @@ fn reads_prefixed_variables_with_local_defaults() {
     assert_eq!(s.service_name, "task-service");
     assert_eq!(s.port, 9000);
     assert_eq!(s.environment, Environment::Test);
-    assert_eq!(s.nats_url, "nats://127.0.0.1:7003");
+    assert_eq!(s.nats_url, "nats://127.0.0.1:7020");
     assert!(s.otlp_endpoint.is_empty());
 }
 

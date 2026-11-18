@@ -80,7 +80,7 @@ def directory() -> StaticDirectory:
 
 
 async def model_input() -> ModelInput:
-    spec = directory().get("sam")
+    spec = await directory().get("sam")
     state = AgentState.start(run_id="r", tenant_id="t", employee_id="sam", task="hi")
     built = await build_context(spec, state)
     return ModelInput(employee_id="sam", limits=Limits(), request=built.request, state=state)

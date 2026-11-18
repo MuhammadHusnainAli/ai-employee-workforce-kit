@@ -8,5 +8,5 @@ RUN cargo build --release --locked -p sandbox-runner
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /src/target/release/sandbox-runner /service
 ENV WFK_SERVICE_NAME=sandbox-runner
-EXPOSE 7015
+EXPOSE 7006
 ENTRYPOINT ["/service"]

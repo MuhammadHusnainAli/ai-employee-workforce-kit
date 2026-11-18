@@ -8,5 +8,5 @@ RUN cargo build --release --locked -p channel-gateway
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /src/target/release/channel-gateway /service
 ENV WFK_SERVICE_NAME=channel-gateway
-EXPOSE 7013
+EXPOSE 7005
 ENTRYPOINT ["/service"]

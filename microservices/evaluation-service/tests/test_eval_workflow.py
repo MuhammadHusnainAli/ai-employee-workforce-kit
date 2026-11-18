@@ -26,7 +26,7 @@ from evaluation_service.workflows import EvalProposal, Proposal
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[1]
-DB = "postgresql://wfk:wfk@127.0.0.1:7000/evaluation_service_test"
+DB = "postgresql://wfk:wfk@127.0.0.1:7017/evaluation_service_test"
 TENANT = "0193a7c4-0000-7000-8000-000000000001"
 
 #: What the stand-in employee does with a candidate, by proposal id.

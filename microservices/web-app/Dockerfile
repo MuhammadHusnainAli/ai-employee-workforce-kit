@@ -10,7 +10,7 @@ RUN npm run build
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=7020 \
+    PORT=7000 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=build --chown=node:node /app/.next/standalone ./
@@ -18,5 +18,5 @@ COPY --from=build --chown=node:node /app/.next/static ./.next/static
 # The .proto files the gRPC clients load at runtime.
 COPY --from=build --chown=node:node /app/contracts ./contracts
 USER node
-EXPOSE 7020
+EXPOSE 7000
 CMD ["node", "server.js"]

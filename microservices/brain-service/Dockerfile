@@ -26,5 +26,5 @@ ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     WFK_SERVICE_NAME=brain-service
 USER 10001
-EXPOSE 7014
+EXPOSE 7003
 CMD ["brain-service"]

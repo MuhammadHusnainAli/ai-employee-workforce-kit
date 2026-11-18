@@ -74,6 +74,8 @@ class AgentState(BaseModel):
     #: live, eval or shadow (see RunInput); a candidate brain change in use, if any.
     mode: str = "live"
     candidate: str = ""
+    #: The employee version pinned at run start (0: defined in code).
+    employee_version: int = 0
 
     @property
     def done(self) -> bool:
@@ -174,6 +176,8 @@ class EmployeeSpec:
     auto_approve: set[str] = field(default_factory=set)
     guardrails: Guardrails = field(default_factory=Guardrails)
     limits: Limits = field(default_factory=Limits)
+    #: The published version this spec is (0: defined in code).
+    version: int = 0
 
     @classmethod
     def build(cls, *, tools: list[Tool] | None = None, **kw: object) -> EmployeeSpec:

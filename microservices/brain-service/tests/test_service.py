@@ -13,7 +13,7 @@ from brain_service.recall import Recall
 from brain_service.settings import Settings
 
 UNREACHABLE = "postgresql://wfk:wfk@127.0.0.1:1/nowhere?connect_timeout=1"
-LOCAL = "postgresql://wfk:wfk@127.0.0.1:7000/postgres"
+LOCAL = "postgresql://wfk:wfk@127.0.0.1:7017/postgres"
 
 
 async def check(db_url: str, service: str) -> int:

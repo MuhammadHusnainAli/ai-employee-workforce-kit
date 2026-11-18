@@ -27,7 +27,7 @@ grpc() {  # grpc <proto dir> <proto file> <address> <method> <json>
   docker run --rm --network wfk_default -v "$1:/protos" fullstorydev/grpcurl:v1.9.3 \
     -plaintext -import-path /protos -proto "$2" -d "$5" "$3" "$4"
 }
-task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7016 \
+task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7004 \
   "wfk.task_service.v1.TaskService/$1" "$2"; }
 sql() { "${COMPOSE[@]}" exec -T postgres psql -U wfk -d "$1" -Atc "$2"; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -74,7 +74,7 @@ FOUND=$(sql brain_db "select count(*) from recall_log where id = any(string_to_a
 echo "   recall_log cites memory $MEMORY"
 
 echo "5. the Brain Inspector shows it"
-LISTED=$(grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7014 \
+LISTED=$(grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7003 \
   wfk.brain_service.v1.BrainService/GetMemory "{$T,\"memory_id\":\"$MEMORY\"}")
 echo "$LISTED" | grep -q "\"runId\": \"$A\"" || fail "GetMemory does not show run $A: $LISTED"
 echo "   GetMemory: episode of run $A, trust $(echo "$LISTED" | grep -o '"trust": "[^"]*"' | head -1 | cut -d'"' -f4)"

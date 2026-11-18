@@ -25,6 +25,13 @@ Temporal workers that execute the `EmployeeRun` workflow and the agent harness: 
 The worker process (`agent-runtime worker`) runs the outbox relay and the task inbox next to the
 Temporal workers (`src/agent_runtime/adapters/tasks.py`).
 
+## Employees
+A run's employee comes from workforce-service (`WFK_WORKFORCE_ADDRESS`): `load_employee` resolves the active version
+and the run is pinned to it, so publishing a new version never changes a run already going. Role and instructions
+become the prompt; the model, tool grants (with risk tiers), auto-approved R2 tools and limits come from the version.
+Tools are those in `tool_catalog.py`; a grant for a tool this runtime cannot run yet is skipped. Employees defined in
+code (the demo `summariser`) are the fallback. Paused employees do not start runs.
+
 ## Depends on
 - Temporal
 - Workforce

@@ -5,7 +5,7 @@
 | **Scope** | cell |
 | **Language** | Rust |
 | **Database** | `task_db` on `pg-app` |
-| **Local port** | 7016 (HTTP health and gRPC) |
+| **Local port** | 7004 (HTTP health and gRPC) |
 
 ## Purpose
 The work inbox. Creates tasks, tracks state, handles approvals and human replies, starts and signals runs.

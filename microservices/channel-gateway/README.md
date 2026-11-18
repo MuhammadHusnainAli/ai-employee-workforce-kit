@@ -5,7 +5,7 @@
 | **Scope** | cell |
 | **Language** | Rust |
 | **Database** | `channel_db` on `pg-app` |
-| **Local port** | 7013 (HTTP webhooks and health, gRPC) |
+| **Local port** | 7005 (HTTP webhooks and health, gRPC) |
 
 ## Purpose
 Inbound and outbound conversation channels: email, Slack, Microsoft Teams, Google Chat and webhooks. Turns external messages into tasks and task replies into messages.
@@ -51,7 +51,7 @@ The loops find work through id-only queues (`forward_queue`, `delivery_queue`) a
 | Out | `CHANNELS` | `channel.binding_created` · `channel.message_received` · `channel.message_delivered` · `channel.delivery_failed` |
 
 ## Depends on
-- Task Service (`CreateTask`, `WFK_TASK_SERVICE_ADDR`, default `http://127.0.0.1:7016`)
+- Task Service (`CreateTask`, `WFK_TASK_SERVICE_ADDR`, default `http://127.0.0.1:7004`)
 - NATS JetStream (outbox relay, `RUNS` consumer)
 - Google's Chat JWKS (`WFK_GOOGLE_CHAT_JWKS_URL`) for Google Chat bindings
 

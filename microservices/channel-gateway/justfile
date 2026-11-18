@@ -4,7 +4,7 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
 name := "channel-gateway"
 db := "channel_db"
-pg := "postgresql://wfk:wfk@127.0.0.1:7000"
+pg := "postgresql://wfk:wfk@127.0.0.1:7017"
 buf := "npx -y @bufbuild/buf@1.47.2"
 
 default:

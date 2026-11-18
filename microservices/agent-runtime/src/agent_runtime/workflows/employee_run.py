@@ -30,6 +30,7 @@ with workflow.unsafe.imports_passed_through():
         DecisionEnvelope,
         EmployeeInfo,
         LedgerEntry,
+        LoadEmployee,
         ModelInput,
         RunInput,
         RunOutcome,
@@ -156,13 +157,22 @@ class EmployeeRun:
             bool,
         )
         try:
-            info: EmployeeInfo = await _call("load_employee", inp.employee_id, EmployeeInfo)
+            # Employees from workforce-service need the tenant; older runs sent the id alone.
+            who: object = (
+                LoadEmployee(employee_id=inp.employee_id, tenant_id=inp.tenant_id)
+                if workflow.patched("workforce-employees-v1")
+                else inp.employee_id
+            )
+            info: EmployeeInfo = await _call("load_employee", who, EmployeeInfo)
         except ActivityError as exc:
             kind, message = _cause(exc)
             state = obs.fail(state, f"{kind}: {message}")
             self._state = state
             await self._record(state, Facts("error", {"error": f"{kind}: {message}"}))
             return RunOutcome(state=state, ledger_entries=self._seq)
+        # Every later step uses exactly this version, whatever is published meanwhile.
+        state = state.model_copy(update={"employee_version": info.version})
+        self._state = state
 
         while not state.done:
             await workflow.wait_condition(lambda: not self._paused or self._cancelled)

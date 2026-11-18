@@ -16,7 +16,7 @@ from brain_service.recall import Recall, RecallRequest
 from ..conftest import TENANT
 
 pytestmark = pytest.mark.integration
-VALKEY = "redis://127.0.0.1:7005/0"
+VALKEY = "redis://127.0.0.1:7022/0"
 
 
 @pytest.fixture

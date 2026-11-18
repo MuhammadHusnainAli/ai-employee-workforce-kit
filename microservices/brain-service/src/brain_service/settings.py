@@ -13,15 +13,15 @@ class Settings(ServiceSettings):
     model_config = SettingsConfigDict(env_prefix="WFK_", extra="ignore")
 
     service_name: str = "brain-service"
-    # One local port, from the 7000-7020 range (deployments/README.md).
-    port: int = 7014
-    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7000/brain_db"
+    # One local port, from the 7000-7030 range (deployments/README.md).
+    port: int = 7003
+    database_url: str = "postgresql://wfk:wfk@127.0.0.1:7017/brain_db"
     # Pinned-context cache (identity and rules), the agent runtime's fallback. Empty: off.
-    valkey_url: str = "redis://127.0.0.1:7005/0"
+    valkey_url: str = "redis://127.0.0.1:7022/0"
 
     # Query embeddings: "hash" (local, no model) or "gateway" (the Model Gateway).
     embedder: Literal["hash", "gateway"] = "hash"
-    model_gateway_url: str = "http://127.0.0.1:7007/v1"
+    model_gateway_url: str = "http://127.0.0.1:7024/v1"
     model_gateway_key: str = "sk-wfk-local"
     embedding_model: str = "embeddings"
 

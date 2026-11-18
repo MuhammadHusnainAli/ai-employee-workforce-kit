@@ -5,7 +5,7 @@
 | **Scope** | cell |
 | **Language** | Rust |
 | **Database** | `sandbox_db`: no business data; one row per execution (idempotency) and the outbox |
-| **Local port** | 7015 (HTTP health and gRPC) |
+| **Local port** | 7006 (HTTP health and gRPC) |
 
 ## Purpose
 Runs untrusted or generated code in short-lived gVisor pods with strict limits.

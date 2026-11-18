@@ -27,7 +27,8 @@ and laptop). The design is in [architecture/](architecture/README.md); decisions
 4. **One task, one commit.** After each task in `plan.md`, commit with a 5 to 10 word imperative message, normally
    the one listed for the task. Do not add a `Co-Authored-By` trailer (a git hook rejects it). `main` holds the
    latest code; merge work into it at the end of each phase. Do not push unless asked.
-5. **Local ports stay in 7000-7020, one port per service.** The port map is in `deployments/README.md`. Rust
+5. **Local ports stay in 7000-7030, one port per service:** web app 7000, backends 7001-7016, infrastructure
+   7017-7030. The port map is in `deployments/README.md`. Rust
    services serve HTTP health and gRPC on that one port; Python services serve gRPC only, with gRPC health.
    Never add a port outside the range.
 6. **No em dashes** in any doc, diagram, README or comment you write.
@@ -39,7 +40,7 @@ and laptop). The design is in [architecture/](architecture/README.md); decisions
 ```
 architecture/                 design docs, ADRs, draw.io diagram
 deployments/docker-compose.yml   local stack: Postgres 18 + pgvector, Temporal, NATS, Valkey, SeaweedFS,
-                                 LiteLLM, Grafana. All local ports are in 7000-7020 (deployments/README.md)
+                                 LiteLLM, Grafana. All local ports are in 7000-7030 (deployments/README.md)
 microservices/
   templates/python-service/   Python template: a real, tested service named service-template
   templates/rust-service/     Rust template

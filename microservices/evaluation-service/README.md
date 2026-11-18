@@ -5,7 +5,7 @@
 | **Scope** | cell |
 | **Language** | Python |
 | **Database** | `eval_db` on `pg-brain` |
-| **Local port** | none: a Temporal worker (queue `eval`); the 7000-7020 range is full |
+| **Local port** | none: a Temporal worker (queue `eval`) |
 
 ## Purpose
 Release gate for employee behaviour (brain.md section 6, step 3): every proposed brain change is run through

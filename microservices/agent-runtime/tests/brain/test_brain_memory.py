@@ -147,7 +147,7 @@ async def test_brain_down_and_no_cache_means_no_memory_quickly() -> None:
 
 @pytest.mark.integration
 async def test_brain_down_falls_back_to_the_cached_identity() -> None:
-    client = BrainClient("127.0.0.1:1", valkey_url="redis://127.0.0.1:7005/0", deadline_s=0.3)
+    client = BrainClient("127.0.0.1:1", valkey_url="redis://127.0.0.1:7022/0", deadline_s=0.3)
     emp = f"emp-{uuid.uuid4().hex[:8]}"
     assert client.cache is not None
     try:

@@ -9,7 +9,7 @@ from wfk_platform.migrate import MigrationError, Runner, discover, ensure_databa
 
 pytestmark = pytest.mark.integration
 
-DSN = "postgresql://wfk:wfk@127.0.0.1:7000/evaluation_service_migrate_test"
+DSN = "postgresql://wfk:wfk@127.0.0.1:7017/evaluation_service_migrate_test"
 TEMPLATE = Path(__file__).resolve().parents[2] / "migrations"  # this service's migrations
 
 

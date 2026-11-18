@@ -29,8 +29,8 @@ use tonic_health::ServingStatus;
 
 pub const SERVICE_NAME: &str = "sandbox-runner";
 /// This service's local port (deployments/README.md, port map) and database.
-pub const PORT: u16 = 7015;
-pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7000/sandbox_db";
+pub const PORT: u16 = 7006;
+pub const DATABASE: &str = "postgresql://wfk:wfk@127.0.0.1:7017/sandbox_db";
 /// The stream this service publishes to (usage.sandbox).
 pub const STREAM: &str = "SANDBOX";
 

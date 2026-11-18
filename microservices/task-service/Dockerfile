@@ -8,5 +8,5 @@ RUN cargo build --release --locked -p task-service
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /src/target/release/task-service /service
 ENV WFK_SERVICE_NAME=task-service
-EXPOSE 7016
+EXPOSE 7004
 ENTRYPOINT ["/service"]

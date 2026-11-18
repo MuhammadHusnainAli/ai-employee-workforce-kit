@@ -5,6 +5,7 @@ import type { Backends, Service } from "@/lib/api-client/grpc";
 import * as http from "@/lib/api/http";
 import * as tasks from "@/lib/api/tasks";
 import * as brain from "@/lib/api/brain";
+import * as workforce from "@/lib/api/workforce";
 import { toSse } from "@/lib/api/events";
 
 const TENANT = "0193a7c4-0000-7000-8000-00000000d3e0";
@@ -43,7 +44,7 @@ const taskMsg = {
 };
 
 function backends(over: Partial<Record<keyof Backends, Service>> = {}): Backends {
-    return { tasks: fake(), runs: fake(), brain: fake(), ...over };
+    return { tasks: fake(), runs: fake(), brain: fake(), workforce: fake(), ...over };
 }
 
 afterEach(() => vi.unstubAllEnvs());
@@ -239,5 +240,83 @@ describe("the live stream", () => {
         expect(toSse(event({ tenantid: "someone-else" }), TENANT)).toBeNull();
         expect(toSse(event({ type: "run.completed" }), TENANT)).toBeNull();
         expect(toSse("not json", TENANT)).toBeNull();
+    });
+});
+
+describe("employees", () => {
+    const answers = {
+        CreateEmployee: { employee: { employeeId: "ana-support" } },
+        PublishVersion: { version: { version: 1 } },
+        GetEmployee: {
+            employee: {
+                employeeId: "ana-support",
+                name: "Ana",
+                status: "EMPLOYEE_STATUS_ACTIVE",
+                activeVersion: 1,
+            },
+        },
+        GetVersion: {
+            version: {
+                version: 1,
+                role: "Support",
+                model: "claude-haiku",
+                toolGrants: [{ tool: "word_count", tier: "RISK_TIER_R0" }],
+                limits: { maxSteps: 8, maxCostUsd: "0.50" },
+            },
+        },
+    };
+
+    it("creates the employee and publishes its first version", async () => {
+        const w = fake(answers);
+        const out = await workforce.createEmployee(backends({ workforce: w }), caller, key, {
+            id: "ana-support",
+            name: "Ana",
+            role: "Support",
+            instructions: "Be kind.",
+            model: "claude-haiku",
+            tools: [{ tool: "word_count", tier: "R0" }],
+            max_steps: 8,
+            max_cost_usd: "0.50",
+        });
+        expect(w.calls.map((c) => c.method)).toEqual([
+            "CreateEmployee",
+            "PublishVersion",
+            "GetEmployee",
+            "GetVersion",
+        ]);
+        expect(w.calls[1]!.request).toMatchObject({
+            employeeId: "ana-support",
+            idempotencyKey: key,
+            toolGrants: [{ tool: "word_count", tier: "RISK_TIER_R0" }],
+            limits: { maxSteps: 8, maxCostUsd: "0.50" },
+        });
+        expect(out.employee).toMatchObject({
+            id: "ana-support",
+            status: "active",
+            active_version: 1,
+        });
+        expect(out.active_version).toMatchObject({ tools: [{ tool: "word_count", tier: "R0" }] });
+    });
+
+    it("refuses bad input before creating anything", async () => {
+        const w = fake(answers);
+        const b = backends({ workforce: w });
+        const good = { id: "ana", name: "Ana", role: "r", model: "m" };
+        await expect(
+            workforce.createEmployee(b, caller, key, { ...good, id: "Ana Support" }),
+        ).rejects.toThrow("id");
+        await expect(
+            workforce.createEmployee(b, caller, key, {
+                ...good,
+                tools: [{ tool: "x", tier: "R9" }],
+            }),
+        ).rejects.toThrow("tier");
+        await expect(
+            workforce.createEmployee(b, caller, key, { ...good, max_cost_usd: "lots" }),
+        ).rejects.toThrow("max_cost_usd");
+        await expect(
+            workforce.createEmployee(b, caller, key, { ...good, role: "" }),
+        ).rejects.toThrow("role");
+        expect(w.calls).toEqual([]);
     });
 });

@@ -69,8 +69,17 @@ async def work(settings: Settings, *, prefix: str, model: str, loops: bool = Tru
         if settings.brain_address
         else None
     )
+    from agent_runtime.employees import ChainDirectory, EmployeeDirectory, WorkforceDirectory
+    from agent_runtime.tool_catalog import CATALOG
+
+    # Published employees first; the employees defined in code (the demo) after.
+    employees: EmployeeDirectory = directory(model)
+    if settings.workforce_address:
+        employees = ChainDirectory(
+            WorkforceDirectory(settings.workforce_address, CATALOG), employees
+        )
     activities = HarnessActivities(
-        employees=directory(model), provider=provider_for(model, settings), brain=brain
+        employees=employees, provider=provider_for(model, settings), brain=brain
     )
     ledger = LedgerActivities(Ledger(db, f"//{settings.cell_id}/{settings.service_name}"))
     stop = asyncio.Event()

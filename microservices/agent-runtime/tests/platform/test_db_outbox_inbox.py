@@ -204,7 +204,7 @@ async def test_relay_loop_publishes_committed_events_until_stopped(
 
     from wfk_platform.messaging import run_outbox_relay
 
-    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7003")
+    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7020")
 
     stop = asyncio.Event()
     task = asyncio.create_task(
@@ -238,7 +238,7 @@ async def test_consumer_loop_waits_for_the_stream_then_handles_each_event_once(
 
     from wfk_platform.messaging import run_inbox_consumer
 
-    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7003")
+    nats_url = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7020")
     seen: list[uuid.UUID] = []
 
     async def record(conn: Conn, event: CloudEvent) -> None:

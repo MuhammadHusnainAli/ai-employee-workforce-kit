@@ -38,7 +38,7 @@ Runs pin a version at start, so edits or outages never change in-flight behaviou
 
 ## Folder layout
 A self-contained Python project ([ADR-0015](../../architecture/adr/0015-self-contained-microservices.md)) on port
-7011 (gRPC, with gRPC health). Teams, schedules and the evaluation gate before publishing come in later phases.
+7001 (gRPC, with gRPC health). Teams, schedules and the evaluation gate before publishing come in later phases.
 
 ```
 workforce-service/

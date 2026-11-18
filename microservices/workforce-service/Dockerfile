@@ -19,5 +19,5 @@ ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     WFK_SERVICE_NAME=workforce-service
 USER 10001
-EXPOSE 7011
+EXPOSE 7001
 CMD ["workforce-service"]

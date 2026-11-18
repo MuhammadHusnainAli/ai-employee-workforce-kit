@@ -45,6 +45,13 @@ class EmployeeInfo(BaseModel):
     name: str
     model: str
     limits: Limits
+    #: The published version the run is pinned to (0: defined in code).
+    version: int = 0
+
+
+class LoadEmployee(BaseModel):
+    employee_id: str
+    tenant_id: str
 
 
 class StepInput(BaseModel):

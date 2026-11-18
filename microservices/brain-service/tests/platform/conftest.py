@@ -10,9 +10,9 @@ from nats.aio.client import Client as NATS
 
 from wfk_platform.db import Database
 
-ADMIN_URL = os.environ.get("WFK_TEST_ADMIN_URL", "postgresql://wfk:wfk@127.0.0.1:7000/postgres")
+ADMIN_URL = os.environ.get("WFK_TEST_ADMIN_URL", "postgresql://wfk:wfk@127.0.0.1:7017/postgres")
 TEST_DB = "brain_service_py_test"
-NATS_URL = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7003")
+NATS_URL = os.environ.get("WFK_TEST_NATS_URL", "nats://127.0.0.1:7020")
 
 
 def _db_url(name: str) -> str:

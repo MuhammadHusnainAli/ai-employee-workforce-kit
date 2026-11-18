@@ -426,9 +426,15 @@ function Teach({ employee, onSent }: { employee: string; onSent: () => void }) {
     );
 }
 
-export function BrainView({ initial }: { initial: Memory[] | null }) {
-    const [employee, setEmployee] = useState("summariser");
-    const [draft, setDraft] = useState("summariser");
+export function BrainView({
+    initial,
+    preset = "summariser",
+}: {
+    initial: Memory[] | null;
+    preset?: string;
+}) {
+    const [employee, setEmployee] = useState(preset);
+    const [draft, setDraft] = useState(preset);
     const [tab, setTab] = useState<Tab>("memories");
 
     return (
@@ -475,7 +481,7 @@ export function BrainView({ initial }: { initial: Memory[] | null }) {
                     <Memories
                         employee={employee}
                         held={false}
-                        initial={employee === "summariser" ? initial : null}
+                        initial={employee === preset ? initial : null}
                     />
                 )}
                 {tab === "held" && <Memories employee={employee} held />}

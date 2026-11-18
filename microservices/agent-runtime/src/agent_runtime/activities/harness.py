@@ -16,17 +16,18 @@ from temporalio.exceptions import ApplicationError
 
 from agent_runtime.activities.heartbeat import heartbeating
 from agent_runtime.adapters.brain import BrainClient, BrainMemoryStore
-from agent_runtime.employees import EmployeeDirectory, EmployeeNotFound
+from agent_runtime.employees import EmployeeDirectory, EmployeeNotFound, EmployeeUnavailable
 from agent_runtime.harness import act as act_stage
 from agent_runtime.harness import context as context_stage
 from agent_runtime.harness import model as model_stage
 from agent_runtime.harness import validate as validate_stage
-from agent_runtime.harness.state import ActionResult, EmployeeSpec, Limits
+from agent_runtime.harness.state import ActionResult, AgentState, EmployeeSpec, Limits
 from agent_runtime.workflows.types import (
     ActInput,
     DecideInput,
     DecisionEnvelope,
     EmployeeInfo,
+    LoadEmployee,
     ModelInput,
     StepInput,
 )
@@ -39,21 +40,40 @@ class HarnessActivities:
     #: The employee's brain. None: runs without long-term memory.
     brain: BrainClient | None = None
 
-    def _spec(self, employee_id: str, limits: Limits | None = None) -> EmployeeSpec:
+    async def _spec(
+        self,
+        employee_id: str,
+        limits: Limits | None = None,
+        *,
+        tenant_id: str = "",
+        version: int = 0,
+    ) -> EmployeeSpec:
         try:
-            spec = self.employees.get(employee_id)
+            spec = await self.employees.get(employee_id, tenant_id=tenant_id, version=version)
         except EmployeeNotFound as exc:
             raise ApplicationError(str(exc), type="EmployeeNotFound", non_retryable=True) from exc
+        except EmployeeUnavailable as exc:
+            raise ApplicationError(str(exc), type="EmployeePaused", non_retryable=True) from exc
         if limits is not None:
             spec.limits = limits  # pinned at run start
         return spec
 
-    @activity.defn(name="load_employee")
-    async def load_employee(self, employee_id: str) -> EmployeeInfo:
-        spec = self._spec(employee_id)
-        return EmployeeInfo(
-            employee_id=employee_id, name=spec.name, model=spec.model, limits=spec.limits
+    async def _pinned(self, employee_id: str, limits: Limits, state: AgentState) -> EmployeeSpec:
+        return await self._spec(
+            employee_id, limits, tenant_id=state.tenant_id, version=state.employee_version
         )
+
+    @activity.defn(name="load_employee")
+    async def load_employee(self, who: LoadEmployee | str) -> EmployeeInfo:
+        # A plain id: runs started before employees came from workforce-service.
+        employee_id, tenant_id = (
+            (who, "") if isinstance(who, str) else (who.employee_id, who.tenant_id)
+        )
+        spec = await self._spec(employee_id, tenant_id=tenant_id)
+        return EmployeeInfo(
+            employee_id=employee_id, name=spec.name, model=spec.model, limits=spec.limits,
+            version=spec.version,
+        )  # fmt: skip
 
     @activity.defn(name="build_context")
     async def build_context(self, inp: StepInput) -> context_stage.BuiltContext:
@@ -69,12 +89,12 @@ class HarnessActivities:
                 candidate=inp.state.candidate,
             )
         return await context_stage.build_context(
-            self._spec(inp.employee_id, inp.limits), inp.state, memory
+            await self._pinned(inp.employee_id, inp.limits, inp.state), inp.state, memory
         )
 
     @activity.defn(name="call_model")
     async def call_model(self, inp: ModelInput) -> ModelResponse:
-        spec = self._spec(inp.employee_id, inp.limits)
+        spec = await self._pinned(inp.employee_id, inp.limits, inp.state)
         try:
             async with heartbeating():
                 response = await model_stage.call_model(
@@ -91,14 +111,14 @@ class HarnessActivities:
 
     @activity.defn(name="decide")
     async def decide(self, inp: DecideInput) -> DecisionEnvelope:
-        spec = self._spec(inp.employee_id, inp.limits)
+        spec = await self._pinned(inp.employee_id, inp.limits, inp.state)
         return DecisionEnvelope(decision=validate_stage.decide(spec, inp.state, inp.response))
 
     @activity.defn(name="act")
     async def act(self, inp: ActInput) -> list[ActionResult]:
         async with heartbeating():
             return await act_stage.act(
-                self._spec(inp.employee_id, inp.limits), inp.state, inp.calls
+                await self._pinned(inp.employee_id, inp.limits, inp.state), inp.state, inp.calls
             )
 
     def all(self) -> list[object]:

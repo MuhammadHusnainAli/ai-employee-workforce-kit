@@ -22,15 +22,15 @@ just nuke      # stop everything and delete all data
 
 | Container | What | Port |
 |---|---|---|
-| `workforce-service` | employees and versions (gRPC) | 7011 |
-| `agent-runtime` | RunService, read API for runs (gRPC) | 7012 |
+| `workforce-service` | employees and versions (gRPC) | 7001 |
+| `agent-runtime` | RunService, read API for runs (gRPC) | 7002 |
 | `agent-runtime-worker` | Temporal workers, `run.*` relay, `task.*` inbox | none |
-| `brain-service` | memory and recall (gRPC) | 7014 |
+| `brain-service` | memory and recall (gRPC) | 7003 |
 | `brain-ingest` | the brain's write path: finished runs become memories (Temporal queue `brain-ingest`) | none |
-| `task-service` | tasks (gRPC) and HTTP `/healthz` `/readyz` | 7016 |
-| `channel-gateway` | webhooks from Slack, Teams, Google Chat, email, webhooks to tasks and back | 7013 |
-| `sandbox-runner` | untrusted code in hardened containers (mounts the Docker socket; runs as root locally only) | 7015 |
-| `web-app` | the web app and public REST API (<http://127.0.0.1:7020>) | 7020 |
+| `task-service` | tasks (gRPC) and HTTP `/healthz` `/readyz` | 7004 |
+| `channel-gateway` | webhooks from Slack, Teams, Google Chat, email, webhooks to tasks and back | 7005 |
+| `sandbox-runner` | untrusted code in hardened containers (mounts the Docker socket; runs as root locally only) | 7006 |
+| `web-app` | the web app and public REST API (<http://127.0.0.1:7000>) | 7000 |
 | `evaluation-service` | evaluates every proposed brain change (golden, regression and safety suites) | none |
 | `agent-runtime-eval-worker` | agent-runtime on the evaluation queues, isolated from live work | none |
 
@@ -49,45 +49,55 @@ just nuke      # stop everything and delete all data
 
 | Component | Address | Credentials |
 |---|---|---|
-| PostgreSQL 18 + pgvector | `postgresql://wfk:wfk@127.0.0.1:7000/wfk` | `wfk` / `wfk` |
-| Temporal (gRPC) | `127.0.0.1:7001`, namespace `default` | none |
-| Temporal UI | <http://127.0.0.1:7002> | none |
-| NATS JetStream | `nats://127.0.0.1:7003`, monitoring <http://127.0.0.1:7004> | none |
-| Valkey | `redis://127.0.0.1:7005` | none |
-| SeaweedFS (S3 API) | <http://127.0.0.1:7006>, buckets `wfk-artifacts`, `wfk-payloads`, `wfk-backups` | `wfk-local-access` / `wfk-local-secret` |
-| Model Gateway (LiteLLM, OpenAI format) | <http://127.0.0.1:7007/v1>, models `local-mock` (no key), `claude-haiku`, `claude-sonnet` | bearer `sk-wfk-local`; provider keys in `deployments/.env` |
-| Grafana (LGTM) | <http://127.0.0.1:7008> | `admin` / `admin` |
-| OTLP | gRPC `127.0.0.1:7009`, HTTP `127.0.0.1:7010` | none |
+| PostgreSQL 18 + pgvector | `postgresql://wfk:wfk@127.0.0.1:7017/wfk` | `wfk` / `wfk` |
+| Temporal (gRPC) | `127.0.0.1:7018`, namespace `default` | none |
+| Temporal UI | <http://127.0.0.1:7019> | none |
+| NATS JetStream | `nats://127.0.0.1:7020`, monitoring <http://127.0.0.1:7021> | none |
+| Valkey | `redis://127.0.0.1:7022` | none |
+| SeaweedFS (S3 API) | <http://127.0.0.1:7023>, buckets `wfk-artifacts`, `wfk-payloads`, `wfk-backups` | `wfk-local-access` / `wfk-local-secret` |
+| Model Gateway (LiteLLM, OpenAI format) | <http://127.0.0.1:7024/v1>, models `local-mock` (no key), `claude-haiku`, `claude-sonnet` | bearer `sk-wfk-local`; provider keys in `deployments/.env` |
+| Grafana (LGTM) | <http://127.0.0.1:7025> | `admin` / `admin` |
+| OTLP | gRPC `127.0.0.1:7026`, HTTP `127.0.0.1:7027` | none |
 
-## Port map (7000-7020)
+## Port map (7000-7030)
 
-Everything local listens on 127.0.0.1 in one range, so nothing collides with other projects on the machine. Each
-service has exactly one port: Rust services serve HTTP `/healthz` and `/readyz` and gRPC on it; Python services serve
-gRPC only, with health as the standard gRPC health service (`""` for liveness, `"readiness"` for readiness).
+Everything local listens on 127.0.0.1 in one range, so nothing collides with other projects on the machine: the web
+app first, then the backends, then the infrastructure. Each service has exactly one port: Rust services serve HTTP
+`/healthz` and `/readyz` and gRPC on it; Python services serve gRPC only, with health as the standard gRPC health
+service (`""` for liveness, `"readiness"` for readiness).
 
 | Port | What |
 |---|---|
-| 7000 | PostgreSQL |
-| 7001 / 7002 | Temporal gRPC / Temporal UI |
-| 7003 / 7004 | NATS / NATS monitoring |
-| 7005 | Valkey |
-| 7006 | S3 object storage (SeaweedFS) |
-| 7007 | Model Gateway (LiteLLM) |
-| 7008 | Grafana |
-| 7009 / 7010 | OTLP gRPC / OTLP HTTP |
-| 7011 | workforce-service |
-| 7012 | agent-runtime |
-| 7013 | channel-gateway |
-| 7014 | brain-service |
-| 7015 | sandbox-runner |
-| 7016 | task-service |
-| 7017 | integration-service |
-| 7018 | audit-service |
-| 7019 | usage-metering |
-| 7020 | web-app (also the templates' default: a new service picks its own) |
+| 7000 | web-app: <http://127.0.0.1:7000> |
+| 7001 | workforce-service |
+| 7002 | agent-runtime |
+| 7003 | brain-service |
+| 7004 | task-service |
+| 7005 | channel-gateway |
+| 7006 | sandbox-runner |
+| 7007 | integration-service (Phase 4) |
+| 7008 | audit-service (Phase 4) |
+| 7009 | usage-metering (Phase 4) |
+| 7010 | identity-accounts (Phase 9) |
+| 7011 | workspace-manager (Phase 9) |
+| 7012 | meeting-service (Phase 9) |
+| 7013 | realtime-voice (Phase 9) |
+| 7014 / 7015 | spare |
+| 7016 | spare; the templates' default (a new service picks its own) |
+| 7017 | PostgreSQL |
+| 7018 / 7019 | Temporal gRPC / Temporal UI |
+| 7020 / 7021 | NATS / NATS monitoring |
+| 7022 | Valkey |
+| 7023 | S3 object storage (SeaweedFS) |
+| 7024 | Model Gateway (LiteLLM) |
+| 7025 | Grafana |
+| 7026 / 7027 | OTLP gRPC / OTLP HTTP |
+| 7028 to 7030 | spare |
 
-A new service takes a free port and sets it in its settings (`port`) and its Dockerfile's `EXPOSE`. Stack ports can be
-changed by copying `.env.example` to `.env` in this folder.
+Workers without a port: agent-runtime-worker, agent-runtime-eval-worker, brain-ingest, evaluation-service.
+
+A new service takes a free backend port and sets it in its settings (`port`) and its Dockerfile's `EXPOSE`. Stack
+ports can be changed by copying `.env.example` to `.env` in this folder.
 
 ## Notes
 
