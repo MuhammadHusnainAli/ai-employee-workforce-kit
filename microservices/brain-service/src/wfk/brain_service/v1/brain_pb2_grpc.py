@@ -28,7 +28,7 @@ if _version_not_supported:
 class BrainServiceStub:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
     this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
-    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
+    add Forget, GetBrain and Rollback.
     """
 
     def __init__(self, channel):
@@ -67,12 +67,17 @@ class BrainServiceStub:
                 request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.SerializeToString,
                 response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.FromString,
                 _registered_method=True)
+        self.Feedback = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/Feedback',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.FromString,
+                _registered_method=True)
 
 
 class BrainServiceServicer:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
     this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
-    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
+    add Forget, GetBrain and Rollback.
     """
 
     def Recall(self, request, context):
@@ -123,6 +128,17 @@ class BrainServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Feedback(self, request, context):
+        """---- Feedback (brain.md section 6) -------------------------------------------------------
+
+        Record feedback. A person's correction proposes a rule (active only once approved); a
+        rating credits or blames the memories the run recalled; a rejected approval becomes a
+        lesson. Idempotent on idempotency_key.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BrainServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -156,6 +172,11 @@ def add_BrainServiceServicer_to_server(servicer, server):
                     request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.FromString,
                     response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.SerializeToString,
             ),
+            'Feedback': grpc.unary_unary_rpc_method_handler(
+                    servicer.Feedback,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'wfk.brain_service.v1.BrainService', rpc_method_handlers)
@@ -167,7 +188,7 @@ def add_BrainServiceServicer_to_server(servicer, server):
 class BrainService:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
     this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
-    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
+    add Forget, GetBrain and Rollback.
     """
 
     @staticmethod
@@ -322,6 +343,33 @@ class BrainService:
             '/wfk.brain_service.v1.BrainService/ReviewMemory',
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.SerializeToString,
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Feedback(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/Feedback',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.FromString,
             options,
             channel_credentials,
             insecure,

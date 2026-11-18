@@ -13,7 +13,9 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from wfk.brain_service.v1 import brain_pb2, brain_pb2_grpc
 from wfk.common.v1 import common_pb2
 
+from brain_service.adapters.postgres.feedback import Feedback, Invalid
 from brain_service.adapters.postgres.inspect import Inspected, Inspector, NotFound, Precondition
+from brain_service.domain.feedback import FeedbackIn
 from brain_service.domain.recall.planner import StepType
 from brain_service.recall import Recall, RecallRequest
 
@@ -91,10 +93,65 @@ def _actor(tenant: common_pb2.TenantContext) -> str:
     return tenant.actor.id or "unknown"
 
 
+FEEDBACK_KINDS = {
+    brain_pb2.FEEDBACK_KIND_CORRECTION: "correction",
+    brain_pb2.FEEDBACK_KIND_RATING: "rating",
+    brain_pb2.FEEDBACK_KIND_APPROVAL_REJECTED: "approval_rejected",
+    brain_pb2.FEEDBACK_KIND_COMMENT: "comment",
+}
+ACTOR_KINDS = {
+    common_pb2.ACTOR_KIND_HUMAN: "human",
+    common_pb2.ACTOR_KIND_EMPLOYEE: "employee",
+    common_pb2.ACTOR_KIND_SERVICE: "service",
+}
+
+
 class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
-    def __init__(self, recall: Recall, inspector: Inspector) -> None:
+    def __init__(self, recall: Recall, inspector: Inspector, feedback: Feedback) -> None:
         self.recall_service = recall
         self.inspector = inspector
+        self.feedback = feedback
+
+    # ---- Feedback ----------------------------------------------------------------------------
+
+    async def Feedback(
+        self, request: brain_pb2.FeedbackRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.FeedbackResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        bad = grpc.StatusCode.INVALID_ARGUMENT
+        kind = FEEDBACK_KINDS.get(request.kind)
+        if kind is None:
+            await _abort(context, bad, "kind is required")
+        actor_kind = ACTOR_KINDS.get(request.tenant.actor.kind)
+        if actor_kind is None or not request.tenant.actor.id:
+            await _abort(context, bad, "tenant.actor (kind and id) is required")
+        if not request.employee_id:
+            await _abort(context, bad, "employee_id is required")
+        key = request.idempotency_key.value.strip()
+        if not key or len(key) > 200:
+            await _abort(context, bad, "idempotency_key is required (at most 200 characters)")
+        if request.rating not in (-1, 0, 1):
+            await _abort(context, bad, "rating is 1 or -1")
+        f = FeedbackIn(
+            tenant_id=uuid.UUID(tenant),
+            employee_id=request.employee_id,
+            run_id=request.run_id or None,
+            kind=kind,  # type: ignore[arg-type]
+            text=request.text,
+            rating=request.rating or None,  # type: ignore[arg-type]
+            actor_id=request.tenant.actor.id,
+            actor_kind=actor_kind,  # type: ignore[arg-type]
+            idempotency_key=key,
+        )
+        try:
+            given = await self.feedback.give(f)
+        except Invalid as exc:
+            await _abort(context, bad, str(exc))
+        return brain_pb2.FeedbackResponse(
+            feedback_id=str(given.feedback_id),
+            proposal_id=str(given.proposal_id) if given.proposal_id else "",
+            credited=given.credited,
+        )
 
     async def _guard[T](self, context: grpc.aio.ServicerContext, call: Awaitable[T]) -> T:
         """Map the Inspector's errors to gRPC codes."""

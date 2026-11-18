@@ -7,7 +7,7 @@ import "wfk/common/v1/common.proto";
 
 // Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
 // this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
-// add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
+// add Forget, GetBrain and Rollback.
 service BrainService {
   // What this employee should have in mind for one step: the pinned identity core and the
   // best memories that fit the token budget, each cited. p95 under 300 ms; degrades instead
@@ -28,6 +28,13 @@ service BrainService {
   // Approve or reject a quarantined memory. Approving one that contradicts a fact supersedes it.
   // FAILED_PRECONDITION unless the memory is quarantined.
   rpc ReviewMemory(ReviewMemoryRequest) returns (ReviewMemoryResponse);
+
+  // ---- Feedback (brain.md section 6) -------------------------------------------------------
+
+  // Record feedback. A person's correction proposes a rule (active only once approved); a
+  // rating credits or blames the memories the run recalled; a rejected approval becomes a
+  // lesson. Idempotent on idempotency_key.
+  rpc Feedback(FeedbackRequest) returns (FeedbackResponse);
 }
 
 // Which stores a step needs (brain.md section 3, the query planner).
@@ -184,4 +191,38 @@ message ReviewMemoryRequest {
 
 message ReviewMemoryResponse {
   InspectedMemory memory = 1;
+}
+
+// ---- Feedback ------------------------------------------------------------------------------
+
+enum FeedbackKind {
+  FEEDBACK_KIND_UNSPECIFIED = 0;
+  // "Don't do X": from a person, proposes a rule.
+  FEEDBACK_KIND_CORRECTION = 1;
+  // Thumbs up (1) or down (-1) on a run.
+  FEEDBACK_KIND_RATING = 2;
+  // A person said no to an approval request; text says why.
+  FEEDBACK_KIND_APPROVAL_REJECTED = 3;
+  FEEDBACK_KIND_COMMENT = 4;
+}
+
+message FeedbackRequest {
+  // tenant.actor says who gives it; only ACTOR_KIND_HUMAN corrections propose rules.
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string employee_id = 3;
+  // The run it is about (required for ratings).
+  string run_id = 4;
+  FeedbackKind kind = 5;
+  string text = 6;
+  // 1 or -1, for ratings.
+  int32 rating = 7;
+}
+
+message FeedbackResponse {
+  string feedback_id = 1;
+  // Set when a correction proposed a rule (see ListProposals / DecideProposal).
+  string proposal_id = 2;
+  // Ratings: how many recalled memories were credited or blamed.
+  int32 credited = 3;
 }

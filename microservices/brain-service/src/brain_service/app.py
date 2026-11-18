@@ -7,9 +7,11 @@ import grpc
 from wfk.brain_service.v1 import brain_pb2_grpc
 from wfk_platform import GrpcHealth, HealthRegistry, add_health
 
+from brain_service.adapters.postgres.feedback import Feedback
 from brain_service.adapters.postgres.inspect import Inspector
 from brain_service.api.brain import BrainServicer
 from brain_service.recall import Recall
+from brain_service.remember import Remember
 from brain_service.settings import Settings
 
 
@@ -24,9 +26,13 @@ def create_server(
     registry.add("postgres", recall.db.ping)
     server = grpc.aio.server()
     health = add_health(server, registry)
-    inspector = Inspector(
-        recall.db, recall.embedder, service_source=f"//{settings.cell_id}/{settings.service_name}"
+    source = f"//{settings.cell_id}/{settings.service_name}"
+    inspector = Inspector(recall.db, recall.embedder, service_source=source)
+    remember = Remember(
+        recall.db, recall.embedder, default_pii=settings.pii_policy, service_source=source
     )
-    brain_pb2_grpc.add_BrainServiceServicer_to_server(BrainServicer(recall, inspector), server)
+    feedback = Feedback(recall.db, remember, service_source=source)
+    servicer = BrainServicer(recall, inspector, feedback)
+    brain_pb2_grpc.add_BrainServiceServicer_to_server(servicer, server)
     bound = server.add_insecure_port(f"{settings.host}:{settings.port if port is None else port}")
     return server, health, bound

@@ -25,6 +25,14 @@ class MemoryStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     MEMORY_STATUS_ACTIVE: _ClassVar[MemoryStatus]
     MEMORY_STATUS_QUARANTINED: _ClassVar[MemoryStatus]
     MEMORY_STATUS_REJECTED: _ClassVar[MemoryStatus]
+
+class FeedbackKind(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    FEEDBACK_KIND_UNSPECIFIED: _ClassVar[FeedbackKind]
+    FEEDBACK_KIND_CORRECTION: _ClassVar[FeedbackKind]
+    FEEDBACK_KIND_RATING: _ClassVar[FeedbackKind]
+    FEEDBACK_KIND_APPROVAL_REJECTED: _ClassVar[FeedbackKind]
+    FEEDBACK_KIND_COMMENT: _ClassVar[FeedbackKind]
 STEP_TYPE_UNSPECIFIED: StepType
 STEP_TYPE_PLANNING: StepType
 STEP_TYPE_ACTING: StepType
@@ -34,6 +42,11 @@ MEMORY_STATUS_UNSPECIFIED: MemoryStatus
 MEMORY_STATUS_ACTIVE: MemoryStatus
 MEMORY_STATUS_QUARANTINED: MemoryStatus
 MEMORY_STATUS_REJECTED: MemoryStatus
+FEEDBACK_KIND_UNSPECIFIED: FeedbackKind
+FEEDBACK_KIND_CORRECTION: FeedbackKind
+FEEDBACK_KIND_RATING: FeedbackKind
+FEEDBACK_KIND_APPROVAL_REJECTED: FeedbackKind
+FEEDBACK_KIND_COMMENT: FeedbackKind
 
 class RecallRequest(_message.Message):
     __slots__ = ("tenant", "employee_id", "run_id", "step", "query", "step_type", "token_budget", "as_of")
@@ -245,3 +258,31 @@ class ReviewMemoryResponse(_message.Message):
     MEMORY_FIELD_NUMBER: _ClassVar[int]
     memory: InspectedMemory
     def __init__(self, memory: _Optional[_Union[InspectedMemory, _Mapping]] = ...) -> None: ...
+
+class FeedbackRequest(_message.Message):
+    __slots__ = ("tenant", "idempotency_key", "employee_id", "run_id", "kind", "text", "rating")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    RUN_ID_FIELD_NUMBER: _ClassVar[int]
+    KIND_FIELD_NUMBER: _ClassVar[int]
+    TEXT_FIELD_NUMBER: _ClassVar[int]
+    RATING_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    idempotency_key: _common_pb2.IdempotencyKey
+    employee_id: str
+    run_id: str
+    kind: FeedbackKind
+    text: str
+    rating: int
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., idempotency_key: _Optional[_Union[_common_pb2.IdempotencyKey, _Mapping]] = ..., employee_id: _Optional[str] = ..., run_id: _Optional[str] = ..., kind: _Optional[_Union[FeedbackKind, str]] = ..., text: _Optional[str] = ..., rating: _Optional[int] = ...) -> None: ...
+
+class FeedbackResponse(_message.Message):
+    __slots__ = ("feedback_id", "proposal_id", "credited")
+    FEEDBACK_ID_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    CREDITED_FIELD_NUMBER: _ClassVar[int]
+    feedback_id: str
+    proposal_id: str
+    credited: int
+    def __init__(self, feedback_id: _Optional[str] = ..., proposal_id: _Optional[str] = ..., credited: _Optional[int] = ...) -> None: ...
