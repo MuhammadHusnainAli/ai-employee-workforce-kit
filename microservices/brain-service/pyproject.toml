@@ -1,7 +1,7 @@
 [project]
 name = "brain-service"
 version = "0.1.0"
-description = "Python service template. `just new-service python <name>` copies and renames it."
+description = "Each employee's brain: recall (read path) and the governed write path."
 requires-python = ">=3.13"
 license = "Apache-2.0"
 dependencies = [
@@ -21,6 +21,8 @@ dependencies = [
     "brain-core",
     "httpx>=0.28",
     "valkey>=6",
+    # The extractor calls the Model Gateway through the harness (ADR-0016)
+    "agent-harness-adk>=0.2,<0.3",
 ]
 
 [project.scripts]

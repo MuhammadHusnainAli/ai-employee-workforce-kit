@@ -24,3 +24,10 @@ class Settings(ServiceSettings):
     model_gateway_url: str = "http://127.0.0.1:7007/v1"
     model_gateway_key: str = "sk-wfk-local"
     embedding_model: str = "embeddings"
+
+    # The write path's extractor: "baseline" (the episode only, no model) or "gateway" (the
+    # episode plus facts, preferences and lessons from `extraction_model`).
+    extractor: Literal["baseline", "gateway"] = "baseline"
+    extraction_model: str = "claude-haiku"
+    # What happens to personal data in memories when a tenant has not set its own policy.
+    pii_policy: Literal["keep", "redact", "drop"] = "redact"
