@@ -31,6 +31,7 @@ logs service:
 e2e:
     bash deployments/e2e/remember-then-recall.sh
     bash deployments/e2e/feedback-to-rule.sh
+    bash deployments/e2e/channels-and-web.sh
 
 # Stop the local stack and the microservices (keeps data)
 down:

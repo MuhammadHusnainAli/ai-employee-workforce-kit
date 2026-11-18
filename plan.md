@@ -430,7 +430,7 @@ Notes for later phases:
 - The no-model entity extractor is coarse (capitalised names). Set `WFK_EXTRACTOR=gateway` for typed entities and
   relations from a real model.
 
-## Phase 7: Channels, sandbox and web app
+## Phase 7: Channels, sandbox and web app - DONE
 
 Channel Gateway (Rust): email, Slack, Teams, Google Chat, webhooks. Sandbox Runner (Rust): gVisor pods. Web app and
 public API (Next.js) with tasks, runs, approvals and the Brain Inspector.
@@ -443,6 +443,31 @@ public API (Next.js) with tasks, runs, approvals and the Brain Inspector.
 | 7.4 | Web app (Next.js, 7020): public REST API over the task, run and brain gRPC APIs, OpenAPI, server-sent task updates | `Add web app public API with OpenAPI and SSE` |
 | 7.5 | Web app pages: tasks, task detail with live run steps, approvals, Brain Inspector (memories, review, proposals, rules) | `Add web app pages for tasks and brain` |
 | 7.6 | All three in docker compose, and an end-to-end check: webhook to task to reply, a sandbox run, the web API | `Add end to end channel and web app test` |
+
+### Phase 7 outcome
+
+All 6 tasks committed. `just ci` passes in `microservices/channel-gateway`, `microservices/sandbox-runner` and
+`microservices/web-app`. `just e2e` runs three end-to-end checks through the containers, all passing.
+
+| | |
+|---|---|
+| Channel Gateway | Rust, port 7013, `channel_db`. Webhooks at `/hooks/{kind}/{binding_id}`, each checked the provider's way: Slack v0 HMAC with a 5 minute replay window, Teams HMAC, Google Chat's RS256 token against Google's keys and the app's audience, `X-WFK-Signature` for mail relays and generic webhooks. A message is stored once per provider message id, becomes a task through `CreateTask` (idempotent, retried with backoff), and the run's answer, approval request or failure goes back to its thread, signed, with a receipt. `DeliverMessage` posts into a thread directly |
+| Sandbox Runner | Rust, port 7015. `RunSandbox` runs allowlisted images (Python 3.13, Node 22) with no network, a read-only root, every capability dropped, user 65534, and memory, CPU, pids and time limits; idempotent on the key; `usage.sandbox` through the outbox. Locally the Docker API (runc, or `runsc` when installed); in production the gVisor pod spec, unit-tested but not run here |
+| Public API | Next.js route handlers at `/api/v1` over task-service, agent-runtime and brain-service, described by `contracts/openapi.json` (a test keeps routes and document identical), idempotency keys on writes, gRPC errors as HTTP statuses with retry guidance, server-sent task events per tenant |
+| Web app | Port 7020. Tasks (assign, live list), a task's page with its run step by step and the controls when it waits for a person, an inbox of everything waiting, and the Brain Inspector (what it knows and why, held memories, proposed rules, rules, corrections). Pages render their first data on the server and stay live through one shared event stream |
+| End to end | `deployments/e2e/channels-and-web.sh`: a forged webhook is refused; a signed one sent twice becomes one task, which completes; its answer reaches the sender once with a valid signature; the web app serves the task; the sandbox runs Python with no network |
+
+Notes for later phases:
+
+- Authentication is a development mode (one tenant, the person from `X-WFK-Actor`, an optional bearer token).
+  OIDC through Keycloak is still to wire in front of the API.
+- Outbound channel sends go straight to the provider. Routing them through the Integration Service (Phase 4.3) is
+  still open.
+- The sandbox container reaches Docker through its socket and runs as root, locally only. gVisor is not installed
+  on this machine; the pod spec is what production runs.
+- Test fixtures include an RSA key that signs only fake Google Chat tokens; secret scanners may flag it on push.
+- The web app's dev dependencies carry a ReDoS advisory in `picomatch` (through vitest), with no fixed version yet.
+  Production dependencies have none.
 
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 

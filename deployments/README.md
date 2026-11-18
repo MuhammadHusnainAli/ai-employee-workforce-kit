@@ -28,6 +28,9 @@ just nuke      # stop everything and delete all data
 | `brain-service` | memory and recall (gRPC) | 7014 |
 | `brain-ingest` | the brain's write path: finished runs become memories (Temporal queue `brain-ingest`) | none |
 | `task-service` | tasks (gRPC) and HTTP `/healthz` `/readyz` | 7016 |
+| `channel-gateway` | webhooks from Slack, Teams, Google Chat, email, webhooks to tasks and back | 7013 |
+| `sandbox-runner` | untrusted code in hardened containers (mounts the Docker socket; runs as root locally only) | 7015 |
+| `web-app` | the web app and public REST API (<http://127.0.0.1:7020>) | 7020 |
 
 - Each service has a one-shot `<name>-migrate` container (same image) that applies its migrations and creates its
   database; the service starts only after it succeeds.

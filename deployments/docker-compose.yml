@@ -344,6 +344,89 @@ services:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
 
+  channel-migrate:
+    <<: *migrate
+    image: wfk/channel-gateway:local
+    build: ../microservices/channel-gateway
+    command: ["migrate"]
+    environment:
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
+
+  # Webhooks from Slack, Teams, Google Chat, mail relays and others become tasks; answers go
+  # back to the thread. Providers post to http://<host>:7013/hooks/{kind}/{binding_id}.
+  channel-gateway:
+    <<: *service
+    image: wfk/channel-gateway:local
+    depends_on:
+      <<: *stack
+      channel-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
+      WFK_TASK_SERVICE_ADDR: http://task-service:7016
+    ports:
+      - "127.0.0.1:${WFK_CHANNEL_PORT:-7013}:7013"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "/service", "healthcheck"]
+
+  sandbox-migrate:
+    <<: *migrate
+    image: wfk/sandbox-runner:local
+    build: ../microservices/sandbox-runner
+    command: ["migrate"]
+    environment:
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/sandbox_db
+
+  # Runs untrusted code in hardened containers through the Docker socket: locally only. It runs
+  # as root to reach the socket; production uses gVisor pods instead (no socket, no root).
+  # Set WFK_SANDBOX_RUNTIME=runsc where gVisor is installed.
+  sandbox-runner:
+    <<: *service
+    image: wfk/sandbox-runner:local
+    user: "0:0"
+    depends_on:
+      <<: *stack
+      sandbox-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/sandbox_db
+      WFK_SANDBOX_RUNTIME: ${WFK_SANDBOX_RUNTIME:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:${WFK_SANDBOX_PORT:-7015}:7015"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "/service", "healthcheck"]
+
+  # The web app and public REST API: http://127.0.0.1:7020
+  web-app:
+    <<: *service
+    image: wfk/web-app:local
+    build: ../microservices/web-app
+    depends_on:
+      task-service:
+        condition: service_healthy
+      agent-runtime:
+        condition: service_healthy
+      brain-service:
+        condition: service_healthy
+    environment:
+      WFK_TASK_SERVICE_ADDR: task-service:7016
+      WFK_RUN_SERVICE_ADDR: agent-runtime:7012
+      WFK_BRAIN_SERVICE_ADDR: brain-service:7014
+      WFK_NATS_URL: nats://nats:4222
+      WFK_AUTH_MODE: dev
+      WFK_API_TOKEN: ${WFK_API_TOKEN:-}
+    ports:
+      - "127.0.0.1:${WFK_WEB_PORT:-7020}:7020"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7020/healthz >/dev/null"]
+
 volumes:
   pg-data:
   nats-data:
