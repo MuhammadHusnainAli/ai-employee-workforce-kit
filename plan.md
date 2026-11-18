@@ -358,7 +358,7 @@ Notes for later phases:
 
 ---
 
-## Phase 5: Brain step 2 (write pipeline, governance, Inspector)
+## Phase 5: Brain step 2 (write pipeline, governance, Inspector) - DONE
 
 `brain-ingest` deployable, extractor through the Model Gateway, governance filter (trust tags, secret and PII drop,
 instructions stored as data), resolver, one-transaction commit with outbox, batch embeddings, Brain Inspector API.
@@ -371,6 +371,29 @@ instructions stored as data), resolver, one-transaction commit with outbox, batc
 | 5.4 | `brain-ingest` deployable: `run.completed` and `run.failed` start `BrainIngest` on queue `brain-ingest`, batch embeddings, own container | `Add brain ingest workflow fed by run events` |
 | 5.5 | Brain Inspector API: list and explain memories, history, correct, delete, review flagged and quarantined | `Add Brain Inspector API` |
 | 5.6 | End-to-end: a task's run is remembered and recalled by the next run, through the containers | `Add end to end remember then recall test` |
+
+### Phase 5 outcome
+
+All 6 tasks committed. `just ci` passes in `microservices/brain-service` (74 unit, 56 integration tests, including
+the latency gate) and in `microservices/agent-runtime` (118 unit, 52 integration). `just e2e` passes through the
+containers.
+
+| | |
+|---|---|
+| Governance | Rust, in `brain-core/src/govern.rs`: secrets always removed (provider keys, tokens, JWTs, private keys, passwords in URLs and `key=value` pairs); PII (email, phone, card with a Luhn check, SSN, IBAN) kept, redacted or dropped by tenant policy (`tenant_policies`); text that tries to instruct the employee is flagged, stored as data, and quarantined unless a person wrote it; trust tag by origin |
+| Extractor | The episode itself always (no model). With `WFK_EXTRACTOR=gateway`, facts, preferences and lessons from the Model Gateway through agent-harness-adk, as structured output validated against a schema; output that does not validate is dropped, never half-used |
+| Resolver and commit | Near-duplicates reinforce the existing memory; a newer value of the same `fact_key` supersedes the old one (validity closed, history kept); a weaker contradiction is quarantined for a human. Memories, episodes and `brain.memory_committed` in one transaction, idempotent on the source event (`ingest_log`, ids derived from the event id). Embeddings in one batch per source |
+| brain-ingest | `brain-service ingest`, its own container: `run.completed` / `run.failed` (now carrying task and output) start `BrainIngest` on the Temporal queue `brain-ingest`, workflow id from the event id; the outbox relays to the `BRAIN` stream. A model outage is retried by the activity; recall never waits for any of it |
+| Inspector | gRPC on brain-api: `ListMemories` (with trust, source and governance findings), `GetMemory` (history chain and episode), `CorrectMemory` (human-verified, supersedes, idempotent), `DeleteMemory`, `ReviewMemory` (approving a contradiction supersedes the fact). Quarantined memories are never recalled |
+| End to end | `just e2e` (`deployments/e2e/remember-then-recall.sh`): task A runs, brain-ingest stores its episode, task B of the same employee runs and its ledger cites a recall that includes A's memory, and the Inspector shows it |
+
+Notes for later phases:
+
+- The Brain Inspector UI is part of the web app (Phase 7); the API is ready.
+- With the full container stack running on one laptop, the recall latency gate can miss under CPU contention; it
+  passes with the service containers stopped. Run `just ci` in brain-service with only `just up`.
+- Signals from task-service are set-style and can be repeated in a rare failure window (Phase 4.2 notes); the
+  Inspector's corrections and reviews are idempotent or guarded by a precondition.
 
 ## Phase 6: Brain steps 3 and 4 (semantic graph, rules from feedback)
 

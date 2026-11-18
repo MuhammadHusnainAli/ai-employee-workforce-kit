@@ -62,8 +62,15 @@ async def work(settings: Settings, *, prefix: str, model: str) -> None:
     client = await temporal_client(settings)
     db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
     await db.open()
+    from agent_runtime.adapters.brain import BrainClient
+
+    brain = (
+        BrainClient(settings.brain_address, valkey_url=settings.valkey_url or None)
+        if settings.brain_address
+        else None
+    )
     activities = HarnessActivities(
-        employees=directory(model), provider=provider_for(model, settings)
+        employees=directory(model), provider=provider_for(model, settings), brain=brain
     )
     ledger = LedgerActivities(Ledger(db, f"//{settings.cell_id}/{settings.service_name}"))
     stop = asyncio.Event()

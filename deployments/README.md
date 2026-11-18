@@ -9,6 +9,7 @@ just up-all    # the stack plus every microservice, built from its own Dockerfil
 just ps        # status
 just logs <service>      # follow one service, e.g. just logs agent-runtime-worker
 just restart <service>   # rebuild and restart one service after a code change
+just e2e       # end-to-end checks against the running containers
 just down      # stop everything, keep data
 just nuke      # stop everything and delete all data
 ```

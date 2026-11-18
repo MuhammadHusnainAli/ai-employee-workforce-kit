@@ -27,6 +27,10 @@ restart service:
 logs service:
     {{compose}} --profile services logs -f {{service}}
 
+# End-to-end checks against the running containers (needs: just up-all)
+e2e:
+    bash deployments/e2e/remember-then-recall.sh
+
 # Stop the local stack and the microservices (keeps data)
 down:
     {{compose}} --profile services down

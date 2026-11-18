@@ -265,6 +265,7 @@ services:
     environment: &agent-runtime-env
       <<: *service-env
       WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
+      WFK_BRAIN_ADDRESS: brain-service:7014
     ports:
       - "127.0.0.1:${WFK_AGENT_RUNTIME_PORT:-7012}:7012"
     healthcheck:

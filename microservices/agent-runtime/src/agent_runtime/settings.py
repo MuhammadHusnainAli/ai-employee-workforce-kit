@@ -25,3 +25,8 @@ class Settings(ServiceSettings):
     s3_secret_key: str = "wfk-local-secret"  # noqa: S105 - local stack only; set WFK_S3_SECRET_KEY
     payload_bucket: str = "wfk-payloads"
     claim_check_threshold_bytes: int = 128 * 1024
+
+    # The employee's brain (brain-service, Recall). Empty: runs without long-term memory.
+    brain_address: str = "127.0.0.1:7014"
+    # Pinned identity cache the brain client falls back to when Recall is slow. Empty: off.
+    valkey_url: str = "redis://127.0.0.1:7005/0"

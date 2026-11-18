@@ -56,6 +56,7 @@ From the repo root:
 ```
 just up                          # start the local stack and wait until healthy
 just up-all                      # the stack plus every microservice in containers
+just e2e                         # end-to-end checks against those containers
 just down                        # stop it (keeps data);  just nuke  deletes data
 just new-service python <name>   # or: just new-service rust <name>
 ```
