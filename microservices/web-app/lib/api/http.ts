@@ -146,3 +146,24 @@ export function employee(v: string): string {
         throw bad("employee id must be 1 to 100 letters, digits, '.', '_' or '-'");
     return v;
 }
+
+/**
+ * The caller for server-rendered pages' first read. Reads do not depend on who the person is,
+ * only on the tenant; actions always go through /api/v1 with the person's own header.
+ */
+export function pageReader(): Caller {
+    return {
+        tenantId: process.env.WFK_DEV_TENANT ?? "0193a7c4-0000-7000-8000-00000000d3e0",
+        actorId: "web-app",
+    };
+}
+
+/** Run a read for a server-rendered page; a backend that is down gives null, not a crash. */
+export async function firstRead<T>(fn: () => Promise<T>): Promise<T | null> {
+    try {
+        return await fn();
+    } catch (err) {
+        console.error("first read", err);
+        return null;
+    }
+}

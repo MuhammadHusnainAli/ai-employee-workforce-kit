@@ -34,6 +34,19 @@ the contract: `tests/contract.test.ts` fails when a route exists without it or i
 - Every backend call has a 5 s deadline.
 - `/healthz` (liveness) and `/readyz` (task-service, agent-runtime and brain-service reachable).
 
+## Pages
+
+| Page          | For                                                                                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tasks`      | Assign work to an employee and watch every task change live                                                                                                    |
+| `/tasks/{id}` | What was asked, the run step by step (growing live), the answer; approve, decline, reply or stop                                                               |
+| `/approvals`  | Everything waiting for a person, oldest first, with approve and decline in place                                                                               |
+| `/brain`      | The Brain Inspector: what the employee knows and why (trust, source, what governance removed), what is held for review, proposed rules, rules, and corrections |
+
+Pages render their first data on the server with the same handlers as the API, then use `/api/v1` from the
+browser like any other client; one shared event stream per tab keeps them live. "Signed in as" names the person
+(`X-WFK-Actor`) while authentication is in development mode, so two people can try the four-eyes rule.
+
 ## Authentication
 
 Production puts OIDC (Keycloak) in front: not wired yet. Locally (`WFK_AUTH_MODE=dev`, the default) every request
@@ -70,7 +83,8 @@ browser reconnects.
 
 ```
 web-app/
-  app/api/v1/        route handlers (thin: caller, input, handler)
+  app/               pages (tasks, approvals, brain) and app/api/v1 route handlers
+  components/        the pages' client views, the shared live stream, the API client
   app/healthz, readyz
   lib/api/           handlers over the backends, HTTP plumbing, the live stream
   lib/api-client/    gRPC clients from contracts/proto
