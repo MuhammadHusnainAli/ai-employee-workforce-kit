@@ -57,3 +57,14 @@ class Governed(BaseModel):
     #: What the filter found: {"secret": 1, "email": 2}, and "instructions" when the text tries
     #: to instruct the employee (stored as data only, never a rule).
     findings: dict[str, int] = Field(default_factory=dict)
+
+
+class Committed(BaseModel):
+    """What one source added to the brain."""
+
+    source_event_id: uuid.UUID
+    memory_ids: list[uuid.UUID] = Field(default_factory=list)
+    #: inserted, reinforced, superseded, flagged, quarantined, dropped
+    counts: dict[str, int] = Field(default_factory=dict)
+    #: True when this event had been committed before: nothing was written now.
+    already: bool = False

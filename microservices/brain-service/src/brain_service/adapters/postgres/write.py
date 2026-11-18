@@ -12,25 +12,15 @@ import uuid
 from typing import Any
 
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, Field
 
 from wfk_platform.db import Conn, Database
 from wfk_platform.outbox import enqueue, new_event
 
 from brain_service.adapters.postgres.memories import vector_literal
-from brain_service.domain.write.model import Governed, PiiPolicy, Source
+from brain_service.domain.write.model import Committed, Governed, PiiPolicy, Source
 from brain_service.domain.write.resolve import Existing, resolve
 
 EVENT = "brain.memory_committed"
-
-
-class Committed(BaseModel):
-    source_event_id: uuid.UUID
-    memory_ids: list[uuid.UUID] = Field(default_factory=list)
-    #: inserted, reinforced, superseded, flagged, quarantined, dropped
-    counts: dict[str, int] = Field(default_factory=dict)
-    #: True when this event had been committed before: nothing was written now.
-    already: bool = False
 
 
 def memory_id(source: Source, index: int) -> uuid.UUID:

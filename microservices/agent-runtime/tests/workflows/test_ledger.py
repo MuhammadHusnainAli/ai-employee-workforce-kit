@@ -145,3 +145,19 @@ async def test_a_whole_run_is_in_the_ledger(client: Client, run_db: Database) ->
         *["run.step_completed"] * 4,
         "run.completed",
     ]
+
+
+async def test_terminal_event_carries_the_task_and_output(run_db: Database) -> None:
+    """brain-ingest remembers a run from run.completed alone."""
+    led, run_id = await started(run_db)
+    long_output = "y" * 20_000
+    assert await led.record(entry(run_id, 0, status="completed", output=long_output))
+    async with run_db.tx() as conn:
+        cur = await conn.execute(
+            "SELECT data FROM outbox WHERE subject = %s AND type = 'run.completed'", (run_id,)
+        )
+        row = await cur.fetchone()
+    assert row is not None
+    data = row["data"]
+    assert data["task"] == "x" and data["employee_id"] == "sam"
+    assert len(data["output"]) == ledger_module.EVENT_TEXT_LIMIT, "clipped, so events stay small"

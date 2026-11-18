@@ -1,4 +1,4 @@
-"""Entry point: one gRPC server on one port (health included), plus subcommands."""
+"""Entry point: brain-api (Recall over gRPC, one port) or brain-ingest (the write path)."""
 
 from __future__ import annotations
 
@@ -59,11 +59,27 @@ async def serve(settings: Settings) -> None:
         telemetry.shutdown()
 
 
-def run() -> None:
+def run(argv: list[str] | None = None) -> None:
+    """`brain-service` (or `serve`): brain-api, Recall over gRPC.
+    `brain-service ingest`: brain-ingest, the write path (Temporal worker, run events)."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="brain-service")
+    sub = parser.add_subparsers(dest="cmd")
+    sub.add_parser("serve", help="brain-api: Recall over gRPC (the default)")
+    sub.add_parser("ingest", help="brain-ingest: remember finished runs")
+    args = parser.parse_args(argv)
     settings = Settings()
+    if args.cmd == "ingest":
+        from brain_service.ingest import run_ingest
+
+        main = run_ingest(settings)
+    else:
+        main = serve(settings)
     # psycopg's async driver needs a selector loop; Windows defaults to Proactor.
     factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
-    asyncio.run(serve(settings), loop_factory=factory)
+    with contextlib.suppress(KeyboardInterrupt):
+        asyncio.run(main, loop_factory=factory)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,8 @@ dependencies = [
     "valkey>=6",
     # The extractor calls the Model Gateway through the harness (ADR-0016)
     "agent-harness-adk>=0.2,<0.3",
+    # brain-ingest: the write path as a Temporal workflow (queue brain-ingest)
+    "temporalio>=1.36,<2",
 ]
 
 [project.scripts]

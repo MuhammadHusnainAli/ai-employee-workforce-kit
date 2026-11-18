@@ -302,6 +302,23 @@ services:
       <<: *grpc-health
       test: ["CMD", "python", "-c", *grpc-probe, "7014"]
 
+  # The write path: finished runs (RUNS stream) become memories through BrainIngest on the
+  # Temporal queue brain-ingest. No port. WFK_BRAIN_EXTRACTOR=gateway adds facts, preferences
+  # and lessons from a real model (WFK_BRAIN_EXTRACTION_MODEL, needs ANTHROPIC_API_KEY).
+  brain-ingest:
+    <<: *service
+    image: wfk/brain-service:local
+    depends_on:
+      <<: *stack
+      brain-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
+      WFK_EXTRACTOR: ${WFK_BRAIN_EXTRACTOR:-baseline}
+      WFK_EXTRACTION_MODEL: ${WFK_BRAIN_EXTRACTION_MODEL:-claude-haiku}
+    command: ["brain-service", "ingest"]
+
   task-migrate:
     <<: *migrate
     image: wfk/task-service:local

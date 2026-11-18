@@ -12,7 +12,7 @@ from wfk_platform.db import Database
 from brain_service.adapters.modelgw.embeddings import Embedder
 from brain_service.adapters.postgres import write
 from brain_service.domain.write.governance import govern
-from brain_service.domain.write.model import Candidate, Governed, PiiPolicy, Source
+from brain_service.domain.write.model import Candidate, Committed, Governed, PiiPolicy, Source
 
 
 class Remember:
@@ -24,7 +24,7 @@ class Remember:
         self.default_pii: PiiPolicy = default_pii
         self.service_source = service_source
 
-    async def __call__(self, source: Source, candidates: list[Candidate]) -> write.Committed:
+    async def __call__(self, source: Source, candidates: list[Candidate]) -> Committed:
         policy = await write.pii_policy(self.db, source.tenant_id, self.default_pii)
         governed: list[Governed] = []
         for c in candidates:

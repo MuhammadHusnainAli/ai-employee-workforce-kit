@@ -15,6 +15,12 @@ from wfk_platform.outbox import enqueue, new_event
 from agent_runtime.workflows.types import LedgerEntry, StartRecord
 
 TERMINAL = {"completed": "run.completed", "failed": "run.failed"}
+#: Task and output carried on run.completed / run.failed, so events stay small.
+EVENT_TEXT_LIMIT = 8000
+
+
+def _clip(text: str) -> str:
+    return text if len(text) <= EVENT_TEXT_LIMIT else text[: EVENT_TEXT_LIMIT - 3] + "..."
 
 
 class Ledger:
@@ -80,16 +86,22 @@ class Ledger:
                 new_event("run.step_completed", self.source, e.tenant_id, data, subject=e.run_id),
             )
             if e.status in TERMINAL:
+                # The task and the output go with the terminal event: brain-ingest remembers
+                # the run from it without reading this service's tables.
+                cur = await conn.execute("SELECT task FROM runs WHERE run_id = %s", (e.run_id,))
+                row = await cur.fetchone()
+                terminal = {
+                    **data,
+                    "stop_reason": e.stop_reason,
+                    "cost_usd": e.total_cost_usd,
+                    "task": _clip(row["task"] if row else ""),
+                    "output": _clip(e.output or ""),
+                }
                 await enqueue(
                     conn,
-                    new_event(
-                        TERMINAL[e.status],
-                        self.source,
-                        e.tenant_id,
-                        {**data, "stop_reason": e.stop_reason, "cost_usd": e.total_cost_usd},
-                        subject=e.run_id,
-                    ),
-                )
+                    new_event(TERMINAL[e.status], self.source, e.tenant_id, terminal,
+                              subject=e.run_id),
+                )  # fmt: skip
         return True
 
     @staticmethod

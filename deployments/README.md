@@ -25,6 +25,7 @@ just nuke      # stop everything and delete all data
 | `agent-runtime` | RunService, read API for runs (gRPC) | 7012 |
 | `agent-runtime-worker` | Temporal workers, `run.*` relay, `task.*` inbox | none |
 | `brain-service` | memory and recall (gRPC) | 7014 |
+| `brain-ingest` | the brain's write path: finished runs become memories (Temporal queue `brain-ingest`) | none |
 | `task-service` | tasks (gRPC) and HTTP `/healthz` `/readyz` | 7016 |
 
 - Each service has a one-shot `<name>-migrate` container (same image) that applies its migrations and creates its
