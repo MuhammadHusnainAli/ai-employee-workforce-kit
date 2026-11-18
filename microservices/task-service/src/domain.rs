@@ -62,7 +62,6 @@ pub fn run_update(event_type: &str, data: &Value) -> Option<RunUpdate> {
         .and_then(Value::as_str)
         .unwrap_or_default()
         .to_string();
-    let kind = data.get("kind").and_then(Value::as_str).unwrap_or_default();
     match event_type {
         "run.started" => Some(RunUpdate {
             seq: -1,
@@ -70,10 +69,12 @@ pub fn run_update(event_type: &str, data: &Value) -> Option<RunUpdate> {
             stop_reason: String::new(),
         }),
         "run.step_completed" => {
-            let status = match data.get("status").and_then(Value::as_str)? {
-                "failed" if kind == "cancelled" => Status::Cancelled,
-                other => Status::parse(other)?,
-            };
+            let status = Status::parse(data.get("status").and_then(Value::as_str)?)?;
+            if status.is_finished() {
+                // The run.completed / run.failed that follows finishes the task, with the
+                // stop reason the step event does not carry.
+                return None;
+            }
             Some(RunUpdate {
                 seq: seq?,
                 status,
@@ -122,9 +123,14 @@ mod tests {
         )
         .unwrap();
         assert_eq!((waiting.seq, waiting.status), (1, Status::WaitingHuman));
+        let last_step = json!({"seq": 4, "status": "completed", "kind": "final"});
+        assert!(
+            run_update("run.step_completed", &last_step).is_none(),
+            "only run.completed / run.failed finish a task"
+        );
         let cancelled = run_update(
-            "run.step_completed",
-            &json!({"seq": 4, "status": "failed", "kind": "cancelled"}),
+            "run.failed",
+            &json!({"seq": 4, "status": "failed", "stop_reason": "cancelled"}),
         )
         .unwrap();
         assert_eq!(cancelled.status, Status::Cancelled);
