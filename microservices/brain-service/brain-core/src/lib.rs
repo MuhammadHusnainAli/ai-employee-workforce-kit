@@ -13,6 +13,8 @@
 
 use std::collections::HashMap;
 
+pub mod govern;
+
 /// The RRF constant. 60 is the value from the original paper and the common default.
 pub const RRF_K: f64 = 60.0;
 
@@ -228,8 +230,28 @@ mod python {
         Ok((out, used))
     }
 
+    /// The write-path governance filter: (text or None when dropped, findings, instructions).
+    #[pyfunction]
+    #[pyo3(signature = (text, pii_policy = "redact"))]
+    fn govern(text: &str, pii_policy: &str) -> PyResult<GovernResult> {
+        let policy = crate::govern::PiiPolicy::parse(pii_policy)
+            .ok_or_else(|| PyValueError::new_err(format!("unknown PII policy {pii_policy:?}")))?;
+        let g = crate::govern::govern(text, policy);
+        Ok((g.text, g.findings.into_iter().collect(), g.instructions))
+    }
+
+    /// The trust tag for a source.
+    #[pyfunction]
+    fn trust_for(source: &str) -> &'static str {
+        crate::govern::trust_for(source)
+    }
+
+    type GovernResult = (Option<String>, HashMap<String, u32>, bool);
+
     #[pymodule]
     fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
+        m.add_function(wrap_pyfunction!(govern, m)?)?;
+        m.add_function(wrap_pyfunction!(trust_for, m)?)?;
         m.add_function(wrap_pyfunction!(fuse, m)?)?;
         m.add_function(wrap_pyfunction!(score, m)?)?;
         m.add_function(wrap_pyfunction!(rank_and_pack, m)?)?;

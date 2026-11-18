@@ -363,6 +363,15 @@ Notes for later phases:
 `brain-ingest` deployable, extractor through the Model Gateway, governance filter (trust tags, secret and PII drop,
 instructions stored as data), resolver, one-transaction commit with outbox, batch embeddings, Brain Inspector API.
 
+| # | Task | Commit message |
+|---|---|---|
+| 5.1 | Governance filter in brain-core (Rust): secret drop, PII policy (keep, redact, drop), instruction detection, trust tag by source | `Add brain governance filter in Rust core` |
+| 5.2 | Extractor through the Model Gateway: structured output validated against a schema, deterministic fallback, idempotent on the source event | `Add brain extractor through the model gateway` |
+| 5.3 | Resolver and commit: near-duplicate merge, supersede or flag on contradiction, memories plus `brain.memory_committed` in one transaction | `Add brain resolver and transactional memory commit` |
+| 5.4 | `brain-ingest` deployable: `run.completed` and `run.failed` start `BrainIngest` on queue `brain-ingest`, batch embeddings, own container | `Add brain ingest workflow fed by run events` |
+| 5.5 | Brain Inspector API: list and explain memories, history, correct, delete, review flagged and quarantined | `Add Brain Inspector API` |
+| 5.6 | End-to-end: a task's run is remembered and recalled by the next run, through the containers | `Add end to end remember then recall test` |
+
 ## Phase 6: Brain steps 3 and 4 (semantic graph, rules from feedback)
 
 Entities, relations, bi-temporal facts, recursive-CTE graph recall, `Feedback` API, rules from verified corrections,
