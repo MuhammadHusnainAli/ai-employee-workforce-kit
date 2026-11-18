@@ -15,6 +15,7 @@ from wfk_platform.db import Database
 from brain_service.adapters.cache.pinned import NoCache, PinnedCache, PinnedContext
 from brain_service.adapters.modelgw.embeddings import Embedder
 from brain_service.adapters.postgres import brain as brain_repo
+from brain_service.adapters.postgres.graph import GraphRetriever
 from brain_service.adapters.postgres.memories import MemoryRetrievers
 from brain_service.domain.memory.model import Memory
 from brain_service.domain.recall.planner import StepType, estimate_tokens, plan
@@ -61,6 +62,7 @@ class Recall:
         self.embedder = embedder
         self.cache: PinnedCache = cache or NoCache()
         self.stores = MemoryRetrievers(db)
+        self.graph = GraphRetriever(db)
 
     async def _embed(self, text: str) -> list[float] | None:
         try:
@@ -92,7 +94,7 @@ class Recall:
         budget_left = max(p.budget - pinned, 0)
 
         embedding = await self._embed(req.query)
-        retrievers: dict[str, Retriever] = {"fulltext": self.stores.fulltext}
+        retrievers: dict[str, Retriever] = {"fulltext": self.stores.fulltext, "graph": self.graph}
         if embedding is not None:
             retrievers["vector"] = self.stores.vector
         query = RecallQuery(

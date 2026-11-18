@@ -12,11 +12,14 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from typing import LiteralString
 
-from wfk_platform.db import Conn
+from wfk_platform.db import Conn, Database
 
-from brain_service.adapters.postgres.memories import vector_literal
-from brain_service.domain.graph.model import EntityRef
+from brain_service.adapters.postgres.memories import COLUMNS, VISIBLE, vector_literal
+from brain_service.domain.graph.model import EntityRef, normalize
+from brain_service.domain.memory.model import Memory
+from brain_service.domain.recall.retrieval import RecallQuery
 
 #: Cosine distance under which two names of the same type are one entity.
 SAME_ENTITY_DISTANCE = 0.12
@@ -150,3 +153,66 @@ async def close_relations_of(conn: Conn, memory_id: uuid.UUID, at: datetime | No
         (at, memory_id),
     )
     return cur.rowcount
+
+
+# ---- graph recall --------------------------------------------------------------------------
+
+#: Seeds per query and hops from them (brain.md section 3: up to 2 hops).
+MAX_SEEDS = 10
+MAX_HOPS = 2
+
+GRAPH_RECALL: LiteralString = """
+WITH RECURSIVE seeds AS (
+    SELECT id FROM entities
+     WHERE (employee_id = %(employee_id)s OR employee_id IS NULL)
+       AND length(norm_name) >= 2
+       AND (%(qnorm)s LIKE '%% ' || norm_name || ' %%'
+            OR EXISTS (SELECT 1 FROM unnest(aliases) a
+                        WHERE length(a) >= 2 AND %(qnorm)s LIKE '%% ' || a || ' %%'))
+     LIMIT %(max_seeds)s
+),
+walk (entity_id, depth) AS (
+    SELECT id, 0 FROM seeds
+    UNION
+    SELECT CASE WHEN r.src_id = w.entity_id THEN r.dst_id ELSE r.src_id END, w.depth + 1
+      FROM walk w
+      JOIN relations r ON r.src_id = w.entity_id OR r.dst_id = w.entity_id
+     WHERE w.depth < %(max_hops)s
+       AND (r.employee_id = %(employee_id)s OR r.employee_id IS NULL)
+       AND r.recorded_at <= %(as_of)s
+       AND r.valid_from <= %(as_of)s
+       AND (r.valid_to IS NULL OR r.valid_to > %(as_of)s)
+),
+reached AS (SELECT entity_id, min(depth) AS depth FROM walk GROUP BY entity_id),
+hits AS (
+    SELECT me.memory_id, min(re.depth) AS depth, count(*) AS n
+      FROM reached re JOIN memory_entities me ON me.entity_id = re.entity_id
+     GROUP BY me.memory_id
+)
+SELECT {columns} FROM memories JOIN hits ON hits.memory_id = memories.id
+ WHERE {visible}
+ ORDER BY hits.depth, hits.n DESC, memories.recorded_at DESC
+ LIMIT %(limit)s
+"""
+
+
+class GraphRetriever:
+    """Memories about the entities a query names, and about entities up to 2 hops away from
+    them through relations that held at `as_of`. Nearest first."""
+
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    async def __call__(self, q: RecallQuery) -> list[Memory]:
+        qnorm = f" {normalize(q.text)} "
+        if not qnorm.strip():
+            return []
+        sql = GRAPH_RECALL.format(columns=COLUMNS, visible=VISIBLE)
+        async with self.db.tenant_tx(q.tenant_id) as conn:
+            cur = await conn.execute(
+                sql,  # type: ignore[arg-type]  # built from constants only
+                {"employee_id": q.employee_id, "kinds": list(q.kinds), "as_of": q.as_of,
+                 "limit": q.limit, "qnorm": qnorm, "max_seeds": MAX_SEEDS,
+                 "max_hops": MAX_HOPS},
+            )  # fmt: skip
+            return [Memory.model_validate(r) for r in await cur.fetchall()]

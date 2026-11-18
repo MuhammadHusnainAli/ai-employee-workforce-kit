@@ -116,7 +116,7 @@ async def test_recall_pins_identity_ranks_and_cites(
     assert log is not None
     assert [str(i) for i in log["item_ids"]] == ids, "the log cites exactly what was returned"
     assert (log["run_id"], log["step"], log["query"]) == ("run-1", 3, "refund window for Acme")
-    assert set(log["retrievers"]) == {"vector", "fulltext"}
+    assert set(log["retrievers"]) == {"vector", "fulltext", "graph"}
 
 
 async def test_identity_is_pinned_even_when_the_budget_is_tiny(
