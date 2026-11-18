@@ -19,9 +19,10 @@ COLUMNS: LiteralString = (
     " source_ref, valid_from, valid_to, recorded_at"
 )
 
-# Visible to this employee, and true and known at as_of.
+# Visible to this employee, approved (not quarantined), and true and known at as_of.
 VISIBLE: LiteralString = """
     (employee_id = %(employee_id)s OR scope = 'tenant')
+    AND status = 'active'
     AND kind = ANY(%(kinds)s)
     AND recorded_at <= %(as_of)s
     AND valid_from <= %(as_of)s
