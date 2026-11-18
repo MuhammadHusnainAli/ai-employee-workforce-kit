@@ -119,14 +119,18 @@ def batch_worker(
     )  # fmt: skip
 
 
-async def ensure_schedule(client: Client, cron: str) -> None:
-    """The nightly ConsolidateAll. Created once; later starts leave it as it is."""
-    from temporalio.client import Schedule, ScheduleActionStartWorkflow, ScheduleSpec
-    from temporalio.service import RPCError
+async def ensure_schedule(client: Client, cron: str, schedule_id: str = SCHEDULE_ID) -> None:
+    """The nightly ConsolidateAll. Created once; later starts (every restart) leave it as is."""
+    from temporalio.client import (
+        Schedule,
+        ScheduleActionStartWorkflow,
+        ScheduleAlreadyRunningError,
+        ScheduleSpec,
+    )
 
     try:
         await client.create_schedule(
-            SCHEDULE_ID,
+            schedule_id,
             Schedule(
                 action=ScheduleActionStartWorkflow(
                     ConsolidateAll.run, id="brain-consolidate-all", task_queue=BATCH_QUEUE
@@ -135,9 +139,8 @@ async def ensure_schedule(client: Client, cron: str) -> None:
             ),
         )
         log.info("consolidation scheduled", extra={"cron": cron})
-    except RPCError as exc:  # already there
-        if "already" not in str(exc).lower():
-            raise
+    except ScheduleAlreadyRunningError:
+        pass  # created by an earlier start
 
 
 def worker(client: Client, activities: IngestActivities, task_queue: str = TASK_QUEUE) -> Worker:

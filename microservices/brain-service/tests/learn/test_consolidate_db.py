@@ -172,3 +172,16 @@ async def test_the_nightly_run_visits_every_due_employee(
     for who in (emp, other):
         done = await rows(brain_db, "SELECT counts FROM consolidations WHERE employee_id = %s", who)
         assert done and done[0]["counts"]["episodes"] == 2
+
+
+async def test_the_schedule_survives_restarts(client: Client) -> None:
+    """Every brain-ingest start ensures the schedule; the second must not fail."""
+    from brain_service.ingest import ensure_schedule
+
+    sid = f"test-consolidate-{uuid.uuid4().hex[:8]}"
+    await ensure_schedule(client, "0 2 * * *", sid)
+    await ensure_schedule(client, "0 2 * * *", sid)  # a restart
+    handle = client.get_schedule_handle(sid)
+    desc = await handle.describe()
+    assert desc.id == sid
+    await handle.delete()
