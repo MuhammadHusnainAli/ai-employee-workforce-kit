@@ -30,6 +30,7 @@ logs service:
 # End-to-end checks against the running containers (needs: just up-all)
 e2e:
     bash deployments/e2e/remember-then-recall.sh
+    bash deployments/e2e/feedback-to-rule.sh
 
 # Stop the local stack and the microservices (keeps data)
 down:

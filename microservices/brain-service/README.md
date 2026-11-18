@@ -24,19 +24,24 @@ Each employee's own brain: identity core, episodic memory, semantic graph, skill
 
 ## API
 Built (`contracts/proto/wfk/brain_service/v1/brain.proto`):
-- `Recall` (p95 < 300 ms)
+- `Recall` (p95 < 300 ms): vector, full-text and graph retrievers in parallel, fused in Rust; the identity core and
+  active rules always pinned
 - Brain Inspector: `ListMemories` (what the employee knows and why: trust, source, governance findings),
   `GetMemory` (history and episode), `CorrectMemory` (a human-verified version supersedes it),
   `DeleteMemory`, `ReviewMemory` (approve or reject quarantined memories)
+- `Feedback`: corrections (a person's proposes a rule), ratings (credit the memories a run recalled), rejected
+  approvals (become lessons), comments
+- Approvals and rules: `ListProposals`, `DecideProposal` (people only; high risk needs a second person),
+  `ListRules`, `RevokeRule`
 - Remembering is asynchronous, from events (see Write path), not an RPC call
 
-Later: `Feedback`, `Forget`, `GetBrain`, `ProposeChange` / `ApproveChange` / `Rollback`.
+Later: `Forget`, `GetBrain`, `Rollback`.
 
 ## Events
 | Direction | Stream | Subjects |
 |---|---|---|
 | In | `RUNS` (consumer `brain-ingest-runs`) | `run.completed` · `run.failed` (later `meeting.notes_ready`, `feedback.given`, `channel.message_received`) |
-| Out | `BRAIN` | `brain.memory_committed` (later `brain.version_promoted`, `brain.change_proposed`) |
+| Out | `BRAIN` | `brain.memory_committed` · `brain.memory_corrected` · `brain.memory_deleted` · `brain.memory_reviewed` · `brain.feedback_given` · `brain.change_proposed` · `brain.rule_activated` · `brain.change_rejected` · `brain.rule_revoked` |
 
 ## Write path (`brain-service ingest`, the `brain-ingest` deployable)
 1. A finished run (`run.completed` / `run.failed`, carrying the task and output) starts `BrainIngest` on the
@@ -82,9 +87,12 @@ brain-service/
     domain/memory/           memories, episodes, identity core, brain versions (no I/O)
     domain/recall/           planner, retrievers, fusion, packer
     domain/write/            sources, extraction schema, governance, resolver (no I/O)
+    domain/graph/            entities and relations, name normal form (no I/O)
+    domain/feedback.py       what each kind of feedback becomes (no I/O)
     remember.py              govern, embed in one batch, commit
     ingest.py                brain-ingest: Temporal worker, RUNS consumer, BRAIN relay
-    adapters/postgres/       repositories, pgvector and full-text queries, the write commit
+    adapters/postgres/       repositories, pgvector, full-text and graph queries, the write commit,
+                             the Inspector, feedback, proposals and rules
     adapters/modelgw/        embeddings and the extractor through the Model Gateway
     adapters/temporal/       the BrainIngest workflow and its activities
     adapters/cache/          Valkey identity-core cache

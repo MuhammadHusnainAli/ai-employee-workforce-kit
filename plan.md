@@ -395,7 +395,7 @@ Notes for later phases:
 - Signals from task-service are set-style and can be repeated in a rare failure window (Phase 4.2 notes); the
   Inspector's corrections and reviews are idempotent or guarded by a precondition.
 
-## Phase 6: Brain steps 3 and 4 (semantic graph, rules from feedback)
+## Phase 6: Brain steps 3 and 4 (semantic graph, rules from feedback) - DONE
 
 Entities, relations, bi-temporal facts, recursive-CTE graph recall, `Feedback` API, rules from verified corrections,
 approval flow.
@@ -408,6 +408,27 @@ approval flow.
 | 6.4 | `Feedback` API: corrections, ratings, rejected approvals; only a person's correction proposes a rule (`change_proposals`) | `Add Feedback API and rule proposals` |
 | 6.5 | Approval flow: list and decide proposals, active rules pinned in Recall and the Valkey cache, revoke | `Add rule approval flow and pinned rules` |
 | 6.6 | End-to-end: a correction becomes an approved rule pinned in the next run; graph recall finds a related entity | `Add end to end feedback to rule test` |
+
+### Phase 6 outcome
+
+All 6 tasks committed. `just ci` passes in `microservices/brain-service` (93 unit, 84 integration tests, including
+the latency gate with the graph retriever added). `just e2e` runs both end-to-end checks through the containers.
+
+| | |
+|---|---|
+| Graph | `entities` (normalised name, aliases, name embedding), bi-temporal `relations` that point at the fact stating them, `memory_entities`. Resolution by name, then alias, then embedding within the same type; a match learns the new spelling as an alias |
+| Write path | The extractor's schema gains entities, mentions and relations; without a model, the episode's capitalised names become entities. Entity names pass governance (a name carrying a secret, or personal data the tenant redacts, is left out; quarantined memories add nothing). Entity names are embedded in the same batch as the memories. Superseding or correcting a fact closes its relations; deleting it removes them |
+| Graph recall | A third retriever beside vector and full text, under the same 150 ms deadline: entities named in the query (whole words, names and aliases), then up to 2 hops by recursive CTE over relations valid at `as_of`, then the memories about what it reached, nearest first |
+| Feedback | `Brain.Feedback`: a person's correction proposes a rule (`change_proposals`, risk medium or high); corrections from employees or services are only recorded; a rating credits or blames the memories its run recalled (`recall_log`); a rejected approval becomes a human-verified lesson through the governed write path. Idempotent on the caller's key |
+| Rules | `ListProposals`, `DecideProposal` (people only; a high-risk rule needs a second person), `ListRules`, `RevokeRule`. Active rules, the employee's and the tenant's, are pinned in every recall and written through to the Valkey fallback; agent-runtime puts them in the prompt under "Rules you follow" |
+| End to end | `deployments/e2e/feedback-to-rule.sh`: Maria's correction of a run becomes a high-risk proposal she cannot approve herself; Omar approves; the next run's recall pins the rule, and its graph retriever finds the first run's episode through the project it named |
+
+Notes for later phases:
+
+- Rules are versioned only by their rows (created, revoked). Folding them into `brain_versions` with shadow and
+  canary comes with the safe promotion pipeline (Phase 8).
+- The no-model entity extractor is coarse (capitalised names). Set `WFK_EXTRACTOR=gateway` for typed entities and
+  relations from a real model.
 
 ## Phase 7: Channels, sandbox and web app
 
