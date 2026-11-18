@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package wfk.sandbox_runner.v1;
+
+import "wfk/common/v1/common.proto";
+
+// Runs untrusted or generated code with hard limits. Owned by sandbox-runner; callers copy this
+// file. Locally a hardened container (no network, read-only root, no capabilities, non-root,
+// CPU, memory, pids and time limits); in production a gVisor pod with the same limits.
+service SandboxService {
+  // Run code in an allowlisted image and return its output. Idempotent on idempotency_key: a
+  // retry returns the first outcome and never runs the code twice.
+  rpc RunSandbox(RunSandboxRequest) returns (RunSandboxResponse);
+}
+
+message Limits {
+  // 0 means the default: 10 s, 256 MB, 500 milli-CPU, 64 processes. Maximum 120 s, 2048 MB,
+  // 2000 milli-CPU, 256 processes.
+  uint64 timeout_ms = 1;
+  uint64 memory_mb = 2;
+  uint64 cpu_milli = 3;
+  int64 pids = 4;
+}
+
+message RunSandboxRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  // The run this is part of, for usage and audit.
+  string run_id = 3;
+  // An allowlisted image: "python-3.13" or "node-22".
+  string image = 4;
+  // The program, at most 64 KiB.
+  string code = 5;
+  // Its standard input, at most 64 KiB.
+  string stdin = 6;
+  Limits limits = 7;
+}
+
+message RunSandboxResponse {
+  string execution_id = 1;
+  int64 exit_code = 2;
+  // Each clipped to 256 KiB; output_truncated says when.
+  string stdout = 3;
+  string stderr = 4;
+  bool timed_out = 5;
+  bool oom_killed = 6;
+  bool output_truncated = 7;
+  uint64 duration_ms = 8;
+  // True when this is the stored outcome of an earlier call with the same key.
+  bool replayed = 9;
+}
