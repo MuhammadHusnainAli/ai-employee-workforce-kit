@@ -9,6 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from brain_service.domain.graph.model import EntityRef, RelationRef
 from brain_service.domain.memory.model import Kind, Trust
 
 Outcome = Literal["success", "failure", "escalated", "unknown"]
@@ -45,6 +46,9 @@ class Candidate(BaseModel):
     #: For semantic facts: a stable subject and attribute ("ana.meeting_day"), so a newer
     #: value of the same fact can supersede the older one.
     key: str | None = Field(default=None, max_length=200)
+    #: Who and what it is about (the semantic graph), and the relations it states.
+    mentions: list[EntityRef] = Field(default_factory=list, max_length=20)
+    relations: list[RelationRef] = Field(default_factory=list, max_length=10)
 
 
 class Governed(BaseModel):
@@ -57,6 +61,10 @@ class Governed(BaseModel):
     #: What the filter found: {"secret": 1, "email": 2}, and "instructions" when the text tries
     #: to instruct the employee (stored as data only, never a rule).
     findings: dict[str, int] = Field(default_factory=dict)
+    #: Mentions and relations that passed governance too (names with secrets or, under the
+    #: tenant's policy, personal data are left out). Empty for quarantined memories.
+    mentions: list[EntityRef] = Field(default_factory=list)
+    relations: list[RelationRef] = Field(default_factory=list)
 
 
 class Committed(BaseModel):

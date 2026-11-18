@@ -16,7 +16,9 @@ from psycopg.types.json import Jsonb
 from wfk_platform.db import Conn, Database
 from wfk_platform.outbox import enqueue, new_event
 
+from brain_service.adapters.postgres import graph
 from brain_service.adapters.postgres.memories import vector_literal
+from brain_service.domain.graph.model import normalize as graph_norm
 from brain_service.domain.write.model import Committed, Governed, PiiPolicy, Source
 from brain_service.domain.write.resolve import Existing, resolve
 
@@ -84,6 +86,31 @@ async def _insert(
         )  # fmt: skip
 
 
+async def _graph(
+    conn: Conn, source: Source, g: Governed, mid: uuid.UUID,
+    vectors: dict[str, list[float]], counts: dict[str, int],
+) -> None:  # fmt: skip
+    """Resolve the memory's entities, link them, and store the relations it states."""
+    ids: dict[str, uuid.UUID] = {}
+    for ref in g.mentions:
+        vec = vectors.get(ref.norm)
+        if vec is None:
+            continue  # no embedding for it (the batch left it out): skip, never guess
+        r = await graph.resolve_entity(conn, source.tenant_id, source.employee_id, ref, vec)
+        ids[ref.norm] = r.id
+        counts["entities"] += int(r.created)
+    await graph.link(conn, source.tenant_id, mid, list(ids.values()))
+    for rel in g.relations:
+        src, dst = ids.get(graph_norm(rel.subject)), ids.get(graph_norm(rel.object))
+        if src is None or dst is None:
+            continue
+        added = await graph.add_relation(
+            conn, source.tenant_id, source.employee_id, src, rel.predicate, dst,
+            memory_id=mid, trust=g.trust, confidence=g.candidate.confidence,
+        )  # fmt: skip
+        counts["relations"] += int(added is not None)
+
+
 async def commit(
     db: Database,
     source: Source,
@@ -92,6 +119,7 @@ async def commit(
     *,
     service_source: str,
     dropped: int = 0,
+    entity_embeddings: dict[str, list[float]] | None = None,
 ) -> Committed:
     """Resolve and store everything learned from one source, in one transaction."""
     if len(governed) != len(embeddings):
@@ -117,7 +145,9 @@ async def commit(
             )  # fmt: skip
 
         counts = {"inserted": 0, "reinforced": 0, "superseded": 0, "flagged": 0,
-                  "quarantined": 0, "dropped": dropped}  # fmt: skip
+                  "quarantined": 0, "dropped": dropped, "entities": 0,
+                  "relations": 0}  # fmt: skip
+        vectors = entity_embeddings or {}
         stored: list[uuid.UUID] = []
         for i, (g, vec) in enumerate(zip(governed, embeddings, strict=True)):
             emb = vector_literal(vec)
@@ -143,7 +173,11 @@ async def commit(
                 metadata["contradicts"] = str(decision.target)
                 counts["flagged"] += 1
             await _insert(conn, mid, source, g, emb, status, metadata)
+            if status == "active" and g.mentions:
+                await _graph(conn, source, g, mid, vectors, counts)
             if decision.action == "supersede":
+                assert decision.target is not None
+                await graph.close_relations_of(conn, decision.target)
                 await conn.execute(
                     "UPDATE memories SET superseded_by = %s,"
                     " valid_to = greatest(now(), valid_from + interval '1 microsecond')"

@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
+from brain_service.domain.graph.model import EntityRef, EntityType, RelationRef, normalize
 from brain_service.domain.write.model import Candidate, Source
 
 log = logging.getLogger(__name__)
@@ -32,11 +35,17 @@ class ExtractedItem(BaseModel):
     confidence: float = Field(default=0.7, ge=0, le=1)
     #: Facts and preferences: subject.attribute in lower case, e.g. "ana.meeting_day".
     key: str | None = Field(default=None, max_length=200)
+    #: Names of the entities it is about (listed in `entities`).
+    mentions: list[str] = Field(default_factory=list, max_length=20)
+    #: Relations it states between entities: {"subject", "type", "object"}.
+    relations: list[RelationRef] = Field(default_factory=list, max_length=10)
 
 
 class Extraction(BaseModel):
     """The structured output the model must return."""
 
+    #: People, organisations, projects, systems and places, with their other names.
+    entities: list[EntityRef] = Field(default_factory=list, max_length=30)
     facts: list[ExtractedItem] = Field(default_factory=list, max_length=MAX_CANDIDATES)
     preferences: list[ExtractedItem] = Field(default_factory=list, max_length=MAX_CANDIDATES)
     lessons: list[ExtractedItem] = Field(default_factory=list, max_length=MAX_CANDIDATES)
@@ -51,6 +60,10 @@ Return JSON matching the schema, with three lists:
 
 For facts and preferences, set key to subject.attribute in lower case ("ana.meeting_day"), so a
 newer value of the same fact can replace the old one.
+
+List the entities involved (people, organizations, projects, systems, places) with their types
+and other names. On each item, set mentions to the entity names it is about, and relations to
+what it states between them, e.g. {"subject": "Ana", "type": "works_at", "object": "Acme"}.
 
 Only include what is useful later. Leave lists empty when there is nothing worth keeping.
 
@@ -83,11 +96,62 @@ def baseline(source: Source) -> Candidate:
     return Candidate(
         kind="episodic",
         content="\n".join(parts),
+        mentions=mentions_in(f"{source.task}\n{source.output}"),
         # Failures teach more than routine successes.
         importance=0.7 if source.outcome in ("failure", "escalated") else 0.5,
         confidence=1.0,  # the platform recorded it; it happened
         origin="run",
     )
+
+
+# Capitalised words that start sentences or labels rather than name something.
+_NOT_NAMES = frozenset(
+    "a an and as at but by for from he her his i if in is it its me my no not of on or our "
+    "she so that the their them then there these they this to us was we what when where which "
+    "who why will with you your task outcome result yes ok please thanks hello hi dear "
+    "monday tuesday wednesday thursday friday saturday sunday january february march april "
+    "may june july august september october november december "
+    # verbs that start tasks ("Send Acme Corp the invoice")
+    "send book write check call email draft summarise summarize review prepare schedule create "
+    "update find ask tell reply plan fix ship pay deploy make get give add remove move "
+    "cancel confirm compare collect".split()
+)
+_NAME = re.compile(r"\b[A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*")
+_KIND_WORDS: dict[str, Literal["project", "organization", "system"]] = {
+    "project": "project", "corp": "organization", "inc": "organization", "ltd": "organization",
+    "gmbh": "organization", "llc": "organization", "api": "system", "service": "system",
+}  # fmt: skip
+
+
+def mentions_in(text: str, limit: int = 10) -> list[EntityRef]:
+    """Names in a text, without a model: runs of capitalised words, minus words that only
+    start sentences. Coarse on purpose: it gives the graph something to connect locally; the
+    model extractor names entities properly."""
+    found: dict[str, EntityRef] = {}
+    for m in _NAME.finditer(text):
+        words = m.group(0).split()
+        stripped = 0
+        while words and words[0].lower() in _NOT_NAMES:
+            words = words[1:]
+            stripped += 1
+        if not words or (len(words) == 1 and len(words[0]) < 3):
+            continue
+        before = text[: m.start()].rstrip(" \t")
+        at_start = not before or before[-1] in ".!?:;\n"
+        if len(words) == 1 and at_start and not stripped:
+            continue  # one capitalised word starting a sentence: most likely not a name
+        name = " ".join(words)
+        kind: EntityType = "other"
+        for w in words:
+            if w.lower() in _KIND_WORDS:
+                kind = _KIND_WORDS[w.lower()]
+                break
+        ref = EntityRef(name=name, type=kind)
+        if ref.norm and ref.norm not in found:
+            found[ref.norm] = ref
+        if len(found) >= limit:
+            break
+    return list(found.values())
 
 
 def parse(text: str) -> list[Candidate]:
@@ -100,6 +164,11 @@ def parse(text: str) -> list[Candidate]:
     except ValidationError as exc:
         log.warning("extractor output rejected", extra={"error": str(exc)[:300]})
         return []
+    known = {e.norm: e for e in ex.entities}
+
+    def refs(names: list[str]) -> list[EntityRef]:
+        return [known.get(normalize(n)) or EntityRef(name=n) for n in names if normalize(n)]
+
     out: list[Candidate] = []
     for kind, items in (("semantic", ex.facts), ("semantic", ex.preferences),
                         ("reflection", ex.lessons)):  # fmt: skip
@@ -112,6 +181,8 @@ def parse(text: str) -> list[Candidate]:
                     confidence=item.confidence,
                     origin="run",
                     key=item.key.strip().lower() if item.key and kind == "semantic" else None,
+                    mentions=refs(item.mentions),
+                    relations=item.relations if kind == "semantic" else [],
                 )
             )
     return out[:MAX_CANDIDATES]

@@ -18,6 +18,7 @@ from wfk_platform.db import Conn, Database
 from wfk_platform.outbox import enqueue, new_event
 
 from brain_service.adapters.modelgw.embeddings import Embedder
+from brain_service.adapters.postgres import graph
 from brain_service.adapters.postgres.memories import vector_literal
 from brain_service.domain.write.governance import govern
 from brain_service.domain.write.model import Candidate
@@ -197,6 +198,13 @@ class Inspector:
                 " WHERE id = %s",
                 (new_id, memory_id),
             )
+            # Still about the same entities; what the old text stated no longer holds.
+            await conn.execute(
+                "INSERT INTO memory_entities (memory_id, entity_id, tenant_id)"
+                " SELECT %s, entity_id, tenant_id FROM memory_entities WHERE memory_id = %s",
+                (new_id, memory_id),
+            )
+            await graph.close_relations_of(conn, memory_id)
             await self._event(
                 conn,
                 tenant_id,
@@ -237,6 +245,7 @@ class Inspector:
                     " WHERE id = %s AND valid_to IS NULL",
                     (memory_id, uuid.UUID(m.contradicts)),
                 )
+                await graph.close_relations_of(conn, uuid.UUID(m.contradicts))
             data = {"memory_id": str(memory_id), "approved": approve, "by": by}
             await self._event(conn, tenant_id, "brain.memory_reviewed", m.employee_id, data)
             return await _one(conn, memory_id)

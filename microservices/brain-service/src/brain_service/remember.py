@@ -31,12 +31,16 @@ class Remember:
             g = govern(c, policy)
             if g is not None:
                 governed.append(g)
-        embeddings = await self.embedder.embed([g.content for g in governed]) if governed else []
+        # One batch: every memory, then every distinct entity name.
+        names = list(dict.fromkeys(m.norm for g in governed for m in g.mentions))
+        texts = [g.content for g in governed] + names
+        vectors = await self.embedder.embed(texts) if texts else []
         return await write.commit(
             self.db,
             source,
             governed,
-            embeddings,
+            vectors[: len(governed)],
             service_source=self.service_source,
             dropped=len(candidates) - len(governed),
+            entity_embeddings=dict(zip(names, vectors[len(governed) :], strict=True)),
         )
