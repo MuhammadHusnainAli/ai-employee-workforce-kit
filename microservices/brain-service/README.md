@@ -23,13 +23,14 @@ Each employee's own brain: identity core, episodic memory, semantic graph, skill
 - documents / chunks (tenant knowledge)
 
 ## API
+Built (`contracts/proto/wfk/brain_service/v1/brain.proto`):
 - `Recall` (p95 < 300 ms)
-- `Remember` (async, idempotent)
-- `Feedback`
-- `Forget`
-- `GetBrain`
-- `ProposeChange` / `ApproveChange` / `Rollback`
-- `Inspect` (Brain Inspector UI)
+- Brain Inspector: `ListMemories` (what the employee knows and why: trust, source, governance findings),
+  `GetMemory` (history and episode), `CorrectMemory` (a human-verified version supersedes it),
+  `DeleteMemory`, `ReviewMemory` (approve or reject quarantined memories)
+- Remembering is asynchronous, from events (see Write path), not an RPC call
+
+Later: `Feedback`, `Forget`, `GetBrain`, `ProposeChange` / `ApproveChange` / `Rollback`.
 
 ## Events
 | Direction | Stream | Subjects |

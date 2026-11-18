@@ -27,8 +27,8 @@ if _version_not_supported:
 
 class BrainServiceStub:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
-    this file to call it. Later phases add Remember, Feedback, Forget, GetBrain, ProposeChange,
-    ApproveChange, Rollback and Inspect.
+    this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
+    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
     """
 
     def __init__(self, channel):
@@ -42,18 +42,82 @@ class BrainServiceStub:
                 request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallRequest.SerializeToString,
                 response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallResponse.FromString,
                 _registered_method=True)
+        self.ListMemories = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/ListMemories',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesResponse.FromString,
+                _registered_method=True)
+        self.GetMemory = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/GetMemory',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryResponse.FromString,
+                _registered_method=True)
+        self.CorrectMemory = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/CorrectMemory',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryResponse.FromString,
+                _registered_method=True)
+        self.DeleteMemory = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/DeleteMemory',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryResponse.FromString,
+                _registered_method=True)
+        self.ReviewMemory = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/ReviewMemory',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.FromString,
+                _registered_method=True)
 
 
 class BrainServiceServicer:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
-    this file to call it. Later phases add Remember, Feedback, Forget, GetBrain, ProposeChange,
-    ApproveChange, Rollback and Inspect.
+    this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
+    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
     """
 
     def Recall(self, request, context):
         """What this employee should have in mind for one step: the pinned identity core and the
         best memories that fit the token budget, each cited. p95 under 300 ms; degrades instead
         of failing when a store is slow or down.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListMemories(self, request, context):
+        """---- Brain Inspector: what an employee knows and why, and the human controls -----------
+
+        Memories, newest first, with why each is there (trust, source, governance findings).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetMemory(self, request, context):
+        """One memory, the versions it replaced and the one that replaced it, and its episode.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CorrectMemory(self, request, context):
+        """A person's correction: a new human-verified memory supersedes the old one (history kept).
+        Idempotent on idempotency_key. Secrets are still removed from the new text.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteMemory(self, request, context):
+        """Remove a memory for good (and its episode). Emits brain.memory_deleted.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ReviewMemory(self, request, context):
+        """Approve or reject a quarantined memory. Approving one that contradicts a fact supersedes it.
+        FAILED_PRECONDITION unless the memory is quarantined.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -67,6 +131,31 @@ def add_BrainServiceServicer_to_server(servicer, server):
                     request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallRequest.FromString,
                     response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallResponse.SerializeToString,
             ),
+            'ListMemories': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListMemories,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesResponse.SerializeToString,
+            ),
+            'GetMemory': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetMemory,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryResponse.SerializeToString,
+            ),
+            'CorrectMemory': grpc.unary_unary_rpc_method_handler(
+                    servicer.CorrectMemory,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryResponse.SerializeToString,
+            ),
+            'DeleteMemory': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteMemory,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryResponse.SerializeToString,
+            ),
+            'ReviewMemory': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReviewMemory,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'wfk.brain_service.v1.BrainService', rpc_method_handlers)
@@ -77,8 +166,8 @@ def add_BrainServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class BrainService:
     """Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
-    this file to call it. Later phases add Remember, Feedback, Forget, GetBrain, ProposeChange,
-    ApproveChange, Rollback and Inspect.
+    this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
+    add Feedback, Forget, GetBrain, ProposeChange, ApproveChange and Rollback.
     """
 
     @staticmethod
@@ -98,6 +187,141 @@ class BrainService:
             '/wfk.brain_service.v1.BrainService/Recall',
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallRequest.SerializeToString,
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.RecallResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListMemories(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/ListMemories',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListMemoriesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetMemory(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/GetMemory',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.GetMemoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CorrectMemory(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/CorrectMemory',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.CorrectMemoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteMemory(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/DeleteMemory',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.DeleteMemoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ReviewMemory(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/ReviewMemory',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ReviewMemoryResponse.FromString,
             options,
             channel_credentials,
             insecure,
