@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package wfk.task_service.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// The work inbox. Owned by task-service; callers copy this file.
+//
+// Commands that affect a run (cancel, approve, reply) are recorded here and published as events;
+// agent-runtime turns them into signals on the EmployeeRun workflow (workflow id = task id).
+// A task's status follows its run's events (run.*), applied in order.
+service TaskService {
+  // Idempotent on idempotency_key. Emits task.created, which starts the run.
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  // FAILED_PRECONDITION when the task is already finished.
+  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
+  // Answer an approval the run waits for. FAILED_PRECONDITION unless the task waits for a person.
+  rpc DecideApproval(DecideApprovalRequest) returns (DecideApprovalResponse);
+  // Answer a question the run waits for (a loop, a guardrail, a budget stop).
+  rpc ReplyToTask(ReplyToTaskRequest) returns (ReplyToTaskResponse);
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_QUEUED = 1;
+  TASK_STATUS_RUNNING = 2;
+  TASK_STATUS_WAITING_HUMAN = 3;
+  TASK_STATUS_COMPLETED = 4;
+  TASK_STATUS_FAILED = 5;
+  TASK_STATUS_CANCELLED = 6;
+}
+
+message Task {
+  string task_id = 1;
+  string employee_id = 2;
+  string title = 3;
+  string input = 4;
+  int32 priority = 5;
+  TaskStatus status = 6;
+  // Why the run stopped or waits: final, approval, loop, budget, error, cancelled...
+  string stop_reason = 7;
+  string created_by = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreateTaskRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string employee_id = 3;
+  string title = 4;
+  string input = 5;
+  // 0 (default) to 9 (most urgent).
+  int32 priority = 6;
+}
+
+message CreateTaskResponse {
+  Task task = 1;
+}
+
+message GetTaskRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string task_id = 2;
+}
+
+message GetTaskResponse {
+  Task task = 1;
+}
+
+message ListTasksRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // Filters; empty / unspecified means any.
+  string employee_id = 2;
+  TaskStatus status = 3;
+  // At most 200, default 50. Newest first.
+  int32 limit = 4;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+message CancelTaskRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string task_id = 2;
+  string reason = 3;
+}
+
+message CancelTaskResponse {
+  Task task = 1;
+}
+
+message DecideApprovalRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string task_id = 3;
+  bool approved = 4;
+  string note = 5;
+}
+
+message DecideApprovalResponse {
+  Task task = 1;
+}
+
+message ReplyToTaskRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string task_id = 3;
+  string text = 4;
+}
+
+message ReplyToTaskResponse {
+  Task task = 1;
+}

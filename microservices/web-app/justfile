@@ -1,0 +1,45 @@
+# Commands for this service. Run from this folder. Install just with: uv tool install rust-just
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+name := "web-app"
+
+default:
+    @just --list
+
+# Install dependencies exactly as locked
+sync:
+    npm ci
+
+# Run the app locally on port 7020 against the stack (just up-all, or the services on their ports)
+run:
+    npm run dev
+
+# Types and formatting
+lint:
+    npm run typecheck
+    npm run fmt-check
+
+# Format
+fmt:
+    npm run fmt
+
+# Unit tests (no services needed): handlers on fake backends, the OpenAPI contract
+test:
+    npm test
+
+# Production build (also checks every route compiles)
+build:
+    npm run build
+
+# Licences (ADR-0007) and known vulnerabilities in production dependencies
+licenses:
+    npm run licenses
+    npm audit --omit=dev
+
+# Build the image (context is this folder)
+image:
+    docker build -t {{name}} .
+
+# Everything CI checks
+ci: lint test build licenses

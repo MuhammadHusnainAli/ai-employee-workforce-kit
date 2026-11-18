@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package wfk.agent_runtime.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// Read access to the run ledger: what a run is doing and every step it took.
+// Owned by agent-runtime. Callers (the web app, the public API) copy this file to build a client.
+service RunService {
+  // One run. NOT_FOUND when it does not exist or belongs to another tenant (no leak either way).
+  rpc GetRun(GetRunRequest) returns (GetRunResponse);
+  // A run's ledger entries, oldest first, a page at a time.
+  rpc ListSteps(ListStepsRequest) returns (ListStepsResponse);
+}
+
+enum RunStatus {
+  RUN_STATUS_UNSPECIFIED = 0;
+  RUN_STATUS_RUNNING = 1;
+  RUN_STATUS_WAITING_HUMAN = 2;
+  RUN_STATUS_COMPLETED = 3;
+  RUN_STATUS_FAILED = 4;
+}
+
+message Run {
+  string run_id = 1;
+  string tenant_id = 2;
+  string employee_id = 3;
+  string task = 4;
+  RunStatus status = 5;
+  // Why the run stopped or waits: final, approval, budget, loop, max_steps, error, cancelled...
+  string stop_reason = 6;
+  // The answer when completed; the reason when failed.
+  string output = 7;
+  int32 steps = 8;
+  int64 input_tokens = 9;
+  int64 output_tokens = 10;
+  // US dollars, as a decimal string so no precision is lost.
+  string cost_usd = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message Step {
+  int32 seq = 1;
+  int32 step = 2;
+  // final, tool_calls, repair, ask_human, give_up, approved, declined, reply, budget, error, cancelled
+  string kind = 3;
+  RunStatus status_after = 4;
+  string model = 5;
+  // SHA-256 of exactly what the model was sent.
+  string prompt_hash = 6;
+  int32 input_tokens = 7;
+  int32 output_tokens = 8;
+  string cost_usd = 9;
+  google.protobuf.Struct decision = 10;
+  repeated google.protobuf.Struct results = 11;
+  google.protobuf.Timestamp created_at = 12;
+  // The brain recall this step's prompt cited (brain-service recall_log id). Empty if none.
+  string recall_id = 13;
+  // True when the step ran with degraded memory (brain or a retriever unavailable).
+  bool memory_degraded = 14;
+}
+
+message GetRunRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string run_id = 2;
+}
+
+message GetRunResponse {
+  Run run = 1;
+}
+
+message ListStepsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string run_id = 2;
+  // page_size defaults to 50, at most 200.
+  wfk.common.v1.PageRequest page = 3;
+}
+
+message ListStepsResponse {
+  repeated Step steps = 1;
+  wfk.common.v1.PageResponse page = 2;
+}
