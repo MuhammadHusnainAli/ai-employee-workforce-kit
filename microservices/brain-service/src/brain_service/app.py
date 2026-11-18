@@ -9,6 +9,7 @@ from wfk_platform import GrpcHealth, HealthRegistry, add_health
 
 from brain_service.adapters.postgres.feedback import Feedback
 from brain_service.adapters.postgres.inspect import Inspector
+from brain_service.adapters.postgres.rules import Rules
 from brain_service.api.brain import BrainServicer
 from brain_service.recall import Recall
 from brain_service.remember import Remember
@@ -32,7 +33,7 @@ def create_server(
         recall.db, recall.embedder, default_pii=settings.pii_policy, service_source=source
     )
     feedback = Feedback(recall.db, remember, service_source=source)
-    servicer = BrainServicer(recall, inspector, feedback)
+    servicer = BrainServicer(recall, inspector, feedback, Rules(recall.db, service_source=source))
     brain_pb2_grpc.add_BrainServiceServicer_to_server(servicer, server)
     bound = server.add_insecure_port(f"{settings.host}:{settings.port if port is None else port}")
     return server, health, bound

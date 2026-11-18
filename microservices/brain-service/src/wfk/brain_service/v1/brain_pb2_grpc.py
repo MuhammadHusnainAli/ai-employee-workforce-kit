@@ -72,6 +72,26 @@ class BrainServiceStub:
                 request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.SerializeToString,
                 response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.FromString,
                 _registered_method=True)
+        self.ListProposals = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/ListProposals',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsResponse.FromString,
+                _registered_method=True)
+        self.DecideProposal = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/DecideProposal',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalResponse.FromString,
+                _registered_method=True)
+        self.ListRules = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/ListRules',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesResponse.FromString,
+                _registered_method=True)
+        self.RevokeRule = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/RevokeRule',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.FromString,
+                _registered_method=True)
 
 
 class BrainServiceServicer:
@@ -139,6 +159,38 @@ class BrainServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListProposals(self, request, context):
+        """---- Approvals and rules (brain.md section 6, step 4) -------------------------------------
+
+        Proposed changes to an employee's brain, newest first.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DecideProposal(self, request, context):
+        """A person approves or rejects a pending proposal. Approving a rule makes it active: pinned in
+        every recall from then on. A high-risk rule needs someone other than its proposer.
+        FAILED_PRECONDITION when already decided, or for that four-eyes check. Humans only.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListRules(self, request, context):
+        """The employee's rules (its own and the tenant's).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RevokeRule(self, request, context):
+        """Stop a rule applying. Humans only.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BrainServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -176,6 +228,26 @@ def add_BrainServiceServicer_to_server(servicer, server):
                     servicer.Feedback,
                     request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.FromString,
                     response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.SerializeToString,
+            ),
+            'ListProposals': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListProposals,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsResponse.SerializeToString,
+            ),
+            'DecideProposal': grpc.unary_unary_rpc_method_handler(
+                    servicer.DecideProposal,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalResponse.SerializeToString,
+            ),
+            'ListRules': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListRules,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesResponse.SerializeToString,
+            ),
+            'RevokeRule': grpc.unary_unary_rpc_method_handler(
+                    servicer.RevokeRule,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -370,6 +442,114 @@ class BrainService:
             '/wfk.brain_service.v1.BrainService/Feedback',
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackRequest.SerializeToString,
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.FeedbackResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListProposals(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/ListProposals',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListProposalsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DecideProposal(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/DecideProposal',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.DecideProposalResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListRules(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/ListRules',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListRulesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RevokeRule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/RevokeRule',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.FromString,
             options,
             channel_credentials,
             insecure,

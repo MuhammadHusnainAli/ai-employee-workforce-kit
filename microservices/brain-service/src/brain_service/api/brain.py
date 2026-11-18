@@ -15,6 +15,7 @@ from wfk.common.v1 import common_pb2
 
 from brain_service.adapters.postgres.feedback import Feedback, Invalid
 from brain_service.adapters.postgres.inspect import Inspected, Inspector, NotFound, Precondition
+from brain_service.adapters.postgres.rules import Proposal, Rule, Rules
 from brain_service.domain.feedback import FeedbackIn
 from brain_service.domain.recall.planner import StepType
 from brain_service.recall import Recall, RecallRequest
@@ -106,11 +107,108 @@ ACTOR_KINDS = {
 }
 
 
+def _proposal(p: Proposal) -> brain_pb2.Proposal:
+    return brain_pb2.Proposal(
+        proposal_id=str(p.id),
+        employee_id=p.employee_id,
+        kind=p.kind,
+        text=str(p.payload.get("text", "")),
+        risk=p.risk,
+        status=p.status,
+        proposed_by=p.proposed_by,
+        decided_by=p.decided_by or "",
+        decision_note=p.decision_note or "",
+        feedback_id=str(p.evidence.get("feedback_id") or ""),
+        run_id=str(p.evidence.get("run_id") or ""),
+        created_at=_ts(p.created_at),
+        decided_at=_ts(p.decided_at),
+    )
+
+
+def _rule(r: Rule) -> brain_pb2.Rule:
+    return brain_pb2.Rule(
+        rule_id=str(r.id),
+        employee_id=r.employee_id or "",
+        text=r.text,
+        status=r.status,
+        proposal_id=str(r.proposal_id) if r.proposal_id else "",
+        approved_by=r.approved_by,
+        created_at=_ts(r.created_at),
+        revoked_by=r.revoked_by or "",
+        revoked_at=_ts(r.revoked_at),
+    )
+
+
+async def _person(tenant: common_pb2.TenantContext, context: grpc.aio.ServicerContext) -> str:
+    """The acting person's id. Decisions about an employee's rules are for people only."""
+    if tenant.actor.kind != common_pb2.ACTOR_KIND_HUMAN or not tenant.actor.id:
+        await _abort(context, grpc.StatusCode.PERMISSION_DENIED, "only a person can do this")
+    return tenant.actor.id
+
+
+async def _uuid(value: str, name: str, context: grpc.aio.ServicerContext) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, f"{name} must be a UUID")
+
+
 class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
-    def __init__(self, recall: Recall, inspector: Inspector, feedback: Feedback) -> None:
+    def __init__(
+        self, recall: Recall, inspector: Inspector, feedback: Feedback, rules: Rules
+    ) -> None:
         self.recall_service = recall
         self.inspector = inspector
         self.feedback = feedback
+        self.rules = rules
+
+    # ---- Approvals and rules -----------------------------------------------------------------
+
+    async def ListProposals(
+        self, request: brain_pb2.ListProposalsRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.ListProposalsResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        if not request.employee_id:
+            await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, "employee_id is required")
+        if not set(request.statuses) <= {"pending", "approved", "rejected"}:
+            await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, "unknown status")
+        found = await self.rules.proposals(tenant, request.employee_id, list(request.statuses))
+        return brain_pb2.ListProposalsResponse(proposals=[_proposal(p) for p in found])
+
+    async def DecideProposal(
+        self, request: brain_pb2.DecideProposalRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.DecideProposalResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        pid = await _uuid(request.proposal_id, "proposal_id", context)
+        by = await _person(request.tenant, context)
+        decide = self.rules.decide(tenant, pid, approve=request.approve, by=by, note=request.note)
+        proposal, rule = await self._guard(context, decide)
+        resp = brain_pb2.DecideProposalResponse(proposal=_proposal(proposal))
+        if rule is not None:
+            resp.rule.CopyFrom(_rule(rule))
+        return resp
+
+    async def ListRules(
+        self, request: brain_pb2.ListRulesRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.ListRulesResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        if not request.employee_id:
+            await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, "employee_id is required")
+        found = await self.rules.rules(
+            tenant, request.employee_id, include_revoked=request.include_revoked
+        )
+        return brain_pb2.ListRulesResponse(rules=[_rule(r) for r in found])
+
+    async def RevokeRule(
+        self, request: brain_pb2.RevokeRuleRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.RevokeRuleResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        rid = await _uuid(request.rule_id, "rule_id", context)
+        by = await _person(request.tenant, context)
+        rule = await self._guard(
+            context, self.rules.revoke(tenant, rid, by=by, reason=request.reason)
+        )
+        return brain_pb2.RevokeRuleResponse(rule=_rule(rule))
 
     # ---- Feedback ----------------------------------------------------------------------------
 

@@ -286,3 +286,123 @@ class FeedbackResponse(_message.Message):
     proposal_id: str
     credited: int
     def __init__(self, feedback_id: _Optional[str] = ..., proposal_id: _Optional[str] = ..., credited: _Optional[int] = ...) -> None: ...
+
+class Proposal(_message.Message):
+    __slots__ = ("proposal_id", "employee_id", "kind", "text", "risk", "status", "proposed_by", "decided_by", "decision_note", "feedback_id", "run_id", "created_at", "decided_at")
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    KIND_FIELD_NUMBER: _ClassVar[int]
+    TEXT_FIELD_NUMBER: _ClassVar[int]
+    RISK_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    PROPOSED_BY_FIELD_NUMBER: _ClassVar[int]
+    DECIDED_BY_FIELD_NUMBER: _ClassVar[int]
+    DECISION_NOTE_FIELD_NUMBER: _ClassVar[int]
+    FEEDBACK_ID_FIELD_NUMBER: _ClassVar[int]
+    RUN_ID_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    DECIDED_AT_FIELD_NUMBER: _ClassVar[int]
+    proposal_id: str
+    employee_id: str
+    kind: str
+    text: str
+    risk: str
+    status: str
+    proposed_by: str
+    decided_by: str
+    decision_note: str
+    feedback_id: str
+    run_id: str
+    created_at: _timestamp_pb2.Timestamp
+    decided_at: _timestamp_pb2.Timestamp
+    def __init__(self, proposal_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., kind: _Optional[str] = ..., text: _Optional[str] = ..., risk: _Optional[str] = ..., status: _Optional[str] = ..., proposed_by: _Optional[str] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., feedback_id: _Optional[str] = ..., run_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+
+class ListProposalsRequest(_message.Message):
+    __slots__ = ("tenant", "employee_id", "statuses")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    STATUSES_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    employee_id: str
+    statuses: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., statuses: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class ListProposalsResponse(_message.Message):
+    __slots__ = ("proposals",)
+    PROPOSALS_FIELD_NUMBER: _ClassVar[int]
+    proposals: _containers.RepeatedCompositeFieldContainer[Proposal]
+    def __init__(self, proposals: _Optional[_Iterable[_Union[Proposal, _Mapping]]] = ...) -> None: ...
+
+class DecideProposalRequest(_message.Message):
+    __slots__ = ("tenant", "proposal_id", "approve", "note")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    APPROVE_FIELD_NUMBER: _ClassVar[int]
+    NOTE_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    proposal_id: str
+    approve: bool
+    note: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., proposal_id: _Optional[str] = ..., approve: _Optional[bool] = ..., note: _Optional[str] = ...) -> None: ...
+
+class DecideProposalResponse(_message.Message):
+    __slots__ = ("proposal", "rule")
+    PROPOSAL_FIELD_NUMBER: _ClassVar[int]
+    RULE_FIELD_NUMBER: _ClassVar[int]
+    proposal: Proposal
+    rule: Rule
+    def __init__(self, proposal: _Optional[_Union[Proposal, _Mapping]] = ..., rule: _Optional[_Union[Rule, _Mapping]] = ...) -> None: ...
+
+class Rule(_message.Message):
+    __slots__ = ("rule_id", "employee_id", "text", "status", "proposal_id", "approved_by", "created_at", "revoked_by", "revoked_at")
+    RULE_ID_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    TEXT_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    APPROVED_BY_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    REVOKED_BY_FIELD_NUMBER: _ClassVar[int]
+    REVOKED_AT_FIELD_NUMBER: _ClassVar[int]
+    rule_id: str
+    employee_id: str
+    text: str
+    status: str
+    proposal_id: str
+    approved_by: str
+    created_at: _timestamp_pb2.Timestamp
+    revoked_by: str
+    revoked_at: _timestamp_pb2.Timestamp
+    def __init__(self, rule_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., text: _Optional[str] = ..., status: _Optional[str] = ..., proposal_id: _Optional[str] = ..., approved_by: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., revoked_by: _Optional[str] = ..., revoked_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+
+class ListRulesRequest(_message.Message):
+    __slots__ = ("tenant", "employee_id", "include_revoked")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_REVOKED_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    employee_id: str
+    include_revoked: bool
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., include_revoked: _Optional[bool] = ...) -> None: ...
+
+class ListRulesResponse(_message.Message):
+    __slots__ = ("rules",)
+    RULES_FIELD_NUMBER: _ClassVar[int]
+    rules: _containers.RepeatedCompositeFieldContainer[Rule]
+    def __init__(self, rules: _Optional[_Iterable[_Union[Rule, _Mapping]]] = ...) -> None: ...
+
+class RevokeRuleRequest(_message.Message):
+    __slots__ = ("tenant", "rule_id", "reason")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    RULE_ID_FIELD_NUMBER: _ClassVar[int]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    rule_id: str
+    reason: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., rule_id: _Optional[str] = ..., reason: _Optional[str] = ...) -> None: ...
+
+class RevokeRuleResponse(_message.Message):
+    __slots__ = ("rule",)
+    RULE_FIELD_NUMBER: _ClassVar[int]
+    rule: Rule
+    def __init__(self, rule: _Optional[_Union[Rule, _Mapping]] = ...) -> None: ...

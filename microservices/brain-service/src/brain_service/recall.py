@@ -15,6 +15,7 @@ from wfk_platform.db import Database
 from brain_service.adapters.cache.pinned import NoCache, PinnedCache, PinnedContext
 from brain_service.adapters.modelgw.embeddings import Embedder
 from brain_service.adapters.postgres import brain as brain_repo
+from brain_service.adapters.postgres import rules as rules_repo
 from brain_service.adapters.postgres.graph import GraphRetriever
 from brain_service.adapters.postgres.memories import MemoryRetrievers
 from brain_service.domain.memory.model import Memory
@@ -76,16 +77,20 @@ class Recall:
         as_of = req.as_of or datetime.now(UTC)
         p = plan(req.step_type, req.token_budget)
 
-        # Pinned first: identity (and, from Phase 6, rules) always go in, budget or not.
+        # Pinned first: identity and approved rules always go in, budget or not.
         async with self.db.tenant_tx(req.tenant_id) as conn:
             identity = await brain_repo.active_identity(conn, req.employee_id)
-        rules: list[str] = []
+            rules = await rules_repo.active_rules(conn, req.employee_id)
         # Write the pinned context through to Valkey: the agent runtime's fallback.
         await self.cache.put(
             req.tenant_id,
             req.employee_id,
-            PinnedContext(version=identity.version, identity=identity.text, rules=rules)
-            if identity
+            PinnedContext(
+                version=identity.version if identity else 0,
+                identity=identity.text if identity else "",
+                rules=rules,
+            )
+            if identity or rules
             else None,
         )
         pinned = (estimate_tokens(identity.text) if identity else 0) + sum(

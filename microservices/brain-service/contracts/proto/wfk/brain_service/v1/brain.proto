@@ -35,6 +35,19 @@ service BrainService {
   // rating credits or blames the memories the run recalled; a rejected approval becomes a
   // lesson. Idempotent on idempotency_key.
   rpc Feedback(FeedbackRequest) returns (FeedbackResponse);
+
+  // ---- Approvals and rules (brain.md section 6, step 4) -------------------------------------
+
+  // Proposed changes to an employee's brain, newest first.
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
+  // A person approves or rejects a pending proposal. Approving a rule makes it active: pinned in
+  // every recall from then on. A high-risk rule needs someone other than its proposer.
+  // FAILED_PRECONDITION when already decided, or for that four-eyes check. Humans only.
+  rpc DecideProposal(DecideProposalRequest) returns (DecideProposalResponse);
+  // The employee's rules (its own and the tenant's).
+  rpc ListRules(ListRulesRequest) returns (ListRulesResponse);
+  // Stop a rule applying. Humans only.
+  rpc RevokeRule(RevokeRuleRequest) returns (RevokeRuleResponse);
 }
 
 // Which stores a step needs (brain.md section 3, the query planner).
@@ -225,4 +238,85 @@ message FeedbackResponse {
   string proposal_id = 2;
   // Ratings: how many recalled memories were credited or blamed.
   int32 credited = 3;
+}
+
+// ---- Approvals and rules ---------------------------------------------------------------------
+
+message Proposal {
+  string proposal_id = 1;
+  string employee_id = 2;
+  // rule_add
+  string kind = 3;
+  // For rule_add: the rule's text.
+  string text = 4;
+  // low, medium, high
+  string risk = 5;
+  // pending, approved, rejected
+  string status = 6;
+  string proposed_by = 7;
+  string decided_by = 8;
+  string decision_note = 9;
+  // Where it came from: the feedback and the run.
+  string feedback_id = 10;
+  string run_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp decided_at = 13;
+}
+
+message ListProposalsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Empty means all; "pending", "approved", "rejected".
+  repeated string statuses = 3;
+}
+
+message ListProposalsResponse {
+  repeated Proposal proposals = 1;
+}
+
+message DecideProposalRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string proposal_id = 2;
+  bool approve = 3;
+  string note = 4;
+}
+
+message DecideProposalResponse {
+  Proposal proposal = 1;
+  // Set when an approved proposal created a rule.
+  Rule rule = 2;
+}
+
+message Rule {
+  string rule_id = 1;
+  // Empty for a tenant-wide rule.
+  string employee_id = 2;
+  string text = 3;
+  // active, revoked
+  string status = 4;
+  string proposal_id = 5;
+  string approved_by = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string revoked_by = 8;
+  google.protobuf.Timestamp revoked_at = 9;
+}
+
+message ListRulesRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  bool include_revoked = 3;
+}
+
+message ListRulesResponse {
+  repeated Rule rules = 1;
+}
+
+message RevokeRuleRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string rule_id = 2;
+  string reason = 3;
+}
+
+message RevokeRuleResponse {
+  Rule rule = 1;
 }
