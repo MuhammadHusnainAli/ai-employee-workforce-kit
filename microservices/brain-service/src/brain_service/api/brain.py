@@ -122,6 +122,8 @@ def _proposal(p: Proposal) -> brain_pb2.Proposal:
         run_id=str(p.evidence.get("run_id") or ""),
         created_at=_ts(p.created_at),
         decided_at=_ts(p.decided_at),
+        eval_status=p.eval_status,
+        eval_reasons=p.eval_reasons,
     )
 
 

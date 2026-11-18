@@ -170,8 +170,9 @@ class BrainServiceServicer:
 
     def DecideProposal(self, request, context):
         """A person approves or rejects a pending proposal. Approving a rule makes it active: pinned in
-        every recall from then on. A high-risk rule needs someone other than its proposer.
-        FAILED_PRECONDITION when already decided, or for that four-eyes check. Humans only.
+        every recall from then on. Approval needs a passing evaluation, and a high-risk rule needs
+        someone other than its proposer. FAILED_PRECONDITION when already decided, not evaluated,
+        evaluated as failing, or for that four-eyes check. Humans only.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')

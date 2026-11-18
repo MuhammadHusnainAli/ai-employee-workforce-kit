@@ -53,6 +53,16 @@ log = logging.getLogger(__name__)
 STREAM = "BRAIN"
 RUNS_STREAM = "RUNS"
 RUNS_CONSUMER = "brain-ingest-runs"
+EVAL_STREAM = "EVAL"
+EVAL_CONSUMER = "brain-evals"
+
+
+async def on_evaluation(conn: Conn, event: CloudEvent) -> None:
+    """evaluation-service's verdict on a proposal: the gate DecideProposal checks."""
+    if event.type == "eval.completed":
+        from brain_service.adapters.postgres.rules import record_evaluation
+
+        await record_evaluation(conn, event.data)
 
 
 class RunsToIngest:
@@ -170,6 +180,17 @@ async def run_ingest(settings: Settings) -> None:
                 consumer=RUNS_CONSUMER,
                 subject="run.>",
                 handler=RunsToIngest(client),
+                stop=stop,
+            )
+        ),
+        asyncio.create_task(
+            run_inbox_consumer(
+                db,
+                settings.nats_url,
+                stream=EVAL_STREAM,
+                consumer=EVAL_CONSUMER,
+                subject="eval.completed",
+                handler=on_evaluation,
                 stop=stop,
             )
         ),

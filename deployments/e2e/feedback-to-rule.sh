@@ -4,9 +4,10 @@
 #
 #   1. task A runs (it names a project); brain-ingest stores its episode and the project entity
 #   2. a person corrects run A through Brain.Feedback: a rule proposal appears
-#   3. the proposal is high risk, so its author cannot approve it; a second person does
-#   4. task B runs: brain-service pins the rule in B's recall (and in the Valkey fallback)
-#   5. B's recall log shows the graph retriever found A's episode through the project
+#   3. evaluation-service runs the suites with and without the rule; it must pass
+#   4. the proposal is high risk, so its author cannot approve it; a second person does
+#   5. task B runs: brain-service pins the rule in B's recall (and in the Valkey fallback)
+#   6. B's recall log shows the graph retriever found A's episode through the project
 #
 # Run from the repo root:  just e2e
 set -euo pipefail
@@ -71,7 +72,20 @@ P=$(brain Feedback "{$(as maria),\"idempotency_key\":{\"value\":\"fb-$A\"},\"emp
 [ -n "$P" ] || fail "the correction proposed no rule"
 echo "   proposal $P"
 
-echo "3. high risk: Maria cannot approve her own rule, Omar can"
+echo "3. evaluation-service evaluates it (golden, regression and safety suites)"
+EVAL=""
+for _ in $(seq 1 240); do
+  EVAL=$(brain ListProposals "{$(as maria),\"employee_id\":\"$EMPLOYEE\"}" | python -c "
+import json, sys
+ps = [p for p in json.load(sys.stdin).get('proposals', []) if p['proposalId'] == '$P']
+print(ps[0].get('evalStatus', 'pending') if ps else 'missing')")
+  [ "$EVAL" = "passed" ] || [ "$EVAL" = "failed" ] && break
+  sleep 1
+done
+[ "$EVAL" = "passed" ] || fail "the evaluation did not pass (status: $EVAL)"
+echo "   evaluation passed"
+
+echo "4. high risk: Maria cannot approve her own rule, Omar can"
 if brain DecideProposal "{$(as maria),\"proposal_id\":\"$P\",\"approve\":true}" >/dev/null 2>&1; then
   fail "the author approved her own high-risk rule"
 fi
@@ -79,13 +93,13 @@ STATUS=$(brain DecideProposal "{$(as omar),\"proposal_id\":\"$P\",\"approve\":tr
 [ "$STATUS" = "approved" ] || fail "Omar's approval gave status '$STATUS'"
 echo "   approved by omar"
 
-echo "4. task B: the rule is pinned"
+echo "5. task B: the rule is pinned"
 B=$(run_task "Pay the vendor for Project $TAG.")
 PINNED=$("${COMPOSE[@]}" exec -T valkey valkey-cli GET "wfk:brain:pinned:v1:$TENANT:$EMPLOYEE")
 echo "$PINNED" | grep -qF "$RULE" || fail "the pinned context does not carry the rule: $PINNED"
 echo "   B's recall pinned: $RULE"
 
-echo "5. graph recall found A's episode for B"
+echo "6. graph recall found A's episode for B"
 HITS=$(sql brain_db "select max((retrievers->'graph'->>'hits')::int) from recall_log where run_id = '$B'")
 EPISODE=$(sql brain_db "select memory_id from episodes where run_id = '$A'")
 CITED=$(sql brain_db "select count(*) from recall_log where run_id = '$B' and '$EPISODE' = any(item_ids)")
@@ -93,4 +107,4 @@ CITED=$(sql brain_db "select count(*) from recall_log where run_id = '$B' and '$
 [ "$CITED" -ge 1 ] || fail "run $B's recall does not cite A's episode $EPISODE"
 echo "   graph hits: $HITS, A's episode cited"
 
-echo "PASS: correction -> proposal -> four-eyes approval -> rule pinned; graph links the runs"
+echo "PASS: correction -> proposal -> evaluation -> four-eyes approval -> rule pinned; graph links the runs"

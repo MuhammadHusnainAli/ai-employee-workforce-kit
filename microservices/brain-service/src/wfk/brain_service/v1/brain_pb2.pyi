@@ -290,7 +290,7 @@ class FeedbackResponse(_message.Message):
     def __init__(self, feedback_id: _Optional[str] = ..., proposal_id: _Optional[str] = ..., credited: _Optional[int] = ...) -> None: ...
 
 class Proposal(_message.Message):
-    __slots__ = ("proposal_id", "employee_id", "kind", "text", "risk", "status", "proposed_by", "decided_by", "decision_note", "feedback_id", "run_id", "created_at", "decided_at")
+    __slots__ = ("proposal_id", "employee_id", "kind", "text", "risk", "status", "proposed_by", "decided_by", "decision_note", "feedback_id", "run_id", "created_at", "decided_at", "eval_status", "eval_reasons")
     PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
     EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
@@ -304,6 +304,8 @@ class Proposal(_message.Message):
     RUN_ID_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
     DECIDED_AT_FIELD_NUMBER: _ClassVar[int]
+    EVAL_STATUS_FIELD_NUMBER: _ClassVar[int]
+    EVAL_REASONS_FIELD_NUMBER: _ClassVar[int]
     proposal_id: str
     employee_id: str
     kind: str
@@ -317,7 +319,9 @@ class Proposal(_message.Message):
     run_id: str
     created_at: _timestamp_pb2.Timestamp
     decided_at: _timestamp_pb2.Timestamp
-    def __init__(self, proposal_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., kind: _Optional[str] = ..., text: _Optional[str] = ..., risk: _Optional[str] = ..., status: _Optional[str] = ..., proposed_by: _Optional[str] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., feedback_id: _Optional[str] = ..., run_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    eval_status: str
+    eval_reasons: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, proposal_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., kind: _Optional[str] = ..., text: _Optional[str] = ..., risk: _Optional[str] = ..., status: _Optional[str] = ..., proposed_by: _Optional[str] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., feedback_id: _Optional[str] = ..., run_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., eval_status: _Optional[str] = ..., eval_reasons: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ListProposalsRequest(_message.Message):
     __slots__ = ("tenant", "employee_id", "statuses")

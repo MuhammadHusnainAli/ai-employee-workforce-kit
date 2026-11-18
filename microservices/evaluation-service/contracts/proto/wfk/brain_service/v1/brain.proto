@@ -41,8 +41,9 @@ service BrainService {
   // Proposed changes to an employee's brain, newest first.
   rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
   // A person approves or rejects a pending proposal. Approving a rule makes it active: pinned in
-  // every recall from then on. A high-risk rule needs someone other than its proposer.
-  // FAILED_PRECONDITION when already decided, or for that four-eyes check. Humans only.
+  // every recall from then on. Approval needs a passing evaluation, and a high-risk rule needs
+  // someone other than its proposer. FAILED_PRECONDITION when already decided, not evaluated,
+  // evaluated as failing, or for that four-eyes check. Humans only.
   rpc DecideProposal(DecideProposalRequest) returns (DecideProposalResponse);
   // The employee's rules (its own and the tenant's).
   rpc ListRules(ListRulesRequest) returns (ListRulesResponse);
@@ -264,6 +265,9 @@ message Proposal {
   string run_id = 11;
   google.protobuf.Timestamp created_at = 12;
   google.protobuf.Timestamp decided_at = 13;
+  // pending, passed, failed: the evaluation (evaluation-service). Approval needs passed.
+  string eval_status = 14;
+  repeated string eval_reasons = 15;
 }
 
 message ListProposalsRequest {

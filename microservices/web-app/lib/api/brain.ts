@@ -54,6 +54,8 @@ export function proposal(p: Msg) {
         run_id: p.runId || null,
         created_at: iso(p.createdAt),
         decided_at: iso(p.decidedAt),
+        eval_status: p.evalStatus || "pending",
+        eval_reasons: (p.evalReasons as string[]) ?? [],
     };
 }
 

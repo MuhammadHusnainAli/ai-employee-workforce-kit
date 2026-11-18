@@ -33,6 +33,8 @@ class Proposal(BaseModel):
     decision_note: str | None
     created_at: datetime
     decided_at: datetime | None
+    eval_status: str = "pending"
+    eval_reasons: list[str] = []
 
 
 class Rule(BaseModel):
@@ -74,6 +76,22 @@ async def candidate_rule(conn: Conn, employee_id: str, proposal_id: str) -> str 
     return row["text"] if row else None
 
 
+async def record_evaluation(conn: Conn, data: dict[str, Any]) -> bool:
+    """An eval.completed verdict for a pending proposal. Later verdicts for a decided proposal
+    change nothing. Returns whether a proposal was updated."""
+    try:
+        pid = uuid.UUID(str(data.get("proposal_id")))
+    except ValueError:
+        return False
+    cur = await conn.execute(
+        "UPDATE change_proposals SET eval_status = %s, eval_reasons = %s, evaluated_at = now()"
+        " WHERE id = %s AND status = 'pending'",
+        ("passed" if data.get("passed") is True else "failed",
+         [str(r) for r in data.get("reasons") or []], pid),
+    )  # fmt: skip
+    return cur.rowcount == 1
+
+
 class Rules:
     def __init__(self, db: Database, *, service_source: str) -> None:
         self.db = db
@@ -104,6 +122,13 @@ class Rules:
             p = Proposal.model_validate(row)
             if p.status != "pending":
                 raise Precondition(f"proposal is already {p.status}")
+            if approve and p.eval_status != "passed":
+                # Fail closed: no passing evaluation, no approval (brain.md section 6, step 3).
+                raise Precondition(
+                    "the evaluation has not finished yet"
+                    if p.eval_status == "pending"
+                    else "the evaluation failed: " + "; ".join(p.eval_reasons)
+                )
             if approve and p.risk == "high" and by == p.proposed_by:
                 raise Precondition("a high-risk rule needs a second person to approve it")
             await conn.execute(

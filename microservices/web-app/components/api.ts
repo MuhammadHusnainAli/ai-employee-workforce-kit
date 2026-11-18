@@ -72,6 +72,8 @@ export interface Proposal {
     decided_by: string | null;
     run_id: string | null;
     created_at: string | null;
+    eval_status: "pending" | "passed" | "failed";
+    eval_reasons: string[];
 }
 
 export interface Rule {

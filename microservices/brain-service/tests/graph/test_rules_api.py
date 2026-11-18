@@ -13,6 +13,7 @@ from wfk_platform.db import Database
 
 from brain_service.adapters.cache.pinned import PinnedContext
 from brain_service.adapters.modelgw.embeddings import HashEmbedder
+from brain_service.adapters.postgres.rules import record_evaluation
 from brain_service.app import create_server
 from brain_service.recall import Recall, RecallRequest
 from brain_service.settings import Settings
@@ -55,7 +56,22 @@ def ctx(who: str = "maria", kind: Any = HUMAN) -> common_pb2.TenantContext:
     return common_pb2.TenantContext(tenant_id=TENANT, actor=common_pb2.Actor(kind=kind, id=who))
 
 
-async def propose(stub: brain_pb2_grpc.BrainServiceStub, emp: str, text: str) -> str:
+async def evaluated(
+    db: Database, pid: str, passed: bool = True, reasons: list[str] | None = None
+) -> None:
+    """evaluation-service's verdict, as the EVAL consumer records it."""
+    async with db.tenant_tx(TENANT) as conn:
+        await record_evaluation(conn, {"proposal_id": pid, "passed": passed,
+                                       "reasons": reasons or []})  # fmt: skip
+
+
+async def propose(
+    stub: brain_pb2_grpc.BrainServiceStub,
+    emp: str,
+    text: str,
+    db: Database | None = None,
+) -> str:
+    """A person's correction becomes a proposal; with `db`, it has passed its evaluation."""
     resp = await stub.Feedback(
         brain_pb2.FeedbackRequest(
             tenant=ctx(), idempotency_key=common_pb2.IdempotencyKey(value=uuid.uuid4().hex),
@@ -63,6 +79,8 @@ async def propose(stub: brain_pb2_grpc.BrainServiceStub, emp: str, text: str) ->
         )
     )  # fmt: skip
     assert resp.proposal_id
+    if db is not None:
+        await evaluated(db, resp.proposal_id)
     return resp.proposal_id
 
 
@@ -94,7 +112,7 @@ async def recalled_rules(db: Database, emp: str, cache: MemCache | None = None) 
 async def test_an_approved_correction_is_pinned_in_every_recall(
     stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
 ) -> None:
-    pid = await propose(stub, emp, "Reply to Ana in French.")
+    pid = await propose(stub, emp, "Reply to Ana in French.", brain_db)
     pending = await stub.ListProposals(
         brain_pb2.ListProposalsRequest(tenant=ctx(), employee_id=emp, statuses=["pending"])
     )
@@ -128,16 +146,16 @@ async def test_a_rejected_proposal_never_becomes_a_rule(
 async def test_high_risk_rules_need_a_second_person(
     stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
 ) -> None:
-    pid = await propose(stub, emp, "Never pay invoices over 500 EUR without asking.")
+    pid = await propose(stub, emp, "Never pay invoices over 500 EUR without asking.", brain_db)
     assert await code_of(decide(stub, pid, who="maria")) == grpc.StatusCode.FAILED_PRECONDITION
     resp = await decide(stub, pid, who="omar")
     assert resp.rule.approved_by == "omar"
 
 
 async def test_only_people_decide_and_revoke(
-    stub: brain_pb2_grpc.BrainServiceStub, emp: str
+    stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
 ) -> None:
-    pid = await propose(stub, emp, "Sign emails as Sam.")
+    pid = await propose(stub, emp, "Sign emails as Sam.", brain_db)
     employee = common_pb2.ACTOR_KIND_EMPLOYEE
     assert await code_of(decide(stub, pid, kind=employee)) == grpc.StatusCode.PERMISSION_DENIED
     rule = (await decide(stub, pid)).rule
@@ -148,7 +166,7 @@ async def test_only_people_decide_and_revoke(
 async def test_a_revoked_rule_stops_applying(
     stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
 ) -> None:
-    rule = (await decide(stub, await propose(stub, emp, "CC Omar on contracts."))).rule
+    rule = (await decide(stub, await propose(stub, emp, "CC Omar on contracts.", brain_db))).rule
     revoke = brain_pb2.RevokeRuleRequest(tenant=ctx(), rule_id=rule.rule_id, reason="Omar left")
     revoked = (await stub.RevokeRule(revoke)).rule
     assert (revoked.status, revoked.revoked_by) == ("revoked", "maria")
@@ -197,3 +215,35 @@ async def test_evaluation_runs_see_a_candidate_rule_others_do_not(
     assert (await ask(candidate_proposal_id="not-a-uuid")).rules == []
     await decide(stub, pid, approve=False)
     assert (await ask(candidate_proposal_id=pid)).rules == [], "a rejected proposal is gone"
+
+
+async def test_approval_waits_for_a_passing_evaluation(
+    stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
+) -> None:
+    pid = await propose(stub, emp, "Greet customers by first name.")
+    with pytest.raises(grpc.aio.AioRpcError) as err:
+        await decide(stub, pid)
+    assert err.value.code() == grpc.StatusCode.FAILED_PRECONDITION
+    assert "not finished" in (err.value.details() or "")
+    listed = await stub.ListProposals(brain_pb2.ListProposalsRequest(tenant=ctx(), employee_id=emp))
+    assert [p.eval_status for p in listed.proposals] == ["pending"]
+
+    await evaluated(brain_db, pid, passed=False, reasons=["regressed: summarise-short-note"])
+    with pytest.raises(grpc.aio.AioRpcError) as err:
+        await decide(stub, pid)
+    assert "regressed: summarise-short-note" in (err.value.details() or "")
+    rejected = await decide(stub, pid, approve=False)
+    assert rejected.proposal.status == "rejected", "rejecting never needs an evaluation"
+    await evaluated(brain_db, pid, passed=True)
+    listed = await stub.ListProposals(brain_pb2.ListProposalsRequest(tenant=ctx(), employee_id=emp))
+    assert listed.proposals[0].eval_status == "failed", "a decided proposal keeps its verdict"
+
+
+async def test_a_passing_evaluation_opens_approval(
+    stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
+) -> None:
+    pid = await propose(stub, emp, "Sign off as Sam from Support.")
+    await evaluated(brain_db, pid)
+    listed = await stub.ListProposals(brain_pb2.ListProposalsRequest(tenant=ctx(), employee_id=emp))
+    assert listed.proposals[0].eval_status == "passed"
+    assert (await decide(stub, pid)).rule.status == "active"

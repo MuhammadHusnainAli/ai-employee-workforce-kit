@@ -22,6 +22,12 @@ const KIND_TEXT: Record<string, string> = {
     reflection: "Lesson",
 };
 
+const EVAL_TEXT: Record<string, string> = {
+    pending: "Being evaluated",
+    passed: "Evaluation passed",
+    failed: "Evaluation failed",
+};
+
 const FINDING_TEXT: Record<string, string> = {
     secret: "secret removed",
     email: "email",
@@ -260,8 +266,9 @@ function Proposals({ employee }: { employee: string }) {
     return (
         <>
             <p className="lede" style={{ marginBottom: "1rem" }}>
-                Corrections become rules only when a person approves them. A high-risk rule needs
-                someone other than the person who proposed it.
+                Corrections become rules only when a person approves them, after they pass an
+                evaluation on the employee&apos;s own tasks. A high-risk rule needs someone other
+                than the person who proposed it.
             </p>
             <ErrorLine error={loadError ?? error} />
             {items && items.length === 0 ? (
@@ -283,10 +290,30 @@ function Proposals({ employee }: { employee: string }) {
                                         {p.status} by {p.decided_by}
                                     </span>
                                 )}
+                                {p.status === "pending" && (
+                                    <span
+                                        className={
+                                            p.eval_status === "failed" ? "chip chip-held" : "chip"
+                                        }
+                                    >
+                                        {EVAL_TEXT[p.eval_status]}
+                                    </span>
+                                )}
                             </div>
+                            {p.status === "pending" && p.eval_status === "failed" && (
+                                <p className="meta">{p.eval_reasons.join("; ")}</p>
+                            )}
                             {p.status === "pending" && (
                                 <div className="row-actions">
-                                    <button disabled={busy} onClick={() => decide(p.id, true)}>
+                                    <button
+                                        disabled={busy || p.eval_status !== "passed"}
+                                        title={
+                                            p.eval_status === "passed"
+                                                ? undefined
+                                                : "A rule can be approved once its evaluation passes"
+                                        }
+                                        onClick={() => decide(p.id, true)}
+                                    >
                                         Approve rule
                                     </button>
                                     <button
