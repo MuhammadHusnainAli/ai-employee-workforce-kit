@@ -1,8 +1,20 @@
 use task_service::platform::{ServiceSettings, init_telemetry, migrate};
 use task_service::{DATABASE, PORT, SERVICE_NAME, bind, serve};
 
-/// `task-service`          run the service
-/// `task-service migrate`  apply pending migrations (creates the database if missing)
+/// GET /readyz on this service's own port; true on 200.
+async fn readyz(port: u16) -> anyhow::Result<bool> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let mut tcp = tokio::net::TcpStream::connect(("127.0.0.1", port)).await?;
+    tcp.write_all(b"GET /readyz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .await?;
+    let mut head = [0u8; 12];
+    tcp.read_exact(&mut head).await?;
+    Ok(&head == b"HTTP/1.1 200")
+}
+
+/// `task-service`              run the service
+/// `task-service migrate`      apply pending migrations (creates the database if missing)
+/// `task-service healthcheck`  exit 0 when the running service is ready (container checks)
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // This service's defaults; the environment overrides any of them.
@@ -17,6 +29,11 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     let settings = ServiceSettings::from_vars(vars)?;
+    if std::env::args().nth(1).as_deref() == Some("healthcheck") {
+        // For container health checks: the image has no shell or curl.
+        let ready = readyz(settings.port).await.unwrap_or(false);
+        std::process::exit(if ready { 0 } else { 1 });
+    }
     let _telemetry = init_telemetry(&settings)?;
 
     if std::env::args().nth(1).as_deref() == Some("migrate") {

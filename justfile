@@ -15,17 +15,29 @@ up:
     {{compose}} up -d --wait --remove-orphans
     {{compose}} --profile init run --rm seaweedfs-init
 
-# Stop the local stack (keeps data)
+# Start the stack and every microservice in containers (builds images), wait until healthy
+up-all: up
+    {{compose}} --profile services up -d --build --wait
+
+# Rebuild and restart one microservice container: just restart task-service
+restart service:
+    {{compose}} --profile services up -d --build --wait {{service}}
+
+# Follow a microservice's logs: just logs agent-runtime-worker
+logs service:
+    {{compose}} --profile services logs -f {{service}}
+
+# Stop the local stack and the microservices (keeps data)
 down:
-    {{compose}} down
+    {{compose}} --profile services down
 
-# Stop the local stack and delete its data
+# Stop everything and delete its data
 nuke:
-    {{compose}} down -v
+    {{compose}} --profile services down -v
 
-# Show the local stack
+# Show the local stack and the microservices
 ps:
-    {{compose}} ps
+    {{compose}} --profile services ps
 
 # Create a self-contained service from a template: just new-service rust task-service
 new-service lang name:

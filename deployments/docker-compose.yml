@@ -14,6 +14,57 @@ name: wfk
 x-restart: &restart
   restart: unless-stopped
 
+# ---- shared settings for the microservices (bottom of this file) ----------------------------
+x-service: &service
+  restart: unless-stopped
+  profiles: ["services"]
+
+x-migrate: &migrate
+  profiles: ["services"]
+  restart: "no"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-stack: &stack
+  postgres:
+    condition: service_healthy
+  nats:
+    condition: service_healthy
+  temporal:
+    condition: service_healthy
+  valkey:
+    condition: service_healthy
+  seaweedfs:
+    condition: service_healthy
+  model-gateway:
+    condition: service_healthy
+
+# Every setting names a stack container on its internal port.
+x-service-env: &service-env
+  WFK_ENVIRONMENT: local
+  WFK_CELL_ID: cell-local
+  WFK_NATS_URL: nats://nats:4222
+  WFK_TEMPORAL_ADDRESS: temporal:7233
+  WFK_VALKEY_URL: redis://valkey:6379/0
+  WFK_S3_ENDPOINT: http://seaweedfs:8333
+  WFK_MODEL_GATEWAY_URL: http://model-gateway:4000/v1
+  WFK_MODEL_GATEWAY_KEY: ${WFK_LITELLM_MASTER_KEY:-sk-wfk-local}
+
+x-grpc-health: &grpc-health
+  interval: 5s
+  timeout: 5s
+  retries: 30
+  start_period: 10s
+
+# Python services serve the standard gRPC health service; "readiness" checks their dependencies.
+x-grpc-probe: &grpc-probe >-
+  import sys, grpc;
+  from grpc_health.v1 import health_pb2 as h, health_pb2_grpc as g;
+  stub = g.HealthStub(grpc.insecure_channel("127.0.0.1:" + sys.argv[1]));
+  r = stub.Check(h.HealthCheckRequest(service="readiness"), timeout=3);
+  sys.exit(0 if r.status == h.HealthCheckResponse.SERVING else 1)
+
 services:
   # PostgreSQL 18 with pgvector: the only system of record. One instance locally;
   # production splits it into pg-app, pg-ledger, pg-brain and pg-temporal clusters.
@@ -168,6 +219,112 @@ services:
       - "127.0.0.1:${WFK_OTLP_HTTP_PORT:-7010}:4318"
     volumes:
       - lgtm-data:/data
+
+  # ---- microservices ------------------------------------------------------------------------
+  # Profile "services": `just up-all` builds and starts them after the stack above; `just up`
+  # alone starts only the stack, so a service can run from its folder on the same port.
+  # Each service has a one-shot `<name>-migrate` that must succeed before the service starts.
+  # Inside the network services reach the stack on its internal ports (postgres:5432 ...).
+
+  workforce-migrate:
+    <<: *migrate
+    image: wfk/workforce-service:local
+    build: ../microservices/workforce-service
+    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/workforce_db", "--dir", "/app/migrations", "--create-db"]
+
+  workforce-service:
+    <<: *service
+    image: wfk/workforce-service:local
+    depends_on:
+      <<: *stack
+      workforce-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/workforce_db
+    ports:
+      - "127.0.0.1:${WFK_WORKFORCE_PORT:-7011}:7011"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "python", "-c", *grpc-probe, "7011"]
+
+  agent-runtime-migrate:
+    <<: *migrate
+    image: wfk/agent-runtime:local
+    build: ../microservices/agent-runtime
+    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/run_db", "--dir", "/app/migrations", "--create-db"]
+
+  # RunService (read API for run history).
+  agent-runtime:
+    <<: *service
+    image: wfk/agent-runtime:local
+    depends_on: &agent-runtime-deps
+      <<: *stack
+      agent-runtime-migrate:
+        condition: service_completed_successfully
+    environment: &agent-runtime-env
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
+    ports:
+      - "127.0.0.1:${WFK_AGENT_RUNTIME_PORT:-7012}:7012"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "python", "-c", *grpc-probe, "7012"]
+
+  # Temporal workers, the run outbox relay (RUNS) and the task inbox (TASKS). No port.
+  # The model is local-mock through the gateway; set WFK_WORKER_MODEL=claude-haiku for a real one.
+  agent-runtime-worker:
+    <<: *service
+    image: wfk/agent-runtime:local
+    depends_on: *agent-runtime-deps
+    environment: *agent-runtime-env
+    command: ["agent-runtime", "worker", "--model", "${WFK_WORKER_MODEL:-local-mock}"]
+
+  brain-migrate:
+    <<: *migrate
+    image: wfk/brain-service:local
+    build: ../microservices/brain-service
+    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/brain_db", "--dir", "/app/migrations", "--create-db"]
+
+  brain-service:
+    <<: *service
+    image: wfk/brain-service:local
+    depends_on:
+      <<: *stack
+      brain-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
+    ports:
+      - "127.0.0.1:${WFK_BRAIN_PORT:-7014}:7014"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "python", "-c", *grpc-probe, "7014"]
+
+  task-migrate:
+    <<: *migrate
+    image: wfk/task-service:local
+    build: ../microservices/task-service
+    command: ["migrate"]
+    environment:
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
+
+  task-service:
+    <<: *service
+    image: wfk/task-service:local
+    depends_on:
+      <<: *stack
+      task-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
+    ports:
+      - "127.0.0.1:${WFK_TASK_PORT:-7016}:7016"
+    healthcheck:
+      <<: *grpc-health
+      test: ["CMD", "/service", "healthcheck"]
 
 volumes:
   pg-data:

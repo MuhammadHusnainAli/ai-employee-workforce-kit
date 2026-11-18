@@ -4,11 +4,39 @@
 `/platform` and `/cells` later (plan.md, Phase 10).
 
 ```
-just up      # start and wait until healthy, then create S3 buckets
-just ps      # status
-just down    # stop, keep data
-just nuke    # stop and delete all data
+just up        # start the stack (Postgres, Temporal, NATS, ...) and wait until healthy
+just up-all    # the stack plus every microservice, built from its own Dockerfile
+just ps        # status
+just logs <service>      # follow one service, e.g. just logs agent-runtime-worker
+just restart <service>   # rebuild and restart one service after a code change
+just down      # stop everything, keep data
+just nuke      # stop everything and delete all data
 ```
+
+## Microservices in containers
+
+`just up-all` runs every implemented microservice from one place. They live in `docker-compose.yml` under the
+`services` profile, so `just up` alone still starts only the stack and you can run one service from its folder
+(`cd microservices/<service> && just run`) on its usual port.
+
+| Container | What | Port |
+|---|---|---|
+| `workforce-service` | employees and versions (gRPC) | 7011 |
+| `agent-runtime` | RunService, read API for runs (gRPC) | 7012 |
+| `agent-runtime-worker` | Temporal workers, `run.*` relay, `task.*` inbox | none |
+| `brain-service` | memory and recall (gRPC) | 7014 |
+| `task-service` | tasks (gRPC) and HTTP `/healthz` `/readyz` | 7016 |
+
+- Each service has a one-shot `<name>-migrate` container (same image) that applies its migrations and creates its
+  database; the service starts only after it succeeds.
+- Inside the network, services use the stack's internal addresses (`postgres:5432`, `nats:4222`, `temporal:7233`,
+  `valkey:6379`, `seaweedfs:8333`, `model-gateway:4000`), set once in `x-service-env`.
+- Health: Python services are probed through gRPC health (`readiness`), Rust services with `/service healthcheck`
+  (the image is distroless: no shell, no curl).
+- The worker uses the `local-mock` model. Set `WFK_WORKER_MODEL=claude-haiku` (and `ANTHROPIC_API_KEY`) in
+  `deployments/.env` for a real model.
+- A service whose folder has only a README (not built yet) has no container. A new service from
+  `just new-service` comes with its Dockerfile; add its `-migrate` and service entries here when it is ready.
 
 ## Endpoints
 

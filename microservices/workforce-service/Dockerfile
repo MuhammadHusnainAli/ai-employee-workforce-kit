@@ -13,6 +13,8 @@ RUN uv sync --frozen --no-dev --no-editable --package workforce-service
 FROM python:3.13-slim-bookworm
 RUN useradd --system --uid 10001 --no-create-home app
 COPY --from=build /app/.venv /app/.venv
+# For `wfk-migrate up --dir /app/migrations` (compose runs it before the service starts).
+COPY migrations /app/migrations
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     WFK_SERVICE_NAME=workforce-service
