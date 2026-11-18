@@ -84,6 +84,12 @@ async def _insert(
             (uuid.uuid5(mid, "episode"), source.tenant_id, source.employee_id, mid,
              source.run_id, source.task[:4000], source.outcome, source.occurred_at),
         )  # fmt: skip
+        # A new experience: consolidation has something to do for this employee tonight.
+        await conn.execute(
+            "INSERT INTO consolidation_due (tenant_id, employee_id) VALUES (%s, %s)"
+            " ON CONFLICT (tenant_id, employee_id) DO UPDATE SET since = now()",
+            (source.tenant_id, source.employee_id),
+        )
 
 
 async def _graph(
@@ -153,6 +159,8 @@ async def commit(
             emb = vector_literal(vec)
             decision = resolve(g, await _nearby(conn, source, g, emb))
             metadata: dict[str, Any] = {"findings": g.findings} if g.findings else {}
+            if g.candidate.cites:
+                metadata["cites"] = g.candidate.cites
             mid = memory_id(source, i)
             if decision.action == "reinforce":
                 await conn.execute(

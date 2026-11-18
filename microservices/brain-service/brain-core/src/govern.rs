@@ -231,7 +231,8 @@ pub fn trust_for(source: &str) -> &'static str {
     match source {
         "feedback" | "inspector" | "human" => "human_verified",
         "run_outcome" | "system" => "system",
-        "run" | "tool" | "meeting" | "chat" => "observed",
+        // What the employee saw itself, and what consolidation distilled from it.
+        "run" | "tool" | "meeting" | "chat" | "consolidation" => "observed",
         _ => "external",
     }
 }
@@ -337,6 +338,7 @@ mod tests {
         assert_eq!(trust_for("feedback"), "human_verified");
         assert_eq!(trust_for("run_outcome"), "system");
         assert_eq!(trust_for("run"), "observed");
+        assert_eq!(trust_for("consolidation"), "observed");
         assert_eq!(trust_for("email_inbound"), "external");
         assert_eq!(
             trust_for(""),

@@ -31,3 +31,5 @@ class Settings(ServiceSettings):
     extraction_model: str = "claude-haiku"
     # What happens to personal data in memories when a tenant has not set its own policy.
     pii_policy: Literal["keep", "redact", "drop"] = "redact"
+    # Nightly consolidation (brain-ingest creates the Temporal schedule; cron, UTC).
+    consolidation_cron: str = "0 2 * * *"

@@ -34,8 +34,15 @@ from brain_service.adapters.modelgw.extractor import (
     GatewayExtractor,
     gateway_provider,
 )
+from brain_service.adapters.postgres.consolidate import Consolidation
 from brain_service.adapters.postgres.learn import Learning
-from brain_service.adapters.temporal.activities import IngestActivities
+from brain_service.adapters.temporal.activities import ConsolidateActivities, IngestActivities
+from brain_service.adapters.temporal.consolidate import (
+    SCHEDULE_ID,
+    BrainConsolidate,
+    ConsolidateAll,
+)
+from brain_service.adapters.temporal.consolidate import TASK_QUEUE as BATCH_QUEUE
 from brain_service.adapters.temporal.ingest import TASK_QUEUE, BrainIngest, workflow_id
 from brain_service.domain.write import sources
 from brain_service.remember import Remember
@@ -88,6 +95,41 @@ async def temporal_client(settings: Settings) -> Client:
     )
 
 
+def batch_worker(
+    client: Client, activities: ConsolidateActivities, task_queue: str = BATCH_QUEUE
+) -> Worker:
+    """Consolidation: few activities at a time, so a night's backlog stays gentle."""
+    return Worker(
+        client,
+        task_queue=task_queue,
+        workflows=[BrainConsolidate, ConsolidateAll],
+        activities=[activities.due, activities.select, activities.remember, activities.decay,
+                    activities.merge, activities.finish],
+        max_concurrent_activities=2,
+    )  # fmt: skip
+
+
+async def ensure_schedule(client: Client, cron: str) -> None:
+    """The nightly ConsolidateAll. Created once; later starts leave it as it is."""
+    from temporalio.client import Schedule, ScheduleActionStartWorkflow, ScheduleSpec
+    from temporalio.service import RPCError
+
+    try:
+        await client.create_schedule(
+            SCHEDULE_ID,
+            Schedule(
+                action=ScheduleActionStartWorkflow(
+                    ConsolidateAll.run, id="brain-consolidate-all", task_queue=BATCH_QUEUE
+                ),
+                spec=ScheduleSpec(cron_expressions=[cron]),
+            ),
+        )
+        log.info("consolidation scheduled", extra={"cron": cron})
+    except RPCError as exc:  # already there
+        if "already" not in str(exc).lower():
+            raise
+
+
 def worker(client: Client, activities: IngestActivities, task_queue: str = TASK_QUEUE) -> Worker:
     return Worker(
         client,
@@ -134,7 +176,9 @@ async def run_ingest(settings: Settings) -> None:
     ]
     try:
         activities = IngestActivities(extractor(settings), remember, Learning(db))
-        async with worker(client, activities):
+        await ensure_schedule(client, settings.consolidation_cron)
+        batch = ConsolidateActivities(Consolidation(db), remember)
+        async with worker(client, activities), batch_worker(client, batch):
             log.info("ingest started", extra={"task_queue": TASK_QUEUE})
             await stop.wait()
     finally:

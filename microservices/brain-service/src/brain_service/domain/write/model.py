@@ -49,6 +49,8 @@ class Candidate(BaseModel):
     #: Who and what it is about (the semantic graph), and the relations it states.
     mentions: list[EntityRef] = Field(default_factory=list, max_length=20)
     relations: list[RelationRef] = Field(default_factory=list, max_length=10)
+    #: The memories it was distilled from (consolidation), so it can always be explained.
+    cites: list[str] = Field(default_factory=list, max_length=200)
 
 
 class Governed(BaseModel):
