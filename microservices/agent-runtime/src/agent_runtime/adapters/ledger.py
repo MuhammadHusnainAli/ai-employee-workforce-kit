@@ -17,6 +17,8 @@ from agent_runtime.workflows.types import LedgerEntry, StartRecord
 TERMINAL = {"completed": "run.completed", "failed": "run.failed"}
 #: Task and output carried on run.completed / run.failed, so events stay small.
 EVENT_TEXT_LIMIT = 8000
+#: Tool names carried on the terminal event, in call order (brain skill mining).
+EVENT_TOOLS_LIMIT = 50
 
 
 def _clip(text: str) -> str:
@@ -103,12 +105,21 @@ class Ledger:
                 # the run from it without reading this service's tables.
                 cur = await conn.execute("SELECT task FROM runs WHERE run_id = %s", (e.run_id,))
                 row = await cur.fetchone()
+                cur = await conn.execute(
+                    "SELECT c->>'name' AS name FROM run_steps,"
+                    " jsonb_array_elements(coalesce(decision->'calls', '[]')) WITH ORDINALITY"
+                    " AS calls(c, i) WHERE run_id = %s AND kind = 'tool_calls' ORDER BY seq, i"
+                    " LIMIT %s",
+                    (e.run_id, EVENT_TOOLS_LIMIT),
+                )
+                tools = [r["name"] for r in await cur.fetchall() if r["name"]]
                 terminal = {
                     **data,
                     "stop_reason": e.stop_reason,
                     "cost_usd": e.total_cost_usd,
                     "task": _clip(row["task"] if row else ""),
                     "output": _clip(e.output or ""),
+                    "tools": tools,
                 }
                 await enqueue(
                     conn,

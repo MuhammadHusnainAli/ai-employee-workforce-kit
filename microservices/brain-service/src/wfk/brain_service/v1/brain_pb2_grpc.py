@@ -92,6 +92,11 @@ class BrainServiceStub:
                 request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.SerializeToString,
                 response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.FromString,
                 _registered_method=True)
+        self.ListSkills = channel.unary_unary(
+                '/wfk.brain_service.v1.BrainService/ListSkills',
+                request_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsRequest.SerializeToString,
+                response_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsResponse.FromString,
+                _registered_method=True)
 
 
 class BrainServiceServicer:
@@ -192,6 +197,14 @@ class BrainServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListSkills(self, request, context):
+        """The employee's skills: ways of doing a kind of task, mined from its successes. A skill is
+        proposed like a rule (kind skill_add) and active once a person approves it.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BrainServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -249,6 +262,11 @@ def add_BrainServiceServicer_to_server(servicer, server):
                     servicer.RevokeRule,
                     request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.FromString,
                     response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.SerializeToString,
+            ),
+            'ListSkills': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSkills,
+                    request_deserializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsRequest.FromString,
+                    response_serializer=wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -551,6 +569,33 @@ class BrainService:
             '/wfk.brain_service.v1.BrainService/RevokeRule',
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleRequest.SerializeToString,
             wfk_dot_brain__service_dot_v1_dot_brain__pb2.RevokeRuleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSkills(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.brain_service.v1.BrainService/ListSkills',
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsRequest.SerializeToString,
+            wfk_dot_brain__service_dot_v1_dot_brain__pb2.ListSkillsResponse.FromString,
             options,
             channel_credentials,
             insecure,

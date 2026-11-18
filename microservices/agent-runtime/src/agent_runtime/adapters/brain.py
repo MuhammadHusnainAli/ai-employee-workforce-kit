@@ -43,6 +43,16 @@ class RecalledMemory(BaseModel):
     trust: str
 
 
+class RecalledSkill(BaseModel):
+    """An approved way of doing this kind of task: which tools, in which order."""
+
+    skill_id: str
+    name: str
+    tools: list[str]
+    procedure: str
+    score: float
+
+
 class BrainRecall(BaseModel):
     """One recall as the harness uses it. `source` says where it came from."""
 
@@ -52,6 +62,7 @@ class BrainRecall(BaseModel):
     identity_version: int = 0
     rules: list[str] = Field(default_factory=list)
     items: list[RecalledMemory] = Field(default_factory=list)
+    skills: list[RecalledSkill] = Field(default_factory=list)
     degraded: bool = False
     skipped: list[str] = Field(default_factory=list)
 
@@ -129,6 +140,16 @@ class BrainClient:
                     trust=i.trust,
                 )
                 for i in resp.items
+            ],
+            skills=[
+                RecalledSkill(
+                    skill_id=s.skill_id,
+                    name=s.name,
+                    tools=list(s.tools),
+                    procedure=s.procedure,
+                    score=s.score,
+                )
+                for s in resp.skills
             ],
             degraded=resp.degraded,
             skipped=list(resp.skipped),
@@ -215,6 +236,12 @@ class BrainMemoryStore(MemoryStore):
             blocks.append("## Who you are (your identity core)\n" + r.identity)
         if r.rules:
             blocks.append("## Rules you follow\n" + "\n".join(f"- {x}" for x in r.rules))
+        if r.skills:
+            blocks.append(
+                "## Skills you have\nWays of working a person approved for tasks like this one. "
+                "Follow one when it fits the task; skip it when it does not.\n"
+                + "\n\n".join(f"### {s.name}\n{s.procedure}" for s in r.skills)
+            )
         if r.items:
             lines = "\n".join(
                 f'<data source="brain:{m.memory_id}" kind="{m.kind}" trust="{m.trust}">'

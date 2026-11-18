@@ -1,7 +1,8 @@
 """Nightly consolidation as Temporal workflows, on task queue `brain-batch`.
 
     ConsolidateAll (on a schedule)  ->  BrainConsolidate per employee with new episodes:
-        select  ->  remember what the clusters teach  ->  decay  ->  merge entities  ->  finish
+        select  ->  remember what the clusters teach  ->  mine skills  ->  decay
+                ->  merge entities  ->  finish
 
 Resumable: each step is an activity, retried on failure and never repeated once done. Rate
 limited: the brain-batch worker runs few activities at once, and at most MAX_PARALLEL
@@ -49,6 +50,11 @@ class BrainConsolidate:
         learned: int = await workflow.execute_activity(
             "consolidate_remember", batch, result_type=int, **opts
         )
+        mined = 0
+        if workflow.patched("skills-v1"):
+            mined = await workflow.execute_activity(
+                "consolidate_skills", who, result_type=int, **opts
+            )
         decay: dict[str, int] = await workflow.execute_activity(
             "consolidate_decay", who, result_type=dict[str, int], **opts
         )
@@ -56,7 +62,7 @@ class BrainConsolidate:
             "consolidate_merge", who, result_type=int, **opts
         )
         counts = {"episodes": len(batch.episodes), "learned": learned, "merged_entities": merged,
-                  **decay}  # fmt: skip
+                  "skills_proposed": mined, **decay}  # fmt: skip
         await workflow.execute_activity(
             "consolidate_finish", {"batch": batch, "counts": counts}, **opts
         )

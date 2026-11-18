@@ -10,6 +10,8 @@ from brain_service.domain.write.model import Source
 
 #: Run events with an outcome. Steps in between carry no task or output.
 RUN_EVENTS = ("run.completed", "run.failed")
+#: Tools kept per run: enough for any real procedure.
+MAX_TOOLS = 50
 
 
 def from_run_event(
@@ -48,4 +50,5 @@ def from_run_event(
         output=str(data.get("output") or ""),
         outcome=outcome,
         stop_reason=stop_reason,
+        tools=[str(t) for t in data.get("tools") or [] if t][:MAX_TOOLS],
     )

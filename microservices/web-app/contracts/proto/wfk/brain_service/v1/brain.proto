@@ -49,6 +49,9 @@ service BrainService {
   rpc ListRules(ListRulesRequest) returns (ListRulesResponse);
   // Stop a rule applying. Humans only.
   rpc RevokeRule(RevokeRuleRequest) returns (RevokeRuleResponse);
+  // The employee's skills: ways of doing a kind of task, mined from its successes. A skill is
+  // proposed like a rule (kind skill_add) and active once a person approves it.
+  rpc ListSkills(ListSkillsRequest) returns (ListSkillsResponse);
 }
 
 // Which stores a step needs (brain.md section 3, the query planner).
@@ -101,6 +104,21 @@ message RecallResponse {
   // True when a retriever was skipped (slow or failing); the step should be flagged.
   bool degraded = 7;
   repeated string skipped = 8;
+  // Approved skills whose trigger is close to the query, best first; in an evaluation or
+  // shadow run of a skill proposal, that proposed skill too. Outside the token budget.
+  repeated RecalledSkill skills = 9;
+}
+
+message RecalledSkill {
+  string skill_id = 1;
+  string name = 2;
+  // The kind of task it is for.
+  string trigger = 3;
+  // The tools to use, in order.
+  repeated string tools = 4;
+  // What the employee is shown.
+  string procedure = 5;
+  double score = 6;
 }
 
 // ---- Brain Inspector ---------------------------------------------------------------------
@@ -249,9 +267,9 @@ message FeedbackResponse {
 message Proposal {
   string proposal_id = 1;
   string employee_id = 2;
-  // rule_add
+  // rule_add, skill_add
   string kind = 3;
-  // For rule_add: the rule's text.
+  // For rule_add: the rule's text. For skill_add: the skill's procedure.
   string text = 4;
   // low, medium, high
   string risk = 5;
@@ -268,6 +286,9 @@ message Proposal {
   // pending, passed, failed: the evaluation (evaluation-service). Approval needs passed.
   string eval_status = 14;
   repeated string eval_reasons = 15;
+  // For skill_add: the skill, and how many successful episodes it was mined from.
+  string skill_id = 16;
+  int32 evidence_count = 17;
 }
 
 message ListProposalsRequest {
@@ -292,6 +313,8 @@ message DecideProposalResponse {
   Proposal proposal = 1;
   // Set when an approved proposal created a rule.
   Rule rule = 2;
+  // Set when a skill proposal was decided: the skill, now active or rejected.
+  Skill skill = 3;
 }
 
 message Rule {
@@ -326,4 +349,33 @@ message RevokeRuleRequest {
 
 message RevokeRuleResponse {
   Rule rule = 1;
+}
+
+message Skill {
+  string skill_id = 1;
+  string employee_id = 2;
+  string name = 3;
+  string trigger = 4;
+  repeated string tools = 5;
+  string procedure = 6;
+  // proposed, active, rejected, retired
+  string status = 7;
+  string proposal_id = 8;
+  // The successful episodes (memory ids) it was mined from.
+  repeated string evidence = 9;
+  string approved_by = 10;
+  int32 use_count = 11;
+  google.protobuf.Timestamp last_used_at = 12;
+  google.protobuf.Timestamp created_at = 13;
+}
+
+message ListSkillsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Empty means all; "proposed", "active", "rejected", "retired".
+  repeated string statuses = 3;
+}
+
+message ListSkillsResponse {
+  repeated Skill skills = 1;
 }

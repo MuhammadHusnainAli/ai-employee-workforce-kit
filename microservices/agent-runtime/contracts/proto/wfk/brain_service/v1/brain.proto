@@ -68,4 +68,19 @@ message RecallResponse {
   // True when a retriever was skipped (slow or failing); the step should be flagged.
   bool degraded = 7;
   repeated string skipped = 8;
+  // Approved skills whose trigger is close to the query, best first; in an evaluation or
+  // shadow run of a skill proposal, that proposed skill too. Outside the token budget.
+  repeated RecalledSkill skills = 9;
+}
+
+message RecalledSkill {
+  string skill_id = 1;
+  string name = 2;
+  // The kind of task it is for.
+  string trigger = 3;
+  // The tools to use, in order.
+  repeated string tools = 4;
+  // What the employee is shown.
+  string procedure = 5;
+  double score = 6;
 }

@@ -161,6 +161,26 @@ async def test_terminal_event_carries_the_task_and_output(run_db: Database) -> N
     data = row["data"]
     assert data["task"] == "x" and data["employee_id"] == "sam"
     assert len(data["output"]) == ledger_module.EVENT_TEXT_LIMIT, "clipped, so events stay small"
+    assert data["tools"] == []
+
+
+async def test_terminal_event_lists_the_tools_called_in_order(run_db: Database) -> None:
+    """brain-ingest mines skills from the tool sequence of successful runs."""
+    led, run_id = await started(run_db)
+    calls = [{"type": "tool_use", "id": f"c{i}", "name": n, "input": {}}
+             for i, n in enumerate(["word_count", "char_count"])]  # fmt: skip
+    await led.record(entry(run_id, 0, decision={"kind": "tool_calls", "calls": calls}))
+    await led.record(entry(run_id, 1, kind="final", decision={"kind": "final", "text": "ok"}))
+    third = [{"type": "tool_use", "id": "c9", "name": "current_time", "input": {}}]
+    await led.record(entry(run_id, 2, decision={"kind": "tool_calls", "calls": third}))
+    assert await led.record(entry(run_id, 3, kind="final", status="completed", output="done"))
+    async with run_db.tx() as conn:
+        cur = await conn.execute(
+            "SELECT data FROM outbox WHERE subject = %s AND type = 'run.completed'", (run_id,)
+        )
+        row = await cur.fetchone()
+    assert row is not None
+    assert row["data"]["tools"] == ["word_count", "char_count", "current_time"]
 
 
 async def test_the_mode_is_recorded_and_travels_with_every_event(run_db: Database) -> None:

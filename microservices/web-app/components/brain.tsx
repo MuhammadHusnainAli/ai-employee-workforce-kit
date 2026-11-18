@@ -3,16 +3,17 @@
 // follows, and corrections that become rules once a person approves them.
 
 import { useCallback, useEffect, useState } from "react";
-import { api, type Memory, type Proposal, type Rule, when } from "./api";
+import { api, type Memory, type Proposal, type Rule, type Skill, when } from "./api";
 import { ErrorLine, Trust } from "./bits";
 
-type Tab = "memories" | "held" | "proposals" | "rules" | "teach";
+type Tab = "memories" | "held" | "proposals" | "rules" | "skills" | "teach";
 
 const TABS: { id: Tab; label: string }[] = [
     { id: "memories", label: "What it knows" },
     { id: "held", label: "Held for review" },
-    { id: "proposals", label: "Proposed rules" },
+    { id: "proposals", label: "Proposed changes" },
     { id: "rules", label: "Rules" },
+    { id: "skills", label: "Skills" },
     { id: "teach", label: "Correct it" },
 ];
 
@@ -266,19 +267,29 @@ function Proposals({ employee }: { employee: string }) {
     return (
         <>
             <p className="lede" style={{ marginBottom: "1rem" }}>
-                Corrections become rules only when a person approves them, after they pass an
-                evaluation on the employee&apos;s own tasks. A high-risk rule needs someone other
-                than the person who proposed it.
+                Corrections become rules, and work it keeps doing the same way becomes a skill, only
+                when a person approves them after they pass an evaluation on the employee&apos;s own
+                tasks. A high-risk change needs someone other than the person who proposed it.
             </p>
             <ErrorLine error={loadError ?? error} />
             {items && items.length === 0 ? (
-                <div className="rows empty">No proposals. Corrections you make appear here.</div>
+                <div className="rows empty">
+                    No proposals. Corrections you make, and skills it learns, appear here.
+                </div>
             ) : (
                 <ul className="rows">
                     {(items ?? []).map((p) => (
                         <li key={p.id} className="memory">
-                            <p className="memory-text">{p.text}</p>
+                            <p className="memory-text prose">{p.text}</p>
                             <div className="memory-why">
+                                <span className="chip">
+                                    {p.kind === "skill_add" ? "New skill" : "New rule"}
+                                </span>
+                                {p.kind === "skill_add" && (
+                                    <span className="meta">
+                                        seen in {p.evidence_count} successful tasks
+                                    </span>
+                                )}
                                 <span className={p.risk === "high" ? "chip chip-held" : "chip"}>
                                     {p.risk} risk
                                 </span>
@@ -310,11 +321,11 @@ function Proposals({ employee }: { employee: string }) {
                                         title={
                                             p.eval_status === "passed"
                                                 ? undefined
-                                                : "A rule can be approved once its evaluation passes"
+                                                : "It can be approved once its evaluation passes"
                                         }
                                         onClick={() => decide(p.id, true)}
                                     >
-                                        Approve rule
+                                        {p.kind === "skill_add" ? "Approve skill" : "Approve rule"}
                                     </button>
                                     <button
                                         className="quiet"
@@ -375,6 +386,54 @@ function Rules({ employee }: { employee: string }) {
                                 >
                                     Stop this rule
                                 </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </>
+    );
+}
+
+function Skills({ employee }: { employee: string }) {
+    const [items, setItems] = useState<Skill[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    useEffect(() => {
+        api<{ skills: Skill[] }>(`/employees/${encodeURIComponent(employee)}/skills?status=active`)
+            .then((r) => setItems(r.skills))
+            .catch((e: Error) => setError(e.message));
+    }, [employee]);
+    return (
+        <>
+            <p className="lede" style={{ marginBottom: "1rem" }}>
+                Ways of working it learned from tasks it kept getting right. When a new task looks
+                like one of these, it is shown which tools worked before and in what order.
+            </p>
+            <ErrorLine error={error} />
+            {items && items.length === 0 ? (
+                <div className="rows empty">
+                    No skills yet. After five similar tasks done the same way, it proposes one for
+                    you to approve.
+                </div>
+            ) : (
+                <ul className="rows">
+                    {(items ?? []).map((s) => (
+                        <li key={s.id} className="memory">
+                            <p className="memory-text">{s.trigger}</p>
+                            <ol className="skill-steps">
+                                {s.tools.map((t, i) => (
+                                    <li key={`${t}-${i}`}>{t}</li>
+                                ))}
+                            </ol>
+                            <div className="memory-why">
+                                <span className="meta">
+                                    learned from {s.evidence_count} tasks, approved by{" "}
+                                    {s.approved_by}
+                                </span>
+                                <span className="meta">
+                                    used {s.use_count} {s.use_count === 1 ? "time" : "times"}
+                                    {s.last_used_at ? `, last ${when(s.last_used_at)}` : ""}
+                                </span>
                             </div>
                         </li>
                     ))}
@@ -487,6 +546,7 @@ export function BrainView({
                 {tab === "held" && <Memories employee={employee} held />}
                 {tab === "proposals" && <Proposals employee={employee} />}
                 {tab === "rules" && <Rules employee={employee} />}
+                {tab === "skills" && <Skills employee={employee} />}
                 {tab === "teach" && (
                     <Teach employee={employee} onSent={() => setTab("proposals")} />
                 )}

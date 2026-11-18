@@ -16,8 +16,10 @@ from brain_service.adapters.cache.pinned import NoCache, PinnedCache, PinnedCont
 from brain_service.adapters.modelgw.embeddings import Embedder
 from brain_service.adapters.postgres import brain as brain_repo
 from brain_service.adapters.postgres import rules as rules_repo
+from brain_service.adapters.postgres import skills as skills_repo
 from brain_service.adapters.postgres.graph import GraphRetriever
 from brain_service.adapters.postgres.memories import MemoryRetrievers
+from brain_service.adapters.postgres.skills import RecalledSkill
 from brain_service.domain.memory.model import Memory
 from brain_service.domain.recall.planner import StepType, estimate_tokens, plan
 from brain_service.domain.recall.retrieval import RecallQuery, Retriever, retrieve
@@ -54,6 +56,8 @@ class RecallResult:
     identity_version: int = 0
     rules: list[str] = field(default_factory=list)
     items: list[RecalledItem] = field(default_factory=list)
+    #: Approved ways of doing tasks like this one (and a proposed one, in evaluation runs).
+    skills: list[RecalledSkill] = field(default_factory=list)
     tokens_used: int = 0
     degraded: bool = False
     skipped: list[str] = field(default_factory=list)
@@ -86,6 +90,11 @@ class Recall:
             candidate = (
                 await rules_repo.candidate_rule(conn, req.employee_id, req.candidate_proposal_id)
                 if req.candidate_proposal_id
+                else None
+            )
+            candidate_skill = (
+                await skills_repo.candidate(conn, req.employee_id, req.candidate_proposal_id)
+                if req.candidate_proposal_id and candidate is None
                 else None
             )
         # Write the pinned context through to Valkey: the agent runtime's fallback. Live rules
@@ -139,6 +148,12 @@ class Recall:
 
         skipped = sorted(name for name, rep in reports.items() if rep["skipped"])
         async with self.db.tenant_tx(req.tenant_id) as conn:
+            # Skills ride along like rules: a few lines, outside the memory budget.
+            skills = (
+                await skills_repo.matching(conn, req.employee_id, embedding) if embedding else []
+            )
+            if candidate_skill and all(s.skill_id != candidate_skill.skill_id for s in skills):
+                skills = [candidate_skill, *skills]
             recall_id = await brain_repo.log_recall(
                 conn,
                 tenant_id=req.tenant_id,
@@ -156,7 +171,8 @@ class Recall:
             identity_version=identity.version if identity else 0,
             rules=rules,
             items=[RecalledItem(found[mid], score) for mid, score in chosen],
-            tokens_used=pinned + used,
+            skills=skills,
+            tokens_used=pinned + used + sum(estimate_tokens(s.procedure) for s in skills),
             degraded=bool(skipped),
             skipped=skipped,
         )

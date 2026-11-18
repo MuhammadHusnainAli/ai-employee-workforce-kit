@@ -37,3 +37,12 @@ def test_nothing_to_learn() -> None:
     assert ev("run.completed", mode="eval") is None, "evaluation runs are not experiences"
     assert ev("run.completed", mode="shadow") is None
     assert ev("run.completed", mode="live") is not None
+
+
+def test_the_tools_a_run_used_are_kept_in_order() -> None:
+    s = ev("run.completed", tools=["word_count", "", "char_count", "word_count"])
+    assert s is not None and s.tools == ["word_count", "char_count", "word_count"]
+    many = ev("run.completed", tools=[f"t{i}" for i in range(80)])
+    assert many is not None and len(many.tools) == 50
+    plain = ev("run.completed")
+    assert plain is not None and plain.tools == []

@@ -31,6 +31,8 @@ class Source(BaseModel):
     output: str = ""
     outcome: Outcome = "unknown"
     stop_reason: str = ""
+    #: The tools the run called, in order (skill mining).
+    tools: list[str] = Field(default_factory=list)
 
 
 class Candidate(BaseModel):

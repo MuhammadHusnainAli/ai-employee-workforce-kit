@@ -65,6 +65,7 @@ export interface Memory {
 
 export interface Proposal {
     id: string;
+    kind: "rule_add" | "skill_add";
     text: string;
     risk: "low" | "medium" | "high";
     status: "pending" | "approved" | "rejected";
@@ -74,6 +75,21 @@ export interface Proposal {
     created_at: string | null;
     eval_status: "pending" | "passed" | "failed";
     eval_reasons: string[];
+    evidence_count: number;
+}
+
+export interface Skill {
+    id: string;
+    name: string;
+    trigger: string;
+    tools: string[];
+    procedure: string;
+    status: "proposed" | "active" | "rejected" | "retired";
+    evidence_count: number;
+    approved_by: string | null;
+    use_count: number;
+    last_used_at: string | null;
+    created_at: string | null;
 }
 
 export interface Rule {

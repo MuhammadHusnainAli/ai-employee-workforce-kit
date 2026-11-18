@@ -33,6 +33,7 @@ IDENTITY = "Role: Billing specialist for Acme.\n\nNever:\n- Promise refunds outs
 class FakeBrain(brain_pb2_grpc.BrainServiceServicer):
     def __init__(self) -> None:
         self.requests: list[brain_pb2.RecallRequest] = []
+        self.skills: list[brain_pb2.RecalledSkill] = []
 
     async def Recall(
         self, request: brain_pb2.RecallRequest, context: grpc.aio.ServicerContext
@@ -59,6 +60,7 @@ class FakeBrain(brain_pb2_grpc.BrainServiceServicer):
                 ),
             ],
             tokens_used=120,
+            skills=self.skills,
         )
 
 
@@ -102,6 +104,25 @@ async def test_prompt_blocks_pin_identity_and_cite_memories_as_data(
         TENANT, "sam", "run-7", 2,
     )  # fmt: skip
     assert req.step_type == brain_pb2.STEP_TYPE_PLANNING and req.query == "refund window"
+
+
+async def test_recalled_skills_go_in_the_prompt_before_memories(
+    brain: tuple[FakeBrain, BrainClient],
+) -> None:
+    fake, client = brain
+    fake.skills = [
+        brain_pb2.RecalledSkill(
+            skill_id="s1", name="word_count then char_count", trigger="Count the words",
+            tools=["word_count", "char_count"], score=0.9,
+            procedure='For tasks like "Count the words", this worked before:\n1. Use word_count.',
+        )
+    ]  # fmt: skip
+    mem = store(client)
+    blocks = await mem.prompt_blocks("count the words in this")
+    assert blocks[1].startswith("## Skills you have\nWays of working a person approved")
+    assert "### word_count then char_count\nFor tasks like" in blocks[1]
+    assert blocks[2].startswith("## What you remember")
+    assert mem.last is not None and mem.last.skills[0].tools == ["word_count", "char_count"]
 
 
 async def test_memory_store_contract(brain: tuple[FakeBrain, BrainClient]) -> None:

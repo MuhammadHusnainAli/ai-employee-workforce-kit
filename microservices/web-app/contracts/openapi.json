@@ -2030,6 +2030,113 @@
         }
       }
     },
+    "/api/v1/employees/{employee}/skills": {
+      "get": {
+        "operationId": "listSkills",
+        "summary": "Ways of working mined from the employee's successes",
+        "tags": ["brain"],
+        "parameters": [
+          {
+            "name": "employee",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "proposed, active, rejected, retired"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "skills": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Skill"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed (people-only actions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: already exists, or not in a state that allows it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A service behind the API is unavailable; retry after the Retry-After header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/memories/{id}": {
       "get": {
         "operationId": "getMemory",
@@ -2502,6 +2609,16 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "skill": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Skill"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
@@ -2942,7 +3059,8 @@
             "type": "string"
           },
           "kind": {
-            "type": "string"
+            "type": "string",
+            "enum": ["rule_add", "skill_add"]
           },
           "text": {
             "type": "string"
@@ -2975,6 +3093,73 @@
             "format": "date-time"
           },
           "decided_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "eval_status": {
+            "type": "string",
+            "enum": ["pending", "passed", "failed"]
+          },
+          "eval_reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skill_id": {
+            "type": ["string", "null"]
+          },
+          "evidence_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "Skill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employee_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "procedure": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["proposed", "active", "rejected", "retired"]
+          },
+          "proposal_id": {
+            "type": ["string", "null"]
+          },
+          "evidence_count": {
+            "type": "integer"
+          },
+          "approved_by": {
+            "type": ["string", "null"]
+          },
+          "use_count": {
+            "type": "integer"
+          },
+          "last_used_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "created_at": {
             "type": ["string", "null"],
             "format": "date-time"
           }

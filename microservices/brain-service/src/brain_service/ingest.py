@@ -113,8 +113,8 @@ def batch_worker(
         client,
         task_queue=task_queue,
         workflows=[BrainConsolidate, ConsolidateAll],
-        activities=[activities.due, activities.select, activities.remember, activities.decay,
-                    activities.merge, activities.finish],
+        activities=[activities.due, activities.select, activities.remember,
+                    activities.mine_skills, activities.decay, activities.merge, activities.finish],
         max_concurrent_activities=2,
     )  # fmt: skip
 

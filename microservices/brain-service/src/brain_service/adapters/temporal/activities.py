@@ -10,9 +10,10 @@ from temporalio import activity
 from brain_service.adapters.modelgw.extractor import Extractor
 from brain_service.adapters.postgres.consolidate import Batch, Consolidation
 from brain_service.adapters.postgres.learn import Learning
+from brain_service.adapters.postgres.skills import Skills
 from brain_service.adapters.temporal.consolidate import Employee
 from brain_service.adapters.temporal.ingest import RememberInput
-from brain_service.domain.learn import consolidate
+from brain_service.domain.learn import consolidate, skills
 from brain_service.domain.write.model import Candidate, Committed, Source
 from brain_service.remember import Remember
 
@@ -43,9 +44,12 @@ class IngestActivities:
 class ConsolidateActivities:
     """Consolidation's steps (adapters/temporal/consolidate.py), bound to brain_db."""
 
-    def __init__(self, consolidation: Consolidation, remember: Remember) -> None:
+    def __init__(
+        self, consolidation: Consolidation, remember: Remember, skills_: Skills | None = None
+    ) -> None:
         self.c = consolidation
         self.remember_ = remember
+        self.skills = skills_ or Skills(consolidation.db, service_source=remember.service_source)
 
     @activity.defn(name="consolidate_due")
     async def due(self) -> list[Employee]:
@@ -73,6 +77,23 @@ class ConsolidateActivities:
         )  # fmt: skip
         done = await self.remember_(source, candidates)
         return len(done.memory_ids)
+
+    @activity.defn(name="consolidate_skills")
+    async def mine_skills(self, who: Employee) -> int:
+        """Propose a skill for each tool sequence that keeps succeeding. Idempotent: a tool
+        sequence that already has a skill is skipped, and ids derive from the sequence."""
+        found = skills.mine(
+            await self.skills.successes(who.tenant_id, who.employee_id),
+            await self.skills.known(who.tenant_id, who.employee_id),
+        )
+        if not found:
+            return 0
+        vectors = await self.remember_.embedder.embed([m.trigger for m in found])
+        proposed = 0
+        for mined, vec in zip(found, vectors, strict=True):
+            if await self.skills.propose(who.tenant_id, who.employee_id, mined, vec):
+                proposed += 1
+        return proposed
 
     @activity.defn(name="consolidate_decay")
     async def decay(self, who: Employee) -> dict[str, int]:

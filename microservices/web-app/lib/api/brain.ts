@@ -56,6 +56,26 @@ export function proposal(p: Msg) {
         decided_at: iso(p.decidedAt),
         eval_status: p.evalStatus || "pending",
         eval_reasons: (p.evalReasons as string[]) ?? [],
+        skill_id: p.skillId || null,
+        evidence_count: p.evidenceCount ?? 0,
+    };
+}
+
+export function skill(s: Msg) {
+    return {
+        id: s.skillId,
+        employee_id: s.employeeId,
+        name: s.name,
+        trigger: s.trigger,
+        tools: (s.tools as string[]) ?? [],
+        procedure: s.procedure,
+        status: s.status,
+        proposal_id: s.proposalId || null,
+        evidence_count: ((s.evidence as string[]) ?? []).length,
+        approved_by: s.approvedBy || null,
+        use_count: s.useCount ?? 0,
+        last_used_at: iso(s.lastUsedAt),
+        created_at: iso(s.createdAt),
     };
 }
 
@@ -194,7 +214,11 @@ export async function decideProposal(b: Backends, c: Caller, id: string, body: M
         approve: body.approve,
         note: str(body.note, "note", { max: 2000 }),
     });
-    return { proposal: proposal(r.proposal as Msg), rule: r.rule ? rule(r.rule as Msg) : null };
+    return {
+        proposal: proposal(r.proposal as Msg),
+        rule: r.rule ? rule(r.rule as Msg) : null,
+        skill: r.skill ? skill(r.skill as Msg) : null,
+    };
 }
 
 export async function listRules(b: Backends, c: Caller, employee: string, q: URLSearchParams) {
@@ -204,6 +228,15 @@ export async function listRules(b: Backends, c: Caller, employee: string, q: URL
         includeRevoked: q.get("include_revoked") === "true",
     });
     return { rules: ((r.rules as Msg[]) ?? []).map(rule) };
+}
+
+export async function listSkills(b: Backends, c: Caller, employee: string, q: URLSearchParams) {
+    const r = await b.brain.call<Msg>("ListSkills", {
+        tenant: tenant(c),
+        employeeId: employee,
+        statuses: list(q, "status", ["proposed", "active", "rejected", "retired"]),
+    });
+    return { skills: ((r.skills as Msg[]) ?? []).map(skill) };
 }
 
 export async function revokeRule(b: Backends, c: Caller, id: string, body: Msg) {

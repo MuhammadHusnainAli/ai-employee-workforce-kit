@@ -65,7 +65,7 @@ class RecalledItem(_message.Message):
     def __init__(self, memory_id: _Optional[str] = ..., kind: _Optional[str] = ..., content: _Optional[str] = ..., score: _Optional[float] = ..., trust: _Optional[str] = ..., recorded_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., source_ref: _Optional[str] = ...) -> None: ...
 
 class RecallResponse(_message.Message):
-    __slots__ = ("recall_id", "identity", "identity_version", "rules", "items", "tokens_used", "degraded", "skipped")
+    __slots__ = ("recall_id", "identity", "identity_version", "rules", "items", "tokens_used", "degraded", "skipped", "skills")
     RECALL_ID_FIELD_NUMBER: _ClassVar[int]
     IDENTITY_FIELD_NUMBER: _ClassVar[int]
     IDENTITY_VERSION_FIELD_NUMBER: _ClassVar[int]
@@ -74,6 +74,7 @@ class RecallResponse(_message.Message):
     TOKENS_USED_FIELD_NUMBER: _ClassVar[int]
     DEGRADED_FIELD_NUMBER: _ClassVar[int]
     SKIPPED_FIELD_NUMBER: _ClassVar[int]
+    SKILLS_FIELD_NUMBER: _ClassVar[int]
     recall_id: str
     identity: str
     identity_version: int
@@ -82,4 +83,21 @@ class RecallResponse(_message.Message):
     tokens_used: int
     degraded: bool
     skipped: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, recall_id: _Optional[str] = ..., identity: _Optional[str] = ..., identity_version: _Optional[int] = ..., rules: _Optional[_Iterable[str]] = ..., items: _Optional[_Iterable[_Union[RecalledItem, _Mapping]]] = ..., tokens_used: _Optional[int] = ..., degraded: _Optional[bool] = ..., skipped: _Optional[_Iterable[str]] = ...) -> None: ...
+    skills: _containers.RepeatedCompositeFieldContainer[RecalledSkill]
+    def __init__(self, recall_id: _Optional[str] = ..., identity: _Optional[str] = ..., identity_version: _Optional[int] = ..., rules: _Optional[_Iterable[str]] = ..., items: _Optional[_Iterable[_Union[RecalledItem, _Mapping]]] = ..., tokens_used: _Optional[int] = ..., degraded: _Optional[bool] = ..., skipped: _Optional[_Iterable[str]] = ..., skills: _Optional[_Iterable[_Union[RecalledSkill, _Mapping]]] = ...) -> None: ...
+
+class RecalledSkill(_message.Message):
+    __slots__ = ("skill_id", "name", "trigger", "tools", "procedure", "score")
+    SKILL_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TRIGGER_FIELD_NUMBER: _ClassVar[int]
+    TOOLS_FIELD_NUMBER: _ClassVar[int]
+    PROCEDURE_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    skill_id: str
+    name: str
+    trigger: str
+    tools: _containers.RepeatedScalarFieldContainer[str]
+    procedure: str
+    score: float
+    def __init__(self, skill_id: _Optional[str] = ..., name: _Optional[str] = ..., trigger: _Optional[str] = ..., tools: _Optional[_Iterable[str]] = ..., procedure: _Optional[str] = ..., score: _Optional[float] = ...) -> None: ...

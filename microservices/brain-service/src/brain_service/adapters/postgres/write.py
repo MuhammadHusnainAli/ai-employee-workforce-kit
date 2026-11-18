@@ -78,11 +78,12 @@ async def _insert(
         await conn.execute(
             """
             INSERT INTO episodes (id, tenant_id, employee_id, memory_id, run_id, task, outcome,
-                ended_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ended_at, tools)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (uuid.uuid5(mid, "episode"), source.tenant_id, source.employee_id, mid,
-             source.run_id, source.task[:4000], source.outcome, source.occurred_at),
+             source.run_id, source.task[:4000], source.outcome, source.occurred_at,
+             source.tools),
         )  # fmt: skip
         # A new experience: consolidation has something to do for this employee tonight.
         await conn.execute(

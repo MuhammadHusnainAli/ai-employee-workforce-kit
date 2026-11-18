@@ -89,7 +89,7 @@ class RecalledItem(_message.Message):
     def __init__(self, memory_id: _Optional[str] = ..., kind: _Optional[str] = ..., content: _Optional[str] = ..., score: _Optional[float] = ..., trust: _Optional[str] = ..., recorded_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., source_ref: _Optional[str] = ...) -> None: ...
 
 class RecallResponse(_message.Message):
-    __slots__ = ("recall_id", "identity", "identity_version", "rules", "items", "tokens_used", "degraded", "skipped")
+    __slots__ = ("recall_id", "identity", "identity_version", "rules", "items", "tokens_used", "degraded", "skipped", "skills")
     RECALL_ID_FIELD_NUMBER: _ClassVar[int]
     IDENTITY_FIELD_NUMBER: _ClassVar[int]
     IDENTITY_VERSION_FIELD_NUMBER: _ClassVar[int]
@@ -98,6 +98,7 @@ class RecallResponse(_message.Message):
     TOKENS_USED_FIELD_NUMBER: _ClassVar[int]
     DEGRADED_FIELD_NUMBER: _ClassVar[int]
     SKIPPED_FIELD_NUMBER: _ClassVar[int]
+    SKILLS_FIELD_NUMBER: _ClassVar[int]
     recall_id: str
     identity: str
     identity_version: int
@@ -106,7 +107,24 @@ class RecallResponse(_message.Message):
     tokens_used: int
     degraded: bool
     skipped: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, recall_id: _Optional[str] = ..., identity: _Optional[str] = ..., identity_version: _Optional[int] = ..., rules: _Optional[_Iterable[str]] = ..., items: _Optional[_Iterable[_Union[RecalledItem, _Mapping]]] = ..., tokens_used: _Optional[int] = ..., degraded: _Optional[bool] = ..., skipped: _Optional[_Iterable[str]] = ...) -> None: ...
+    skills: _containers.RepeatedCompositeFieldContainer[RecalledSkill]
+    def __init__(self, recall_id: _Optional[str] = ..., identity: _Optional[str] = ..., identity_version: _Optional[int] = ..., rules: _Optional[_Iterable[str]] = ..., items: _Optional[_Iterable[_Union[RecalledItem, _Mapping]]] = ..., tokens_used: _Optional[int] = ..., degraded: _Optional[bool] = ..., skipped: _Optional[_Iterable[str]] = ..., skills: _Optional[_Iterable[_Union[RecalledSkill, _Mapping]]] = ...) -> None: ...
+
+class RecalledSkill(_message.Message):
+    __slots__ = ("skill_id", "name", "trigger", "tools", "procedure", "score")
+    SKILL_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TRIGGER_FIELD_NUMBER: _ClassVar[int]
+    TOOLS_FIELD_NUMBER: _ClassVar[int]
+    PROCEDURE_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    skill_id: str
+    name: str
+    trigger: str
+    tools: _containers.RepeatedScalarFieldContainer[str]
+    procedure: str
+    score: float
+    def __init__(self, skill_id: _Optional[str] = ..., name: _Optional[str] = ..., trigger: _Optional[str] = ..., tools: _Optional[_Iterable[str]] = ..., procedure: _Optional[str] = ..., score: _Optional[float] = ...) -> None: ...
 
 class InspectedMemory(_message.Message):
     __slots__ = ("memory_id", "employee_id", "kind", "content", "status", "trust", "confidence", "importance", "fact_key", "source_ref", "valid_from", "valid_to", "recorded_at", "superseded_by", "findings", "contradicts", "reinforced", "use_count")
@@ -290,7 +308,7 @@ class FeedbackResponse(_message.Message):
     def __init__(self, feedback_id: _Optional[str] = ..., proposal_id: _Optional[str] = ..., credited: _Optional[int] = ...) -> None: ...
 
 class Proposal(_message.Message):
-    __slots__ = ("proposal_id", "employee_id", "kind", "text", "risk", "status", "proposed_by", "decided_by", "decision_note", "feedback_id", "run_id", "created_at", "decided_at", "eval_status", "eval_reasons")
+    __slots__ = ("proposal_id", "employee_id", "kind", "text", "risk", "status", "proposed_by", "decided_by", "decision_note", "feedback_id", "run_id", "created_at", "decided_at", "eval_status", "eval_reasons", "skill_id", "evidence_count")
     PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
     EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
@@ -306,6 +324,8 @@ class Proposal(_message.Message):
     DECIDED_AT_FIELD_NUMBER: _ClassVar[int]
     EVAL_STATUS_FIELD_NUMBER: _ClassVar[int]
     EVAL_REASONS_FIELD_NUMBER: _ClassVar[int]
+    SKILL_ID_FIELD_NUMBER: _ClassVar[int]
+    EVIDENCE_COUNT_FIELD_NUMBER: _ClassVar[int]
     proposal_id: str
     employee_id: str
     kind: str
@@ -321,7 +341,9 @@ class Proposal(_message.Message):
     decided_at: _timestamp_pb2.Timestamp
     eval_status: str
     eval_reasons: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, proposal_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., kind: _Optional[str] = ..., text: _Optional[str] = ..., risk: _Optional[str] = ..., status: _Optional[str] = ..., proposed_by: _Optional[str] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., feedback_id: _Optional[str] = ..., run_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., eval_status: _Optional[str] = ..., eval_reasons: _Optional[_Iterable[str]] = ...) -> None: ...
+    skill_id: str
+    evidence_count: int
+    def __init__(self, proposal_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., kind: _Optional[str] = ..., text: _Optional[str] = ..., risk: _Optional[str] = ..., status: _Optional[str] = ..., proposed_by: _Optional[str] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., feedback_id: _Optional[str] = ..., run_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., eval_status: _Optional[str] = ..., eval_reasons: _Optional[_Iterable[str]] = ..., skill_id: _Optional[str] = ..., evidence_count: _Optional[int] = ...) -> None: ...
 
 class ListProposalsRequest(_message.Message):
     __slots__ = ("tenant", "employee_id", "statuses")
@@ -352,12 +374,14 @@ class DecideProposalRequest(_message.Message):
     def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., proposal_id: _Optional[str] = ..., approve: _Optional[bool] = ..., note: _Optional[str] = ...) -> None: ...
 
 class DecideProposalResponse(_message.Message):
-    __slots__ = ("proposal", "rule")
+    __slots__ = ("proposal", "rule", "skill")
     PROPOSAL_FIELD_NUMBER: _ClassVar[int]
     RULE_FIELD_NUMBER: _ClassVar[int]
+    SKILL_FIELD_NUMBER: _ClassVar[int]
     proposal: Proposal
     rule: Rule
-    def __init__(self, proposal: _Optional[_Union[Proposal, _Mapping]] = ..., rule: _Optional[_Union[Rule, _Mapping]] = ...) -> None: ...
+    skill: Skill
+    def __init__(self, proposal: _Optional[_Union[Proposal, _Mapping]] = ..., rule: _Optional[_Union[Rule, _Mapping]] = ..., skill: _Optional[_Union[Skill, _Mapping]] = ...) -> None: ...
 
 class Rule(_message.Message):
     __slots__ = ("rule_id", "employee_id", "text", "status", "proposal_id", "approved_by", "created_at", "revoked_by", "revoked_at")
@@ -412,3 +436,49 @@ class RevokeRuleResponse(_message.Message):
     RULE_FIELD_NUMBER: _ClassVar[int]
     rule: Rule
     def __init__(self, rule: _Optional[_Union[Rule, _Mapping]] = ...) -> None: ...
+
+class Skill(_message.Message):
+    __slots__ = ("skill_id", "employee_id", "name", "trigger", "tools", "procedure", "status", "proposal_id", "evidence", "approved_by", "use_count", "last_used_at", "created_at")
+    SKILL_ID_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TRIGGER_FIELD_NUMBER: _ClassVar[int]
+    TOOLS_FIELD_NUMBER: _ClassVar[int]
+    PROCEDURE_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    EVIDENCE_FIELD_NUMBER: _ClassVar[int]
+    APPROVED_BY_FIELD_NUMBER: _ClassVar[int]
+    USE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    LAST_USED_AT_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    skill_id: str
+    employee_id: str
+    name: str
+    trigger: str
+    tools: _containers.RepeatedScalarFieldContainer[str]
+    procedure: str
+    status: str
+    proposal_id: str
+    evidence: _containers.RepeatedScalarFieldContainer[str]
+    approved_by: str
+    use_count: int
+    last_used_at: _timestamp_pb2.Timestamp
+    created_at: _timestamp_pb2.Timestamp
+    def __init__(self, skill_id: _Optional[str] = ..., employee_id: _Optional[str] = ..., name: _Optional[str] = ..., trigger: _Optional[str] = ..., tools: _Optional[_Iterable[str]] = ..., procedure: _Optional[str] = ..., status: _Optional[str] = ..., proposal_id: _Optional[str] = ..., evidence: _Optional[_Iterable[str]] = ..., approved_by: _Optional[str] = ..., use_count: _Optional[int] = ..., last_used_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+
+class ListSkillsRequest(_message.Message):
+    __slots__ = ("tenant", "employee_id", "statuses")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    STATUSES_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    employee_id: str
+    statuses: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., statuses: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class ListSkillsResponse(_message.Message):
+    __slots__ = ("skills",)
+    SKILLS_FIELD_NUMBER: _ClassVar[int]
+    skills: _containers.RepeatedCompositeFieldContainer[Skill]
+    def __init__(self, skills: _Optional[_Iterable[_Union[Skill, _Mapping]]] = ...) -> None: ...

@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from wfk_platform.db import Conn, Database
 from wfk_platform.outbox import enqueue, new_event
 
+from brain_service.adapters.postgres import skills as skills_repo
 from brain_service.adapters.postgres.inspect import NotFound, Precondition
 
 
@@ -130,14 +131,23 @@ class Rules:
                     else "the evaluation failed: " + "; ".join(p.eval_reasons)
                 )
             if approve and p.risk == "high" and by == p.proposed_by:
-                raise Precondition("a high-risk rule needs a second person to approve it")
+                raise Precondition("a high-risk change needs a second person to approve it")
             await conn.execute(
                 "UPDATE change_proposals SET status = %s, decided_by = %s, decision_note = %s,"
                 " decided_at = now() WHERE id = %s",
                 ("approved" if approve else "rejected", by, note, proposal_id),
             )
             rule = None
-            if approve:
+            if p.kind == "skill_add":
+                skill = await skills_repo.decide(conn, proposal_id, approve=approve, by=by)
+                if approve and skill is not None:
+                    data = {"skill_id": str(skill.id), "proposal_id": str(proposal_id),
+                            "name": skill.name, "tools": skill.tools, "by": by}  # fmt: skip
+                    await self._event(conn, tenant_id, "brain.skill_activated", p.employee_id, data)
+                if not approve:
+                    data = {"proposal_id": str(proposal_id), "by": by, "note": note}
+                    await self._event(conn, tenant_id, "brain.change_rejected", p.employee_id, data)
+            elif approve:
                 rid = uuid.uuid5(proposal_id, "rule")
                 await conn.execute(
                     "INSERT INTO policy_rules (id, tenant_id, employee_id, text, proposal_id,"

@@ -16,6 +16,7 @@ from wfk.common.v1 import common_pb2
 from brain_service.adapters.postgres.feedback import Feedback, Invalid
 from brain_service.adapters.postgres.inspect import Inspected, Inspector, NotFound, Precondition
 from brain_service.adapters.postgres.rules import Proposal, Rule, Rules
+from brain_service.adapters.postgres.skills import Skill, Skills
 from brain_service.domain.feedback import FeedbackIn
 from brain_service.domain.recall.planner import StepType
 from brain_service.recall import Recall, RecallRequest
@@ -112,7 +113,7 @@ def _proposal(p: Proposal) -> brain_pb2.Proposal:
         proposal_id=str(p.id),
         employee_id=p.employee_id,
         kind=p.kind,
-        text=str(p.payload.get("text", "")),
+        text=str(p.payload.get("text") or p.payload.get("procedure") or ""),
         risk=p.risk,
         status=p.status,
         proposed_by=p.proposed_by,
@@ -124,6 +125,26 @@ def _proposal(p: Proposal) -> brain_pb2.Proposal:
         decided_at=_ts(p.decided_at),
         eval_status=p.eval_status,
         eval_reasons=p.eval_reasons,
+        skill_id=str(p.payload.get("skill_id") or ""),
+        evidence_count=int(p.evidence.get("count") or 0),
+    )
+
+
+def _skill(s: Skill) -> brain_pb2.Skill:
+    return brain_pb2.Skill(
+        skill_id=str(s.id),
+        employee_id=s.employee_id,
+        name=s.name,
+        trigger=s.trigger,
+        tools=s.tools,
+        procedure=s.procedure,
+        status=s.status,
+        proposal_id=str(s.proposal_id or ""),
+        evidence=[str(e) for e in s.evidence],
+        approved_by=s.approved_by or "",
+        use_count=s.use_count,
+        last_used_at=_ts(s.last_used_at),
+        created_at=_ts(s.created_at),
     )
 
 
@@ -157,12 +178,18 @@ async def _uuid(value: str, name: str, context: grpc.aio.ServicerContext) -> uui
 
 class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
     def __init__(
-        self, recall: Recall, inspector: Inspector, feedback: Feedback, rules: Rules
+        self,
+        recall: Recall,
+        inspector: Inspector,
+        feedback: Feedback,
+        rules: Rules,
+        skills: Skills | None = None,
     ) -> None:
         self.recall_service = recall
         self.inspector = inspector
         self.feedback = feedback
         self.rules = rules
+        self.skills = skills or Skills(rules.db, service_source=rules.source)
 
     # ---- Approvals and rules -----------------------------------------------------------------
 
@@ -188,6 +215,10 @@ class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
         resp = brain_pb2.DecideProposalResponse(proposal=_proposal(proposal))
         if rule is not None:
             resp.rule.CopyFrom(_rule(rule))
+        if proposal.kind == "skill_add":
+            skill = await self.skills.by_proposal(tenant, proposal.id)
+            if skill is not None:
+                resp.skill.CopyFrom(_skill(skill))
         return resp
 
     async def ListRules(
@@ -211,6 +242,15 @@ class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
             context, self.rules.revoke(tenant, rid, by=by, reason=request.reason)
         )
         return brain_pb2.RevokeRuleResponse(rule=_rule(rule))
+
+    async def ListSkills(
+        self, request: brain_pb2.ListSkillsRequest, context: grpc.aio.ServicerContext
+    ) -> brain_pb2.ListSkillsResponse:
+        tenant = await _tenant(request.tenant.tenant_id, context)
+        if not request.employee_id:
+            await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, "employee_id is required")
+        found = await self.skills.list(tenant, request.employee_id, list(request.statuses))
+        return brain_pb2.ListSkillsResponse(skills=[_skill(s) for s in found])
 
     # ---- Feedback ----------------------------------------------------------------------------
 
@@ -415,4 +455,15 @@ class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
             tokens_used=result.tokens_used,
             degraded=result.degraded,
             skipped=result.skipped,
+            skills=[
+                brain_pb2.RecalledSkill(
+                    skill_id=s.skill_id,
+                    name=s.name,
+                    trigger=s.trigger,
+                    tools=s.tools,
+                    procedure=s.procedure,
+                    score=s.score,
+                )
+                for s in result.skills
+            ],
         )

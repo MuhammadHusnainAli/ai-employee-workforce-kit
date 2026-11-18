@@ -771,3 +771,10 @@ button.danger {
     display: grid;
     gap: 1rem;
 }
+
+.skill-steps {
+    margin: 0.5rem 0 0.75rem;
+    padding-left: 1.5rem;
+    display: grid;
+    gap: 0.2rem;
+}
