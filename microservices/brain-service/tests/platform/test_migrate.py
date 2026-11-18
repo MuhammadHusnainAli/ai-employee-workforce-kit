@@ -47,10 +47,10 @@ T1, T2 = "0193a7c4-0000-7000-8000-000000000001", "0193a7c4-0000-7000-8000-000000
 
 def test_brain_db_applies_and_reverts(fresh_db: str) -> None:
     runner = Runner(fresh_db, TEMPLATE)
-    assert runner.up() == [1, 2, 3]
+    assert runner.up() == [1, 2, 3, 4]
     assert BRAIN_TABLES | {"outbox", "inbox"} <= tables(fresh_db)
     assert runner.up() == []
-    assert runner.down(steps=3) == [3, 2, 1]
+    assert runner.down(steps=4) == [4, 3, 2, 1]
     assert tables(fresh_db) == {"schema_migrations"}
 
 
@@ -159,5 +159,5 @@ def test_cli_creates_database_and_reports(
     assert main(["up", "--dsn", DSN, "--dir", str(TEMPLATE), "--create-db"]) == 0
     assert main(["status", "--dsn", DSN, "--dir", str(TEMPLATE)]) == 0
     out = capsys.readouterr().out
-    assert "applied 3 migration(s)" in out
+    assert "applied 4 migration(s)" in out
     assert "applied  0001 platform_outbox_inbox" in out

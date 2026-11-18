@@ -400,6 +400,15 @@ Notes for later phases:
 Entities, relations, bi-temporal facts, recursive-CTE graph recall, `Feedback` API, rules from verified corrections,
 approval flow.
 
+| # | Task | Commit message |
+|---|---|---|
+| 6.1 | Semantic graph schema: `entities` (aliases, embedding), bi-temporal `relations`, `memory_entities`; entity resolution by name, alias and embedding | `Add semantic graph with entity resolution` |
+| 6.2 | Graph in the write path: entities and relations from the extractor (and a no-model baseline), linked to their facts; superseding a fact closes its relations | `Add entities and relations to the brain write path` |
+| 6.3 | Graph recall: entities named in the query, up to 2 hops by recursive CTE, as of a time, fused with vector and full text | `Add graph recall with two hop recursive CTE` |
+| 6.4 | `Feedback` API: corrections, ratings, rejected approvals; only a person's correction proposes a rule (`change_proposals`) | `Add Feedback API and rule proposals` |
+| 6.5 | Approval flow: list and decide proposals, active rules pinned in Recall and the Valkey cache, revoke | `Add rule approval flow and pinned rules` |
+| 6.6 | End-to-end: a correction becomes an approved rule pinned in the next run; graph recall finds a related entity | `Add end to end feedback to rule test` |
+
 ## Phase 7: Channels, sandbox and web app
 
 Channel Gateway (Rust): email, Slack, Teams, Google Chat, webhooks. Sandbox Runner (Rust): gVisor pods. Web app and
