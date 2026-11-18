@@ -474,6 +474,17 @@ Notes for later phases:
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills
 mining, change proposals, shadow and canary, autonomy ladder.
 
+| # | Task | Commit message |
+|---|---|---|
+| 8.1 | Credit assignment: each run's outcome credits or blames the memories its steps recalled (`recall_log`), once per run | `Add credit assignment from the recall log` |
+| 8.2 | Consolidation workflow per employee (queue `brain-batch`, nightly schedule): cluster episodes into cited facts and lessons, decay and archive unused memories, merge duplicate entities, reflect on outcomes | `Add nightly brain consolidation workflow` |
+| 8.3 | Evaluation Service (Python, Temporal worker on queue `eval`, no port): golden, regression and safety suites run through the harness `Evaluator` against candidate and current brain on an isolated run queue | `Add evaluation service with golden and safety suites` |
+| 8.4 | Proposals gated on evaluation: a rule is approvable only with a passing report that does not regress (fail closed) | `Gate brain proposals on evaluation reports` |
+| 8.5 | Skills mining: five or more similar successful episodes with one tool sequence become a skill proposal; active skills recalled by trigger | `Add skill mining and skill recall` |
+| 8.6 | Shadow and canary: an approved change shadows live tasks, then runs on 10 % of them, then is promoted, with automatic rollback | `Add shadow and canary promotion for brain changes` |
+| 8.7 | Autonomy ladder: levels L0 to L4 per employee from evaluations and accepted work; the level decides which tool tiers need approval; incidents demote | `Add autonomy ladder for employees` |
+| 8.8 | End-to-end: correction to evaluated, approved, shadowed, promoted rule; consolidation; level change | `Add end to end learning loop test` |
+
 ## Phase 9: The digital employee
 
 Identity & Accounts (Rust), Workspace Manager (Rust, Kata microVM), Meeting Service and Realtime Voice (Python,

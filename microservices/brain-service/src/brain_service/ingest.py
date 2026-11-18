@@ -34,6 +34,7 @@ from brain_service.adapters.modelgw.extractor import (
     GatewayExtractor,
     gateway_provider,
 )
+from brain_service.adapters.postgres.learn import Learning
 from brain_service.adapters.temporal.activities import IngestActivities
 from brain_service.adapters.temporal.ingest import TASK_QUEUE, BrainIngest, workflow_id
 from brain_service.domain.write import sources
@@ -92,7 +93,7 @@ def worker(client: Client, activities: IngestActivities, task_queue: str = TASK_
         client,
         task_queue=task_queue,
         workflows=[BrainIngest],
-        activities=[activities.extract, activities.remember],
+        activities=[activities.credit, activities.extract, activities.remember],
     )
 
 
@@ -132,7 +133,8 @@ async def run_ingest(settings: Settings) -> None:
         ),
     ]
     try:
-        async with worker(client, IngestActivities(extractor(settings), remember)):
+        activities = IngestActivities(extractor(settings), remember, Learning(db))
+        async with worker(client, activities):
             log.info("ingest started", extra={"task_queue": TASK_QUEUE})
             await stop.wait()
     finally:

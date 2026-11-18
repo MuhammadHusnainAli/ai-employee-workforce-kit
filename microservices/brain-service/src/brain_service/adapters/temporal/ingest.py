@@ -1,6 +1,7 @@
 """BrainIngest: the write path as a Temporal workflow, on task queue `brain-ingest`.
 
-    extract (model call, retried)  ->  remember (govern, embed in one batch, resolve, commit)
+    credit (the memories the run recalled)  ->  extract (model call, retried)
+        ->  remember (govern, embed in one batch, resolve, commit)
 
 The activities are in `activities.py`; this module imports only data types, so the workflow
 sandbox never loads database or network code.
@@ -38,6 +39,15 @@ def workflow_id(source: Source) -> str:
 class BrainIngest:
     @workflow.run
     async def run(self, source: Source) -> Committed:
+        # Credit assignment came later: runs started before it replay without the step.
+        if workflow.patched("credit-v1"):
+            await workflow.execute_activity(
+                "brain_credit",
+                source,
+                result_type=int,
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=RetryPolicy(maximum_interval=timedelta(seconds=30)),
+            )
         candidates = await workflow.execute_activity(
             "brain_extract",
             source,

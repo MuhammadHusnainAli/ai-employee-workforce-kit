@@ -15,6 +15,7 @@ from wfk_platform.outbox import CloudEvent, new_event
 
 from brain_service.adapters.modelgw.embeddings import HashEmbedder
 from brain_service.adapters.modelgw.extractor import Extractor, GatewayExtractor
+from brain_service.adapters.postgres.learn import Learning
 from brain_service.adapters.temporal.activities import IngestActivities
 from brain_service.adapters.temporal.ingest import BrainIngest
 from brain_service.domain.write.model import Committed
@@ -54,7 +55,8 @@ async def running(
 ) -> AsyncIterator[tuple[str, RunsToIngest]]:
     queue = f"brain-ingest-test-{uuid.uuid4().hex[:8]}"
     remember = Remember(db, HashEmbedder(), default_pii="redact", service_source="//test/brain")
-    async with worker(client, IngestActivities(extractor, remember), task_queue=queue):
+    activities = IngestActivities(extractor, remember, Learning(db))
+    async with worker(client, activities, task_queue=queue):
         yield queue, RunsToIngest(client, queue)
 
 
