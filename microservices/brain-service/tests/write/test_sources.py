@@ -34,3 +34,6 @@ def test_nothing_to_learn() -> None:
     assert ev("run.started") is None
     assert ev("run.completed", task="") is None, "older events without the task"
     assert ev("run.completed", employee_id="") is None
+    assert ev("run.completed", mode="eval") is None, "evaluation runs are not experiences"
+    assert ev("run.completed", mode="shadow") is None
+    assert ev("run.completed", mode="live") is not None

@@ -344,6 +344,37 @@ services:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
 
+  # agent-runtime's evaluation queues (eval-runs, eval-llm, eval-tools): evaluations never
+  # compete with live work. Workflows only: no outbox relay, no task inbox.
+  agent-runtime-eval-worker:
+    <<: *service
+    image: wfk/agent-runtime:local
+    depends_on: *agent-runtime-deps
+    environment: *agent-runtime-env
+    command: ["agent-runtime", "worker", "--prefix", "eval-", "--no-loops",
+              "--model", "${WFK_WORKER_MODEL:-local-mock}"]
+
+  evaluation-migrate:
+    <<: *migrate
+    image: wfk/evaluation-service:local
+    build: ../microservices/evaluation-service
+    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/eval_db", "--dir", "/app/migrations", "--create-db"]
+
+  # Evaluates every proposed brain change (golden, regression, safety suites) through the
+  # evaluation queues above. A Temporal worker: no port.
+  evaluation-service:
+    <<: *service
+    image: wfk/evaluation-service:local
+    depends_on:
+      <<: *stack
+      evaluation-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-env
+      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/eval_db
+      WFK_BRAIN_ADDRESS: brain-service:7014
+    command: ["evaluation-service"]
+
   channel-migrate:
     <<: *migrate
     image: wfk/channel-gateway:local

@@ -141,7 +141,7 @@ class EmployeeRun:
     async def run(self, inp: RunInput) -> RunOutcome:
         state = AgentState.start(
             run_id=inp.run_id, tenant_id=inp.tenant_id, employee_id=inp.employee_id, task=inp.task
-        )
+        ).model_copy(update={"mode": inp.mode, "candidate": inp.candidate})
         self._state = state
         await _call(
             "record_start",
@@ -150,6 +150,8 @@ class EmployeeRun:
                 tenant_id=inp.tenant_id,
                 employee_id=inp.employee_id,
                 task=inp.task,
+                mode=inp.mode,
+                candidate=inp.candidate,
             ),
             bool,
         )
@@ -212,6 +214,7 @@ class EmployeeRun:
             total_input_tokens=state.usage.input_tokens,
             total_output_tokens=state.usage.output_tokens,
             total_cost_usd=state.usage.cost_usd,
+            mode=state.mode,  # type: ignore[arg-type]
         )
         await _call("record_step", entry, bool)
         self._seq += 1

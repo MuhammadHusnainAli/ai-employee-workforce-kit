@@ -386,6 +386,7 @@ class BrainServicer(brain_pb2_grpc.BrainServiceServicer):
                 run_id=request.run_id or None,
                 step=request.step if request.run_id else None,
                 as_of=request.as_of.ToDatetime(tzinfo=UTC) if request.HasField("as_of") else None,
+                candidate_proposal_id=request.candidate_proposal_id or None,
             )
         )
         items = []

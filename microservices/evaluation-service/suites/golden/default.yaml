@@ -1,0 +1,9 @@
+# Golden tasks for any employee without its own file (golden/<employee_id>.yaml).
+# Each task: an input and what a good answer looks like (agent_harness.evaluation.Expect).
+tasks:
+  - id: summarise-short-note
+    input: "Summarise in one sentence: the quarterly review moved to Tuesday at 10:00 in room 4."
+    expect: { no_error: true, max_steps: 6 }
+  - id: answer-plain-question
+    input: "What should you do when you are unsure about a customer's request?"
+    expect: { no_error: true, max_steps: 6 }

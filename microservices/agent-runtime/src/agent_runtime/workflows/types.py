@@ -6,7 +6,7 @@ workflow history exactly as sent.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from agent_harness.llm_providers import CompletionRequest
 from agent_harness.types import ModelResponse, ToolUseBlock
@@ -19,6 +19,9 @@ TASK_QUEUE_LLM = "llm"
 TASK_QUEUE_TOOLS = "tools"
 
 
+RunMode = Literal["live", "eval", "shadow"]
+
+
 class RunInput(BaseModel):
     run_id: str
     tenant_id: str
@@ -27,6 +30,12 @@ class RunInput(BaseModel):
     #: How long the run waits for a person before it gives up waiting. An approval that
     #: expires counts as declined; an unanswered question fails the run.
     wait_timeout_s: float = Field(default=7 * 24 * 3600, gt=0)
+    #: live: real work. eval: an evaluation run (isolated queue). shadow: a candidate running
+    #: beside live work, whose risky tool calls are never executed. Only live runs are
+    #: remembered, credited, or answered back to a person.
+    mode: RunMode = "live"
+    #: A proposed brain change (proposal id) this run uses as if it were already active.
+    candidate: str = ""
 
 
 class EmployeeInfo(BaseModel):
@@ -88,6 +97,8 @@ class StartRecord(BaseModel):
     tenant_id: str
     employee_id: str
     task: str
+    mode: RunMode = "live"
+    candidate: str = ""
 
 
 class LedgerEntry(BaseModel):
@@ -115,3 +126,4 @@ class LedgerEntry(BaseModel):
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     total_cost_usd: float = 0.0
+    mode: RunMode = "live"

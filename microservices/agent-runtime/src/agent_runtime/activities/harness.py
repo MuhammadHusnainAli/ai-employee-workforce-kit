@@ -66,6 +66,7 @@ class HarnessActivities:
                 run_id=inp.state.run_id,
                 step=inp.state.step,
                 step_type="planning" if inp.state.step == 0 else "acting",
+                candidate=inp.state.candidate,
             )
         return await context_stage.build_context(
             self._spec(inp.employee_id, inp.limits), inp.state, memory

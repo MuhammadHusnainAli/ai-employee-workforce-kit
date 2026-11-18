@@ -37,6 +37,8 @@ class RecallRequest:
     run_id: str | None = None
     step: int | None = None
     as_of: datetime | None = None
+    #: A proposed rule to include as if it were active (evaluation and shadow runs).
+    candidate_proposal_id: str | None = None
 
 
 @dataclass
@@ -81,7 +83,13 @@ class Recall:
         async with self.db.tenant_tx(req.tenant_id) as conn:
             identity = await brain_repo.active_identity(conn, req.employee_id)
             rules = await rules_repo.active_rules(conn, req.employee_id)
-        # Write the pinned context through to Valkey: the agent runtime's fallback.
+            candidate = (
+                await rules_repo.candidate_rule(conn, req.employee_id, req.candidate_proposal_id)
+                if req.candidate_proposal_id
+                else None
+            )
+        # Write the pinned context through to Valkey: the agent runtime's fallback. Live rules
+        # only: a candidate is added after, never cached.
         await self.cache.put(
             req.tenant_id,
             req.employee_id,
@@ -93,6 +101,8 @@ class Recall:
             if identity or rules
             else None,
         )
+        if candidate and candidate not in rules:
+            rules = [*rules, candidate]
         pinned = (estimate_tokens(identity.text) if identity else 0) + sum(
             estimate_tokens(r) for r in rules
         )

@@ -97,6 +97,7 @@ class BrainClient:
         run_id: str = "",
         step: int = 0,
         step_type: StepType = "acting",
+        candidate: str = "",
     ) -> BrainRecall:
         request = brain_pb2.RecallRequest(
             tenant=common_pb2.TenantContext(tenant_id=tenant_id),
@@ -106,6 +107,7 @@ class BrainClient:
             query=query or "(no query)",
             step_type=_STEP[step_type],
             token_budget=self.token_budget,
+            candidate_proposal_id=candidate,
         )
         try:
             resp = await self.stub.Recall(request, timeout=self.deadline_s)
@@ -175,8 +177,10 @@ class BrainMemoryStore(MemoryStore):
         run_id: str = "",
         step: int = 0,
         step_type: StepType = "acting",
+        candidate: str = "",
     ) -> None:
         self.client = client
+        self.candidate = candidate
         self.tenant_id = tenant_id
         self.employee_id = employee_id
         self.run_id = run_id
@@ -192,6 +196,7 @@ class BrainMemoryStore(MemoryStore):
             run_id=self.run_id,
             step=self.step,
             step_type=self.step_type,
+            candidate=self.candidate,
         )
         return self.last
 

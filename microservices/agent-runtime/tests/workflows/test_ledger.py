@@ -161,3 +161,26 @@ async def test_terminal_event_carries_the_task_and_output(run_db: Database) -> N
     data = row["data"]
     assert data["task"] == "x" and data["employee_id"] == "sam"
     assert len(data["output"]) == ledger_module.EVENT_TEXT_LIMIT, "clipped, so events stay small"
+
+
+async def test_the_mode_is_recorded_and_travels_with_every_event(run_db: Database) -> None:
+    """Evaluation and shadow runs say so, so no consumer mistakes them for real work."""
+    led = Ledger(run_db, SOURCE)
+    run_id = f"eval-{uuid.uuid4().hex[:10]}"
+    rec = StartRecord(run_id=run_id, tenant_id=TENANT, employee_id="sam", task="x",
+                      mode="eval", candidate="p-1")  # fmt: skip
+    assert await led.start(rec)
+    assert await led.record(entry(run_id, 0, status="completed", mode="eval"))
+    (run,) = await rows(run_db, "SELECT mode, candidate FROM runs WHERE run_id = %s", run_id)
+    assert (run["mode"], run["candidate"]) == ("eval", "p-1")
+    async with run_db.tx() as conn:
+        cur = await conn.execute(
+            "SELECT type, data->>'mode' AS mode FROM outbox WHERE subject = %s ORDER BY seq",
+            (run_id,),
+        )
+        events = [(r["type"], r["mode"]) for r in await cur.fetchall()]
+    assert events == [
+        ("run.started", "eval"),
+        ("run.step_completed", "eval"),
+        ("run.completed", "eval"),
+    ]

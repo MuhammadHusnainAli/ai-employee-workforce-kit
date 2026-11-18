@@ -39,6 +39,9 @@ message RecallRequest {
   int32 token_budget = 7;
   // Recall as the brain stood at this time. Unset means now.
   google.protobuf.Timestamp as_of = 8;
+  // Evaluation and shadow runs: a proposed rule (its proposal id) to include as if it were
+  // active. Never cached as the employee's pinned rules.
+  string candidate_proposal_id = 9;
 }
 
 message RecalledItem {

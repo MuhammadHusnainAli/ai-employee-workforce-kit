@@ -174,3 +174,26 @@ async def test_tenant_rules_apply_to_every_employee(brain_db: Database, emp: str
         )
         assert r.rules == ["Never discuss salaries."]
     assert await recalled_rules(brain_db, emp) == [], "other tenants never see it"
+
+
+async def test_evaluation_runs_see_a_candidate_rule_others_do_not(
+    stub: brain_pb2_grpc.BrainServiceStub, brain_db: Database, emp: str
+) -> None:
+    pid = await propose(stub, emp, "Answer Ana in French.")
+    cache = MemCache()
+    recall = Recall(brain_db, EMBED, cache)
+    ask = lambda **kw: recall.recall(  # noqa: E731
+        RecallRequest(tenant_id=TENANT, employee_id=emp, query="hi", **kw)
+    )
+    assert (await ask(candidate_proposal_id=pid)).rules == ["Answer Ana in French."]
+    pinned = cache.data[(TENANT, emp)]
+    assert pinned is None or pinned.rules == [], "a candidate never reaches the live cache"
+    assert (await ask()).rules == [], "live runs do not see it"
+    other = f"emp-{uuid.uuid4().hex[:8]}"
+    r = await recall.recall(
+        RecallRequest(tenant_id=TENANT, employee_id=other, query="hi", candidate_proposal_id=pid)
+    )
+    assert r.rules == [], "another employee's proposal is never applied"
+    assert (await ask(candidate_proposal_id="not-a-uuid")).rules == []
+    await decide(stub, pid, approve=False)
+    assert (await ask(candidate_proposal_id=pid)).rules == [], "a rejected proposal is gone"

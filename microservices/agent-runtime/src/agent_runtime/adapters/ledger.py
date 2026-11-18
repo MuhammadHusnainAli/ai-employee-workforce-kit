@@ -33,11 +33,18 @@ class Ledger:
         async with self.db.tenant_tx(rec.tenant_id) as conn:
             cur = await conn.execute(
                 """
-                INSERT INTO runs (run_id, tenant_id, employee_id, task, status)
-                VALUES (%s, %s, %s, %s, 'running')
+                INSERT INTO runs (run_id, tenant_id, employee_id, task, status, mode, candidate)
+                VALUES (%s, %s, %s, %s, 'running', %s, %s)
                 ON CONFLICT (run_id) DO NOTHING
                 """,
-                (rec.run_id, rec.tenant_id, rec.employee_id, rec.task),
+                (
+                    rec.run_id,
+                    rec.tenant_id,
+                    rec.employee_id,
+                    rec.task,
+                    rec.mode,
+                    rec.candidate,
+                ),
             )
             if cur.rowcount != 1:
                 return False
@@ -47,7 +54,12 @@ class Ledger:
                     "run.started",
                     self.source,
                     rec.tenant_id,
-                    {"run_id": rec.run_id, "employee_id": rec.employee_id},
+                    {
+                        "run_id": rec.run_id,
+                        "employee_id": rec.employee_id,
+                        "mode": rec.mode,
+                        "candidate": rec.candidate,
+                    },
                     subject=rec.run_id,
                 ),
             )
@@ -80,6 +92,7 @@ class Ledger:
                 "step": e.step,
                 "kind": e.kind,
                 "status": e.status,
+                "mode": e.mode,
             }
             await enqueue(
                 conn,

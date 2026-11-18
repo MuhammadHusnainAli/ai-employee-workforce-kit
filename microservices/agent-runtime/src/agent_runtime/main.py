@@ -45,7 +45,7 @@ async def serve(settings: Settings) -> None:
         telemetry.shutdown()
 
 
-async def work(settings: Settings, *, prefix: str, model: str) -> None:
+async def work(settings: Settings, *, prefix: str, model: str, loops: bool = True) -> None:
     """Run the Temporal workers (runs, llm, tools queues) until stopped, with the run outbox
     relay (run.* to the RUNS stream) and the task inbox (task.* starts and steers runs)."""
     from contextlib import AsyncExitStack
@@ -74,24 +74,28 @@ async def work(settings: Settings, *, prefix: str, model: str) -> None:
     )
     ledger = LedgerActivities(Ledger(db, f"//{settings.cell_id}/{settings.service_name}"))
     stop = asyncio.Event()
-    loops = [
-        asyncio.create_task(
-            run_outbox_relay(
-                db, settings.nats_url, stream=RUNS_STREAM, subjects=["run.>"], stop=stop
-            )
-        ),
-        asyncio.create_task(
-            run_inbox_consumer(
-                db,
-                settings.nats_url,
-                stream=tasks.STREAM,
-                consumer=tasks.CONSUMER,
-                subject=tasks.SUBJECT,
-                handler=tasks.TaskCommands(client, queues(prefix)[0]),
-                stop=stop,
-            )
-        ),
-    ]
+    # An evaluation worker (--no-loops) runs workflows only: it must never take live tasks.
+    # Its runs' events still reach NATS: the live worker's relay publishes the shared outbox.
+    running: list[asyncio.Task[None]] = []
+    if loops:
+        running = [
+            asyncio.create_task(
+                run_outbox_relay(
+                    db, settings.nats_url, stream=RUNS_STREAM, subjects=["run.>"], stop=stop
+                )
+            ),
+            asyncio.create_task(
+                run_inbox_consumer(
+                    db,
+                    settings.nats_url,
+                    stream=tasks.STREAM,
+                    consumer=tasks.CONSUMER,
+                    subject=tasks.SUBJECT,
+                    handler=tasks.TaskCommands(client, queues(prefix)[0]),
+                    stop=stop,
+                )
+            ),
+        ]
     try:
         async with AsyncExitStack() as stack:
             for worker in build_workers(client, activities, ledger, prefix):
@@ -100,7 +104,7 @@ async def work(settings: Settings, *, prefix: str, model: str) -> None:
             await asyncio.Event().wait()
     finally:
         stop.set()
-        await asyncio.gather(*loops, return_exceptions=True)
+        await asyncio.gather(*running, return_exceptions=True)
         await db.close()
 
 
@@ -113,6 +117,9 @@ def run(argv: list[str] | None = None) -> None:
     worker = sub.add_parser("worker", help="Temporal workers")
     worker.add_argument("--prefix", default="", help="task queue prefix")
     worker.add_argument("--model", default="local-mock", help="scripted, local-mock, claude-haiku")
+    worker.add_argument(
+        "--no-loops", action="store_true", help="workflows only: no outbox relay, no task inbox"
+    )
     demo = sub.add_parser("demo-run", help="a durable demo run you can watch")
     demo.add_argument("text", help="the text to summarise")
     demo.add_argument("--model", default="scripted", help="scripted, local-mock, claude-haiku")
@@ -121,7 +128,7 @@ def run(argv: list[str] | None = None) -> None:
 
     settings = Settings()
     if args.cmd == "worker":
-        main = work(settings, prefix=args.prefix, model=args.model)
+        main = work(settings, prefix=args.prefix, model=args.model, loops=not args.no_loops)
     elif args.cmd == "demo-run":
         from agent_runtime.demo import run_demo
 

@@ -25,7 +25,7 @@ STEP_TYPE_REPLYING: StepType
 STEP_TYPE_LIVE_MEETING: StepType
 
 class RecallRequest(_message.Message):
-    __slots__ = ("tenant", "employee_id", "run_id", "step", "query", "step_type", "token_budget", "as_of")
+    __slots__ = ("tenant", "employee_id", "run_id", "step", "query", "step_type", "token_budget", "as_of", "candidate_proposal_id")
     TENANT_FIELD_NUMBER: _ClassVar[int]
     EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
     RUN_ID_FIELD_NUMBER: _ClassVar[int]
@@ -34,6 +34,7 @@ class RecallRequest(_message.Message):
     STEP_TYPE_FIELD_NUMBER: _ClassVar[int]
     TOKEN_BUDGET_FIELD_NUMBER: _ClassVar[int]
     AS_OF_FIELD_NUMBER: _ClassVar[int]
+    CANDIDATE_PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
     tenant: _common_pb2.TenantContext
     employee_id: str
     run_id: str
@@ -42,7 +43,8 @@ class RecallRequest(_message.Message):
     step_type: StepType
     token_budget: int
     as_of: _timestamp_pb2.Timestamp
-    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., run_id: _Optional[str] = ..., step: _Optional[int] = ..., query: _Optional[str] = ..., step_type: _Optional[_Union[StepType, str]] = ..., token_budget: _Optional[int] = ..., as_of: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    candidate_proposal_id: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., run_id: _Optional[str] = ..., step: _Optional[int] = ..., query: _Optional[str] = ..., step_type: _Optional[_Union[StepType, str]] = ..., token_budget: _Optional[int] = ..., as_of: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., candidate_proposal_id: _Optional[str] = ...) -> None: ...
 
 class RecalledItem(_message.Message):
     __slots__ = ("memory_id", "kind", "content", "score", "trust", "recorded_at", "source_ref")

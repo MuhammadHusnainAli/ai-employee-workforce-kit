@@ -26,21 +26,21 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from wfk.common.v1 import common_pb2 as wfk_dot_common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n wfk/brain_service/v1/brain.proto\x12\x14wfk.brain_service.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1awfk/common/v1/common.proto\"\xf3\x01\n\rRecallRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x13\n\x0b\x65mployee_id\x18\x02 \x01(\t\x12\x0e\n\x06run_id\x18\x03 \x01(\t\x12\x0c\n\x04step\x18\x04 \x01(\x05\x12\r\n\x05query\x18\x05 \x01(\t\x12\x31\n\tstep_type\x18\x06 \x01(\x0e\x32\x1e.wfk.brain_service.v1.StepType\x12\x14\n\x0ctoken_budget\x18\x07 \x01(\x05\x12)\n\x05\x61s_of\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xa3\x01\n\x0cRecalledItem\x12\x11\n\tmemory_id\x18\x01 \x01(\t\x12\x0c\n\x04kind\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\r\n\x05score\x18\x04 \x01(\x01\x12\r\n\x05trust\x18\x05 \x01(\t\x12/\n\x0brecorded_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\nsource_ref\x18\x07 \x01(\t\"\xc9\x01\n\x0eRecallResponse\x12\x11\n\trecall_id\x18\x01 \x01(\t\x12\x10\n\x08identity\x18\x02 \x01(\t\x12\x18\n\x10identity_version\x18\x03 \x01(\x05\x12\r\n\x05rules\x18\x04 \x03(\t\x12\x31\n\x05items\x18\x05 \x03(\x0b\x32\".wfk.brain_service.v1.RecalledItem\x12\x13\n\x0btokens_used\x18\x06 \x01(\x05\x12\x10\n\x08\x64\x65graded\x18\x07 \x01(\x08\x12\x0f\n\x07skipped\x18\x08 \x03(\t*\x87\x01\n\x08StepType\x12\x19\n\x15STEP_TYPE_UNSPECIFIED\x10\x00\x12\x16\n\x12STEP_TYPE_PLANNING\x10\x01\x12\x14\n\x10STEP_TYPE_ACTING\x10\x02\x12\x16\n\x12STEP_TYPE_REPLYING\x10\x03\x12\x1a\n\x16STEP_TYPE_LIVE_MEETING\x10\x04\x32\x63\n\x0c\x42rainService\x12S\n\x06Recall\x12#.wfk.brain_service.v1.RecallRequest\x1a$.wfk.brain_service.v1.RecallResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n wfk/brain_service/v1/brain.proto\x12\x14wfk.brain_service.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1awfk/common/v1/common.proto\"\x92\x02\n\rRecallRequest\x12,\n\x06tenant\x18\x01 \x01(\x0b\x32\x1c.wfk.common.v1.TenantContext\x12\x13\n\x0b\x65mployee_id\x18\x02 \x01(\t\x12\x0e\n\x06run_id\x18\x03 \x01(\t\x12\x0c\n\x04step\x18\x04 \x01(\x05\x12\r\n\x05query\x18\x05 \x01(\t\x12\x31\n\tstep_type\x18\x06 \x01(\x0e\x32\x1e.wfk.brain_service.v1.StepType\x12\x14\n\x0ctoken_budget\x18\x07 \x01(\x05\x12)\n\x05\x61s_of\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x1d\n\x15\x63\x61ndidate_proposal_id\x18\t \x01(\t\"\xa3\x01\n\x0cRecalledItem\x12\x11\n\tmemory_id\x18\x01 \x01(\t\x12\x0c\n\x04kind\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\r\n\x05score\x18\x04 \x01(\x01\x12\r\n\x05trust\x18\x05 \x01(\t\x12/\n\x0brecorded_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\nsource_ref\x18\x07 \x01(\t\"\xc9\x01\n\x0eRecallResponse\x12\x11\n\trecall_id\x18\x01 \x01(\t\x12\x10\n\x08identity\x18\x02 \x01(\t\x12\x18\n\x10identity_version\x18\x03 \x01(\x05\x12\r\n\x05rules\x18\x04 \x03(\t\x12\x31\n\x05items\x18\x05 \x03(\x0b\x32\".wfk.brain_service.v1.RecalledItem\x12\x13\n\x0btokens_used\x18\x06 \x01(\x05\x12\x10\n\x08\x64\x65graded\x18\x07 \x01(\x08\x12\x0f\n\x07skipped\x18\x08 \x03(\t*\x87\x01\n\x08StepType\x12\x19\n\x15STEP_TYPE_UNSPECIFIED\x10\x00\x12\x16\n\x12STEP_TYPE_PLANNING\x10\x01\x12\x14\n\x10STEP_TYPE_ACTING\x10\x02\x12\x16\n\x12STEP_TYPE_REPLYING\x10\x03\x12\x1a\n\x16STEP_TYPE_LIVE_MEETING\x10\x04\x32\x63\n\x0c\x42rainService\x12S\n\x06Recall\x12#.wfk.brain_service.v1.RecallRequest\x1a$.wfk.brain_service.v1.RecallResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'wfk.brain_service.v1.brain_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_STEPTYPE']._serialized_start=736
-  _globals['_STEPTYPE']._serialized_end=871
+  _globals['_STEPTYPE']._serialized_start=767
+  _globals['_STEPTYPE']._serialized_end=902
   _globals['_RECALLREQUEST']._serialized_start=120
-  _globals['_RECALLREQUEST']._serialized_end=363
-  _globals['_RECALLEDITEM']._serialized_start=366
-  _globals['_RECALLEDITEM']._serialized_end=529
-  _globals['_RECALLRESPONSE']._serialized_start=532
-  _globals['_RECALLRESPONSE']._serialized_end=733
-  _globals['_BRAINSERVICE']._serialized_start=873
-  _globals['_BRAINSERVICE']._serialized_end=972
+  _globals['_RECALLREQUEST']._serialized_end=394
+  _globals['_RECALLEDITEM']._serialized_start=397
+  _globals['_RECALLEDITEM']._serialized_end=560
+  _globals['_RECALLRESPONSE']._serialized_start=563
+  _globals['_RECALLRESPONSE']._serialized_end=764
+  _globals['_BRAINSERVICE']._serialized_start=904
+  _globals['_BRAINSERVICE']._serialized_end=1003
 # @@protoc_insertion_point(module_scope)

@@ -1,0 +1,325 @@
+syntax = "proto3";
+
+package wfk.brain_service.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// Each employee's brain (architecture/brain.md). Owned by brain-service; agent-runtime copies
+// this file to call it. Remembering is asynchronous (brain-ingest, from run events); later phases
+// add Forget, GetBrain and Rollback.
+service BrainService {
+  // What this employee should have in mind for one step: the pinned identity core and the
+  // best memories that fit the token budget, each cited. p95 under 300 ms; degrades instead
+  // of failing when a store is slow or down.
+  rpc Recall(RecallRequest) returns (RecallResponse);
+
+  // ---- Brain Inspector: what an employee knows and why, and the human controls -----------
+
+  // Memories, newest first, with why each is there (trust, source, governance findings).
+  rpc ListMemories(ListMemoriesRequest) returns (ListMemoriesResponse);
+  // One memory, the versions it replaced and the one that replaced it, and its episode.
+  rpc GetMemory(GetMemoryRequest) returns (GetMemoryResponse);
+  // A person's correction: a new human-verified memory supersedes the old one (history kept).
+  // Idempotent on idempotency_key. Secrets are still removed from the new text.
+  rpc CorrectMemory(CorrectMemoryRequest) returns (CorrectMemoryResponse);
+  // Remove a memory for good (and its episode). Emits brain.memory_deleted.
+  rpc DeleteMemory(DeleteMemoryRequest) returns (DeleteMemoryResponse);
+  // Approve or reject a quarantined memory. Approving one that contradicts a fact supersedes it.
+  // FAILED_PRECONDITION unless the memory is quarantined.
+  rpc ReviewMemory(ReviewMemoryRequest) returns (ReviewMemoryResponse);
+
+  // ---- Feedback (brain.md section 6) -------------------------------------------------------
+
+  // Record feedback. A person's correction proposes a rule (active only once approved); a
+  // rating credits or blames the memories the run recalled; a rejected approval becomes a
+  // lesson. Idempotent on idempotency_key.
+  rpc Feedback(FeedbackRequest) returns (FeedbackResponse);
+
+  // ---- Approvals and rules (brain.md section 6, step 4) -------------------------------------
+
+  // Proposed changes to an employee's brain, newest first.
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
+  // A person approves or rejects a pending proposal. Approving a rule makes it active: pinned in
+  // every recall from then on. A high-risk rule needs someone other than its proposer.
+  // FAILED_PRECONDITION when already decided, or for that four-eyes check. Humans only.
+  rpc DecideProposal(DecideProposalRequest) returns (DecideProposalResponse);
+  // The employee's rules (its own and the tenant's).
+  rpc ListRules(ListRulesRequest) returns (ListRulesResponse);
+  // Stop a rule applying. Humans only.
+  rpc RevokeRule(RevokeRuleRequest) returns (RevokeRuleResponse);
+}
+
+// Which stores a step needs (brain.md section 3, the query planner).
+enum StepType {
+  STEP_TYPE_UNSPECIFIED = 0; // treated as ACTING
+  STEP_TYPE_PLANNING = 1;
+  STEP_TYPE_ACTING = 2;
+  STEP_TYPE_REPLYING = 3;
+  STEP_TYPE_LIVE_MEETING = 4;
+}
+
+message RecallRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Where the recall happens, for the recall log and credit assignment.
+  string run_id = 3;
+  int32 step = 4;
+  string query = 5;
+  StepType step_type = 6;
+  // Tokens for identity, rules and memories together. 0 means the server default.
+  int32 token_budget = 7;
+  // Recall as the brain stood at this time. Unset means now.
+  google.protobuf.Timestamp as_of = 8;
+  // Evaluation and shadow runs: a proposed rule (its proposal id) to include as if it were
+  // active. Never cached as the employee's pinned rules.
+  string candidate_proposal_id = 9;
+}
+
+message RecalledItem {
+  string memory_id = 1;
+  string kind = 2;
+  string content = 3;
+  double score = 4;
+  string trust = 5;
+  google.protobuf.Timestamp recorded_at = 6;
+  string source_ref = 7;
+}
+
+message RecallResponse {
+  // The recall_log row: cite it in the run ledger.
+  string recall_id = 1;
+  // The pinned identity core. Empty when the employee has no active brain version yet.
+  string identity = 2;
+  int32 identity_version = 3;
+  // In-scope rules, pinned like the identity (populated from Phase 6).
+  repeated string rules = 4;
+  // Memories, best first, that fit the budget left after identity and rules.
+  repeated RecalledItem items = 5;
+  int32 tokens_used = 6;
+  // True when a retriever was skipped (slow or failing); the step should be flagged.
+  bool degraded = 7;
+  repeated string skipped = 8;
+}
+
+// ---- Brain Inspector ---------------------------------------------------------------------
+
+enum MemoryStatus {
+  MEMORY_STATUS_UNSPECIFIED = 0;
+  MEMORY_STATUS_ACTIVE = 1;
+  // Waits for a person: instructions from outside, or a weaker contradiction. Not recalled.
+  MEMORY_STATUS_QUARANTINED = 2;
+  MEMORY_STATUS_REJECTED = 3;
+}
+
+message InspectedMemory {
+  string memory_id = 1;
+  string employee_id = 2;
+  // episodic, semantic, reflection
+  string kind = 3;
+  string content = 4;
+  MemoryStatus status = 5;
+  // human_verified, system, observed, external
+  string trust = 6;
+  double confidence = 7;
+  double importance = 8;
+  // subject.attribute for facts and preferences
+  string fact_key = 9;
+  // Where it came from: "event:<id>" or "inspector:<who>".
+  string source_ref = 10;
+  google.protobuf.Timestamp valid_from = 11;
+  // Set when it stopped being true (superseded or corrected).
+  google.protobuf.Timestamp valid_to = 12;
+  google.protobuf.Timestamp recorded_at = 13;
+  string superseded_by = 14;
+  // What governance found: {"secret": 1, "email": 2, "instructions": 1}.
+  map<string, int32> findings = 15;
+  // A quarantined contradiction: the memory it contradicts.
+  string contradicts = 16;
+  // How many later sources said the same thing.
+  int32 reinforced = 17;
+  int32 use_count = 18;
+}
+
+message ListMemoriesRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Empty means all kinds / all statuses.
+  repeated string kinds = 3;
+  repeated MemoryStatus statuses = 4;
+  // Also list memories that are no longer valid (superseded, corrected).
+  bool include_history = 5;
+  wfk.common.v1.PageRequest page = 6;
+}
+
+message ListMemoriesResponse {
+  repeated InspectedMemory memories = 1;
+  wfk.common.v1.PageResponse page = 2;
+}
+
+message GetMemoryRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string memory_id = 2;
+}
+
+message Episode {
+  string run_id = 1;
+  string task = 2;
+  // success, failure, escalated, unknown
+  string outcome = 3;
+  google.protobuf.Timestamp ended_at = 4;
+}
+
+message GetMemoryResponse {
+  InspectedMemory memory = 1;
+  // Older versions this one replaced, newest first; then what replaced it, if anything.
+  repeated InspectedMemory replaced = 2;
+  InspectedMemory replaced_by = 3;
+  // For episodic memories.
+  Episode episode = 4;
+}
+
+message CorrectMemoryRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string memory_id = 3;
+  string content = 4;
+}
+
+message CorrectMemoryResponse {
+  InspectedMemory memory = 1;
+}
+
+message DeleteMemoryRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string memory_id = 2;
+  string reason = 3;
+}
+
+message DeleteMemoryResponse {}
+
+message ReviewMemoryRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string memory_id = 2;
+  bool approve = 3;
+  string note = 4;
+}
+
+message ReviewMemoryResponse {
+  InspectedMemory memory = 1;
+}
+
+// ---- Feedback ------------------------------------------------------------------------------
+
+enum FeedbackKind {
+  FEEDBACK_KIND_UNSPECIFIED = 0;
+  // "Don't do X": from a person, proposes a rule.
+  FEEDBACK_KIND_CORRECTION = 1;
+  // Thumbs up (1) or down (-1) on a run.
+  FEEDBACK_KIND_RATING = 2;
+  // A person said no to an approval request; text says why.
+  FEEDBACK_KIND_APPROVAL_REJECTED = 3;
+  FEEDBACK_KIND_COMMENT = 4;
+}
+
+message FeedbackRequest {
+  // tenant.actor says who gives it; only ACTOR_KIND_HUMAN corrections propose rules.
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string employee_id = 3;
+  // The run it is about (required for ratings).
+  string run_id = 4;
+  FeedbackKind kind = 5;
+  string text = 6;
+  // 1 or -1, for ratings.
+  int32 rating = 7;
+}
+
+message FeedbackResponse {
+  string feedback_id = 1;
+  // Set when a correction proposed a rule (see ListProposals / DecideProposal).
+  string proposal_id = 2;
+  // Ratings: how many recalled memories were credited or blamed.
+  int32 credited = 3;
+}
+
+// ---- Approvals and rules ---------------------------------------------------------------------
+
+message Proposal {
+  string proposal_id = 1;
+  string employee_id = 2;
+  // rule_add
+  string kind = 3;
+  // For rule_add: the rule's text.
+  string text = 4;
+  // low, medium, high
+  string risk = 5;
+  // pending, approved, rejected
+  string status = 6;
+  string proposed_by = 7;
+  string decided_by = 8;
+  string decision_note = 9;
+  // Where it came from: the feedback and the run.
+  string feedback_id = 10;
+  string run_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp decided_at = 13;
+}
+
+message ListProposalsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  // Empty means all; "pending", "approved", "rejected".
+  repeated string statuses = 3;
+}
+
+message ListProposalsResponse {
+  repeated Proposal proposals = 1;
+}
+
+message DecideProposalRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string proposal_id = 2;
+  bool approve = 3;
+  string note = 4;
+}
+
+message DecideProposalResponse {
+  Proposal proposal = 1;
+  // Set when an approved proposal created a rule.
+  Rule rule = 2;
+}
+
+message Rule {
+  string rule_id = 1;
+  // Empty for a tenant-wide rule.
+  string employee_id = 2;
+  string text = 3;
+  // active, revoked
+  string status = 4;
+  string proposal_id = 5;
+  string approved_by = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string revoked_by = 8;
+  google.protobuf.Timestamp revoked_at = 9;
+}
+
+message ListRulesRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  bool include_revoked = 3;
+}
+
+message ListRulesResponse {
+  repeated Rule rules = 1;
+}
+
+message RevokeRuleRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string rule_id = 2;
+  string reason = 3;
+}
+
+message RevokeRuleResponse {
+  Rule rule = 1;
+}

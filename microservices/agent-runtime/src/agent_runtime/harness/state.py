@@ -71,6 +71,9 @@ class AgentState(BaseModel):
     #: Calls waiting for a person. Set when status is waiting_human because of an approval.
     pending: list[ToolUseBlock] = Field(default_factory=list)
     pending_reason: str = ""
+    #: live, eval or shadow (see RunInput); a candidate brain change in use, if any.
+    mode: str = "live"
+    candidate: str = ""
 
     @property
     def done(self) -> bool:

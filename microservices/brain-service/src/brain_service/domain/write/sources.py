@@ -22,6 +22,8 @@ def from_run_event(
     """The source for a finished run, or None when there is nothing to learn from it."""
     if event_type not in RUN_EVENTS:
         return None
+    if data.get("mode", "live") != "live":
+        return None  # evaluation and shadow runs teach nothing about real work
     employee_id = str(data.get("employee_id") or "")
     task = str(data.get("task") or "")
     if not employee_id or not task:

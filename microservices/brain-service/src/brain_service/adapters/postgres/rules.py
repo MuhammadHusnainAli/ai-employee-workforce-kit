@@ -58,6 +58,22 @@ async def active_rules(conn: Conn, employee_id: str) -> list[str]:
     return [r["text"] for r in await cur.fetchall()]
 
 
+async def candidate_rule(conn: Conn, employee_id: str, proposal_id: str) -> str | None:
+    """A proposed (not yet active) rule's text, for evaluation and shadow runs of this
+    employee. None for anything else: unknown, rejected, another employee's, not a UUID."""
+    try:
+        uuid.UUID(proposal_id)
+    except ValueError:
+        return None
+    cur = await conn.execute(
+        "SELECT payload->>'text' AS text FROM change_proposals WHERE id = %s"
+        " AND employee_id = %s AND kind = 'rule_add' AND status <> 'rejected'",
+        (proposal_id, employee_id),
+    )
+    row = await cur.fetchone()
+    return row["text"] if row else None
+
+
 class Rules:
     def __init__(self, db: Database, *, service_source: str) -> None:
         self.db = db
