@@ -70,6 +70,26 @@ class CollaborationServiceStub:
                 request_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueRequest.SerializeToString,
                 response_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueResponse.FromString,
                 _registered_method=True)
+        self.StartStandup = channel.unary_unary(
+                '/wfk.collaboration_service.v1.CollaborationService/StartStandup',
+                request_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupRequest.SerializeToString,
+                response_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupResponse.FromString,
+                _registered_method=True)
+        self.GetStandup = channel.unary_unary(
+                '/wfk.collaboration_service.v1.CollaborationService/GetStandup',
+                request_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupRequest.SerializeToString,
+                response_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupResponse.FromString,
+                _registered_method=True)
+        self.ListStandups = channel.unary_unary(
+                '/wfk.collaboration_service.v1.CollaborationService/ListStandups',
+                request_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsRequest.SerializeToString,
+                response_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsResponse.FromString,
+                _registered_method=True)
+        self.EndStandupDiscussion = channel.unary_unary(
+                '/wfk.collaboration_service.v1.CollaborationService/EndStandupDiscussion',
+                request_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionRequest.SerializeToString,
+                response_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionResponse.FromString,
+                _registered_method=True)
 
 
 class CollaborationServiceServicer:
@@ -125,6 +145,34 @@ class CollaborationServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StartStandup(self, request, context):
+        """Standups, run by the co-CEO from real task status. The person joins by posting into the
+        standup's conversation (conversation_id = standup_id) while it is discussing.
+        Starts one for the whole company, or one department. Idempotent on idempotency_key.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetStandup(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListStandups(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def EndStandupDiscussion(self, request, context):
+        """Close the discussion now and go to the summary. FAILED_PRECONDITION once summarising.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CollaborationServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -157,6 +205,26 @@ def add_CollaborationServiceServicer_to_server(servicer, server):
                     servicer.AskColleague,
                     request_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueRequest.FromString,
                     response_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueResponse.SerializeToString,
+            ),
+            'StartStandup': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartStandup,
+                    request_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupRequest.FromString,
+                    response_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupResponse.SerializeToString,
+            ),
+            'GetStandup': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetStandup,
+                    request_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupRequest.FromString,
+                    response_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupResponse.SerializeToString,
+            ),
+            'ListStandups': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListStandups,
+                    request_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsRequest.FromString,
+                    response_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsResponse.SerializeToString,
+            ),
+            'EndStandupDiscussion': grpc.unary_unary_rpc_method_handler(
+                    servicer.EndStandupDiscussion,
+                    request_deserializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionRequest.FromString,
+                    response_serializer=wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -327,6 +395,114 @@ class CollaborationService:
             '/wfk.collaboration_service.v1.CollaborationService/AskColleague',
             wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueRequest.SerializeToString,
             wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.AskColleagueResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartStandup(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.collaboration_service.v1.CollaborationService/StartStandup',
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupRequest.SerializeToString,
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.StartStandupResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetStandup(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.collaboration_service.v1.CollaborationService/GetStandup',
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupRequest.SerializeToString,
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.GetStandupResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListStandups(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.collaboration_service.v1.CollaborationService/ListStandups',
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsRequest.SerializeToString,
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.ListStandupsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def EndStandupDiscussion(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.collaboration_service.v1.CollaborationService/EndStandupDiscussion',
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionRequest.SerializeToString,
+            wfk_dot_collaboration__service_dot_v1_dot_collaboration__pb2.EndStandupDiscussionResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -11,6 +11,7 @@ from wfk_platform.db import Database
 from core_python.collaboration.adapters.answerer import Answerer, gateway_provider
 from core_python.collaboration.adapters.colleagues import Colleagues, WorkforceColleagues
 from core_python.collaboration.adapters.postgres.conversations import Conversations
+from core_python.collaboration.adapters.postgres.standups import Standups
 from core_python.collaboration.api.collaboration import CollaborationServicer
 from core_python.collaboration.settings import Settings
 
@@ -54,5 +55,7 @@ def add_services(
         gateway_provider(settings.model_gateway_url, settings.model_gateway_key)
     )
     colleagues = colleagues or WorkforceColleagues(settings.workforce_address)
-    servicer = CollaborationServicer(Conversations(db, source(settings)), answerer, colleagues)
+    conversations = Conversations(db, source(settings))
+    standups = Standups(db, source(settings), conversations)
+    servicer = CollaborationServicer(conversations, answerer, colleagues, standups)
     collaboration_pb2_grpc.add_CollaborationServiceServicer_to_server(servicer, server)

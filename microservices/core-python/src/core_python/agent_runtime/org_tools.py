@@ -7,6 +7,7 @@
 - send_message / read_messages: direct messages, to colleagues or the person
 - ask_colleague: a short call: ask, get an answer, ask again with the same call_id
 - request_hire: ask the person to approve a hire (a hire costs money; only the person hires)
+- start_standup: the co-CEO runs a standup the person can join
 
 Every tool speaks to its module as the calling employee and passes the call's idempotency key,
 so a retried step never hands work down twice or sends a message twice. A refusal comes back to
@@ -296,6 +297,28 @@ def org_tools(clients: OrgClients) -> dict[str, Callable[[], Tool]]:
             "Nothing is hired until they do."
         )
 
+    async def start_standup(ctx: ToolContext, department_id: str = "") -> str:
+        """Run a standup: everyone (or one department) reports what they did, what is next and
+        what blocks them, the person can join, and you sum up where we are and where we go.
+
+        Args:
+            department_id: one department; leave empty for the whole company.
+        """
+        _live(ctx, "started")
+        tenant, me, key = _who(ctx)
+        got = await _call(
+            "start the standup",
+            c.collaboration.StartStandup,
+            collab.StartStandupRequest(
+                tenant=_tenant(tenant, me), idempotency_key=_key(key), department_id=department_id
+            ),
+            c.deadline_s,
+        )
+        return (
+            f"Standup {got.standup.standup_id} has started. The updates and your summary "
+            "will be in its conversation; the person can join it."
+        )
+
     fns: list[Callable[..., Any]] = [
         list_team,
         delegate_task,
@@ -304,5 +327,6 @@ def org_tools(clients: OrgClients) -> dict[str, Callable[[], Tool]]:
         read_messages,
         ask_colleague,
         request_hire,
+        start_standup,
     ]
     return {fn.__name__: (lambda fn=fn: Tool(fn)) for fn in fns}

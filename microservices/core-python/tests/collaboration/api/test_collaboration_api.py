@@ -254,3 +254,63 @@ async def test_the_person_joins_a_conversation_and_outsiders_cannot_post(rig: Ri
         tenant=as_person(OTHER_TENANT), conversation_id=msg.conversation_id
     )
     assert await code(rig.stub.GetConversation(elsewhere)) == grpc.StatusCode.NOT_FOUND
+
+
+async def test_standups_start_once_list_and_end(rig: Rig, collab_db: Database) -> None:
+    t = fresh()
+    k = key()
+    start = pb.StartStandupRequest(
+        tenant=as_person(t), idempotency_key=k, department_id="sales", assign_next_steps=True
+    )
+    first = (await rig.stub.StartStandup(start)).standup
+    again = (await rig.stub.StartStandup(start)).standup
+    assert again.standup_id == first.standup_id
+    assert (first.status, first.department_id, first.discussion_s) == ("collecting", "sales", 120)
+    assert first.started_by == "maria" and first.assign_next_steps
+
+    convo = await rig.stub.GetConversation(
+        pb.GetConversationRequest(tenant=as_person(t), conversation_id=first.standup_id)
+    )
+    assert convo.conversation.kind == pb.CONVERSATION_KIND_STANDUP
+    got = await rig.stub.GetStandup(
+        pb.GetStandupRequest(tenant=as_person(t), standup_id=first.standup_id)
+    )
+    assert got.standup.standup_id == first.standup_id
+    listed = await rig.stub.ListStandups(pb.ListStandupsRequest(tenant=as_person(t)))
+    assert [s.standup_id for s in listed.standups] == [first.standup_id]
+
+    await rig.stub.EndStandupDiscussion(
+        pb.EndStandupDiscussionRequest(tenant=as_person(t), standup_id=first.standup_id)
+    )
+    async with collab_db.tx() as conn:
+        cur = await conn.execute(
+            "SELECT type FROM outbox WHERE subject = %s AND type LIKE 'collab.standup%%'"
+            " ORDER BY seq",
+            (first.standup_id,),
+        )
+        assert [r["type"] for r in await cur.fetchall()] == [
+            "collab.standup_started",
+            "collab.standup_end_requested",
+        ]
+
+    quiet = pb.StartStandupRequest(tenant=as_person(t), idempotency_key=key(), discussion_s=0)
+    assert (await rig.stub.StartStandup(quiet)).standup.discussion_s == 0
+    too_long = pb.StartStandupRequest(tenant=as_person(t), idempotency_key=key(), discussion_s=4000)
+    assert await code(rig.stub.StartStandup(too_long)) == grpc.StatusCode.INVALID_ARGUMENT
+
+
+async def test_a_finished_standup_cannot_be_ended(rig: Rig, collab_db: Database) -> None:
+    from core_python.collaboration.adapters.postgres.conversations import Conversations
+    from core_python.collaboration.adapters.postgres.standups import Standups
+
+    t = fresh()
+    started = await rig.stub.StartStandup(
+        pb.StartStandupRequest(tenant=as_person(t), idempotency_key=key())
+    )
+    sid = started.standup.standup_id
+    store = Standups(collab_db, "//test", Conversations(collab_db, "//test"))
+    await store.fail(t, sid, "no co-CEO")
+    end = pb.EndStandupDiscussionRequest(tenant=as_person(t), standup_id=sid)
+    assert await code(rig.stub.EndStandupDiscussion(end)) == grpc.StatusCode.FAILED_PRECONDITION
+    got = await rig.stub.GetStandup(pb.GetStandupRequest(tenant=as_person(t), standup_id=sid))
+    assert (got.standup.status, got.standup.error) == ("failed", "no co-CEO")

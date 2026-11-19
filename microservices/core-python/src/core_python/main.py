@@ -5,7 +5,8 @@
 - one gRPC server on one port: health, WorkforceService, RunService, BrainService,
   CollaborationService;
 - workforce: the outbox relay (employee.* to EMPLOYEES);
-- collaboration: the outbox relay (collab.* to COLLAB);
+- collaboration: the outbox relay (collab.* to COLLAB), the Standup worker (queue collab) and
+  the collab.* inbox that starts and steers standups;
 - agent_runtime: the live Temporal workers (runs, llm, tools), the run outbox relay (RUNS)
   and the task inbox (TASKS); and the evaluation workers (eval-runs, eval-llm, eval-tools),
   workflows only, so evaluations never take live work;
@@ -109,6 +110,11 @@ def parts(s: config.Settings, dbs: Databases) -> dict[str, Part]:
         return run_outbox_relay(dbs.collab, s.nats_url, stream=collab_app.STREAM,
                                 subjects=collab_app.SUBJECTS, stop=stop)  # fmt: skip
 
+    def standups(stop: asyncio.Event) -> Awaitable[None]:
+        from core_python.collaboration.worker import run_workers as run_collab_workers
+
+        return run_collab_workers(config.collaboration(s), stop=stop, db=dbs.collab)
+
     named: dict[str, Part] = {"workforce-relay": employees, "collab-relay": conversations}
     if s.workers:
         named |= {
@@ -116,6 +122,7 @@ def parts(s: config.Settings, dbs: Databases) -> dict[str, Part]:
             "runtime-eval-workers": evals,
             "brain-ingest": remember,
             "evaluation": gate,
+            "collab-workers": standups,
         }
     return named
 

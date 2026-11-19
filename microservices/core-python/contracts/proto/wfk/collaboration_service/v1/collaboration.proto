@@ -26,6 +26,15 @@ service CollaborationService {
   // Ask a colleague a question on a call and get the answer. Ask again with the same
   // conversation_id to carry on; a call closes after 6 turns. Idempotent on idempotency_key.
   rpc AskColleague(AskColleagueRequest) returns (AskColleagueResponse);
+
+  // Standups, run by the co-CEO from real task status. The person joins by posting into the
+  // standup's conversation (conversation_id = standup_id) while it is discussing.
+  // Starts one for the whole company, or one department. Idempotent on idempotency_key.
+  rpc StartStandup(StartStandupRequest) returns (StartStandupResponse);
+  rpc GetStandup(GetStandupRequest) returns (GetStandupResponse);
+  rpc ListStandups(ListStandupsRequest) returns (ListStandupsResponse);
+  // Close the discussion now and go to the summary. FAILED_PRECONDITION once summarising.
+  rpc EndStandupDiscussion(EndStandupDiscussionRequest) returns (EndStandupDiscussionResponse);
 }
 
 enum ConversationKind {
@@ -149,4 +158,86 @@ message AskColleagueResponse {
   string answer = 2;
   // Questions left before the call closes.
   int32 turns_left = 3;
+}
+
+message StandupReport {
+  string employee_id = 1;
+  string title = 2;
+  string done = 3;
+  string next = 4;
+  string blockers = 5;
+  // Nothing new since the last standup: a fixed line, no model call.
+  bool idle = 6;
+}
+
+message NextStep {
+  // An employee id, or "person".
+  string owner = 1;
+  string action = 2;
+  // The task it became, when the standup assigns next steps.
+  string task_id = 3;
+}
+
+message Standup {
+  // Also the id of its conversation.
+  string standup_id = 1;
+  // Empty: the whole company.
+  string department_id = 2;
+  // collecting, discussing, summarising, done or failed.
+  string status = 3;
+  string led_by = 4;
+  string started_by = 5;
+  int32 discussion_s = 6;
+  bool assign_next_steps = 7;
+  repeated StandupReport reports = 8;
+  string where_we_are = 9;
+  string where_we_go = 10;
+  repeated NextStep next_steps = 11;
+  repeated string risks = 12;
+  string error = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp finished_at = 15;
+}
+
+message StartStandupRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  // Empty: the whole company.
+  string department_id = 3;
+  // Seconds of quiet before the discussion closes: 0 skips it, at most 3600. Unset: 120.
+  optional int32 discussion_s = 4;
+  // Turn each next step into a task for its owner.
+  bool assign_next_steps = 5;
+}
+
+message StartStandupResponse {
+  Standup standup = 1;
+}
+
+message GetStandupRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string standup_id = 2;
+}
+
+message GetStandupResponse {
+  Standup standup = 1;
+}
+
+message ListStandupsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // At most 100, default 20. Newest first.
+  int32 limit = 2;
+}
+
+message ListStandupsResponse {
+  repeated Standup standups = 1;
+}
+
+message EndStandupDiscussionRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string standup_id = 2;
+}
+
+message EndStandupDiscussionResponse {
+  Standup standup = 1;
 }

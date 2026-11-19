@@ -189,3 +189,125 @@ class AskColleagueResponse(_message.Message):
     answer: str
     turns_left: int
     def __init__(self, conversation_id: _Optional[str] = ..., answer: _Optional[str] = ..., turns_left: _Optional[int] = ...) -> None: ...
+
+class StandupReport(_message.Message):
+    __slots__ = ("employee_id", "title", "done", "next", "blockers", "idle")
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    DONE_FIELD_NUMBER: _ClassVar[int]
+    NEXT_FIELD_NUMBER: _ClassVar[int]
+    BLOCKERS_FIELD_NUMBER: _ClassVar[int]
+    IDLE_FIELD_NUMBER: _ClassVar[int]
+    employee_id: str
+    title: str
+    done: str
+    next: str
+    blockers: str
+    idle: bool
+    def __init__(self, employee_id: _Optional[str] = ..., title: _Optional[str] = ..., done: _Optional[str] = ..., next: _Optional[str] = ..., blockers: _Optional[str] = ..., idle: _Optional[bool] = ...) -> None: ...
+
+class NextStep(_message.Message):
+    __slots__ = ("owner", "action", "task_id")
+    OWNER_FIELD_NUMBER: _ClassVar[int]
+    ACTION_FIELD_NUMBER: _ClassVar[int]
+    TASK_ID_FIELD_NUMBER: _ClassVar[int]
+    owner: str
+    action: str
+    task_id: str
+    def __init__(self, owner: _Optional[str] = ..., action: _Optional[str] = ..., task_id: _Optional[str] = ...) -> None: ...
+
+class Standup(_message.Message):
+    __slots__ = ("standup_id", "department_id", "status", "led_by", "started_by", "discussion_s", "assign_next_steps", "reports", "where_we_are", "where_we_go", "next_steps", "risks", "error", "created_at", "finished_at")
+    STANDUP_ID_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    LED_BY_FIELD_NUMBER: _ClassVar[int]
+    STARTED_BY_FIELD_NUMBER: _ClassVar[int]
+    DISCUSSION_S_FIELD_NUMBER: _ClassVar[int]
+    ASSIGN_NEXT_STEPS_FIELD_NUMBER: _ClassVar[int]
+    REPORTS_FIELD_NUMBER: _ClassVar[int]
+    WHERE_WE_ARE_FIELD_NUMBER: _ClassVar[int]
+    WHERE_WE_GO_FIELD_NUMBER: _ClassVar[int]
+    NEXT_STEPS_FIELD_NUMBER: _ClassVar[int]
+    RISKS_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    FINISHED_AT_FIELD_NUMBER: _ClassVar[int]
+    standup_id: str
+    department_id: str
+    status: str
+    led_by: str
+    started_by: str
+    discussion_s: int
+    assign_next_steps: bool
+    reports: _containers.RepeatedCompositeFieldContainer[StandupReport]
+    where_we_are: str
+    where_we_go: str
+    next_steps: _containers.RepeatedCompositeFieldContainer[NextStep]
+    risks: _containers.RepeatedScalarFieldContainer[str]
+    error: str
+    created_at: _timestamp_pb2.Timestamp
+    finished_at: _timestamp_pb2.Timestamp
+    def __init__(self, standup_id: _Optional[str] = ..., department_id: _Optional[str] = ..., status: _Optional[str] = ..., led_by: _Optional[str] = ..., started_by: _Optional[str] = ..., discussion_s: _Optional[int] = ..., assign_next_steps: _Optional[bool] = ..., reports: _Optional[_Iterable[_Union[StandupReport, _Mapping]]] = ..., where_we_are: _Optional[str] = ..., where_we_go: _Optional[str] = ..., next_steps: _Optional[_Iterable[_Union[NextStep, _Mapping]]] = ..., risks: _Optional[_Iterable[str]] = ..., error: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., finished_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+
+class StartStandupRequest(_message.Message):
+    __slots__ = ("tenant", "idempotency_key", "department_id", "discussion_s", "assign_next_steps")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    DISCUSSION_S_FIELD_NUMBER: _ClassVar[int]
+    ASSIGN_NEXT_STEPS_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    idempotency_key: _common_pb2.IdempotencyKey
+    department_id: str
+    discussion_s: int
+    assign_next_steps: bool
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., idempotency_key: _Optional[_Union[_common_pb2.IdempotencyKey, _Mapping]] = ..., department_id: _Optional[str] = ..., discussion_s: _Optional[int] = ..., assign_next_steps: _Optional[bool] = ...) -> None: ...
+
+class StartStandupResponse(_message.Message):
+    __slots__ = ("standup",)
+    STANDUP_FIELD_NUMBER: _ClassVar[int]
+    standup: Standup
+    def __init__(self, standup: _Optional[_Union[Standup, _Mapping]] = ...) -> None: ...
+
+class GetStandupRequest(_message.Message):
+    __slots__ = ("tenant", "standup_id")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    STANDUP_ID_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    standup_id: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., standup_id: _Optional[str] = ...) -> None: ...
+
+class GetStandupResponse(_message.Message):
+    __slots__ = ("standup",)
+    STANDUP_FIELD_NUMBER: _ClassVar[int]
+    standup: Standup
+    def __init__(self, standup: _Optional[_Union[Standup, _Mapping]] = ...) -> None: ...
+
+class ListStandupsRequest(_message.Message):
+    __slots__ = ("tenant", "limit")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    LIMIT_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    limit: int
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., limit: _Optional[int] = ...) -> None: ...
+
+class ListStandupsResponse(_message.Message):
+    __slots__ = ("standups",)
+    STANDUPS_FIELD_NUMBER: _ClassVar[int]
+    standups: _containers.RepeatedCompositeFieldContainer[Standup]
+    def __init__(self, standups: _Optional[_Iterable[_Union[Standup, _Mapping]]] = ...) -> None: ...
+
+class EndStandupDiscussionRequest(_message.Message):
+    __slots__ = ("tenant", "standup_id")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    STANDUP_ID_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    standup_id: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., standup_id: _Optional[str] = ...) -> None: ...
+
+class EndStandupDiscussionResponse(_message.Message):
+    __slots__ = ("standup",)
+    STANDUP_FIELD_NUMBER: _ClassVar[int]
+    standup: Standup
+    def __init__(self, standup: _Optional[_Union[Standup, _Mapping]] = ...) -> None: ...

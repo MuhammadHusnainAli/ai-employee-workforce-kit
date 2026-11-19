@@ -21,8 +21,10 @@ from core_python.collaboration.adapters.postgres.conversations import (
     Conversations,
     Who,
 )
+from core_python.collaboration.adapters.postgres.standups import Standups
 from core_python.collaboration.domain.conversations import MAX_CALL_TURNS, PERSON, speaker
 from core_python.collaboration.domain.errors import Closed, Invalid, NotAParticipant, NotFound
+from core_python.collaboration.domain.standup import DISCUSSION_S
 
 T = TypeVar("T")
 MAX_TEXT = 20_000
@@ -115,13 +117,56 @@ def conversation_pb(
     return c
 
 
+def standup_pb(row: DictRow) -> pb.Standup:
+    summary = row["summary"] or {}
+    s = pb.Standup(
+        standup_id=str(row["standup_id"]),
+        department_id=row["department_id"],
+        status=row["status"],
+        led_by=row["led_by"],
+        started_by=row["started_by"],
+        discussion_s=row["discussion_s"],
+        assign_next_steps=row["assign_next_steps"],
+        reports=[
+            pb.StandupReport(
+                employee_id=r.get("employee_id", ""),
+                title=r.get("title", ""),
+                done=r.get("done", ""),
+                next=r.get("next", ""),
+                blockers=r.get("blockers", ""),
+                idle=bool(r.get("idle")),
+            )
+            for r in row["reports"]
+        ],
+        where_we_are=summary.get("where_we_are", ""),
+        where_we_go=summary.get("where_we_go", ""),
+        next_steps=[
+            pb.NextStep(
+                owner=n.get("owner", ""), action=n.get("action", ""), task_id=n.get("task_id", "")
+            )
+            for n in summary.get("next_steps", [])
+        ],
+        risks=list(summary.get("risks", [])),
+        error=row["error"],
+        created_at=_ts(row["created_at"]),
+    )
+    if row["finished_at"] is not None:
+        s.finished_at.CopyFrom(_ts(row["finished_at"]))
+    return s
+
+
 class CollaborationServicer(collaboration_pb2_grpc.CollaborationServiceServicer):
     def __init__(
-        self, conversations: Conversations, answerer: Answerer, colleagues: Colleagues
+        self,
+        conversations: Conversations,
+        answerer: Answerer,
+        colleagues: Colleagues,
+        standups: Standups,
     ) -> None:
         self.conversations = conversations
         self.answerer = answerer
         self.colleagues = colleagues
+        self.standups = standups
 
     async def _guard(
         self, context: grpc.aio.ServicerContext, call: Callable[[], Awaitable[T]]
@@ -256,5 +301,62 @@ class CollaborationServicer(collaboration_pb2_grpc.CollaborationServiceServicer)
             return pb.AskColleagueResponse(
                 conversation_id=turn.conversation_id, answer=answer, turns_left=left
             )
+
+        return await self._guard(context, call)
+
+    # ---- standups --------------------------------------------------------------------------
+
+    async def StartStandup(
+        self, request: pb.StartStandupRequest, context: grpc.aio.ServicerContext
+    ) -> pb.StartStandupResponse:
+        async def call() -> pb.StartStandupResponse:
+            seconds = request.discussion_s if request.HasField("discussion_s") else DISCUSSION_S
+            if not 0 <= seconds <= 3600:
+                raise Invalid("discussion_s must be 0 to 3600")
+            if len(request.department_id) > 63:
+                raise Invalid("department_id is at most 63 characters")
+            row = await self.standups.start(
+                tenant_of(request.tenant),
+                key_of(request.idempotency_key),
+                department_id=request.department_id,
+                discussion_s=seconds,
+                assign_next_steps=request.assign_next_steps,
+                started_by=who(request.tenant).author,
+            )
+            return pb.StartStandupResponse(standup=standup_pb(row))
+
+        return await self._guard(context, call)
+
+    async def GetStandup(
+        self, request: pb.GetStandupRequest, context: grpc.aio.ServicerContext
+    ) -> pb.GetStandupResponse:
+        async def call() -> pb.GetStandupResponse:
+            row = await self.standups.get(
+                tenant_of(request.tenant), conversation_id_of(request.standup_id)
+            )
+            return pb.GetStandupResponse(standup=standup_pb(row))
+
+        return await self._guard(context, call)
+
+    async def ListStandups(
+        self, request: pb.ListStandupsRequest, context: grpc.aio.ServicerContext
+    ) -> pb.ListStandupsResponse:
+        async def call() -> pb.ListStandupsResponse:
+            limit = request.limit or 20
+            if not 1 <= limit <= 100:
+                raise Invalid("limit must be 1 to 100")
+            rows = await self.standups.list(tenant_of(request.tenant), limit)
+            return pb.ListStandupsResponse(standups=[standup_pb(r) for r in rows])
+
+        return await self._guard(context, call)
+
+    async def EndStandupDiscussion(
+        self, request: pb.EndStandupDiscussionRequest, context: grpc.aio.ServicerContext
+    ) -> pb.EndStandupDiscussionResponse:
+        async def call() -> pb.EndStandupDiscussionResponse:
+            row = await self.standups.request_end(
+                tenant_of(request.tenant), conversation_id_of(request.standup_id)
+            )
+            return pb.EndStandupDiscussionResponse(standup=standup_pb(row))
 
         return await self._guard(context, call)

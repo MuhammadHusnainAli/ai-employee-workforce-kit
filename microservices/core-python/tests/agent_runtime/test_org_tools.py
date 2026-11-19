@@ -275,3 +275,15 @@ async def test_act_tells_tools_the_run_mode() -> None:
     state = state.model_copy(update={"mode": "shadow"})
     await act(spec, state, [ToolUseBlock(id="1", name="probe", input={})])
     assert seen["mode"] == "shadow"
+
+
+async def test_the_co_ceo_starts_a_standup() -> None:
+    tools, _, _, talk = rig()
+    talk.replies["StartStandup"] = collab.StartStandupResponse(
+        standup=collab.Standup(standup_id="s-1", status="collecting")
+    )
+    text, err = await run(tools["start_standup"], {"department_id": "sales"}, ctx("co-ceo"))
+    assert not err and "s-1" in text
+    (req,) = talk.sent("StartStandup")
+    assert req.department_id == "sales" and req.tenant.actor.id == "co-ceo"
+    assert req.idempotency_key.value == f"{RUN}:2:0"

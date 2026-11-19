@@ -99,6 +99,7 @@ def test_workers_can_be_turned_off() -> None:
         "runtime-eval-workers",
         "brain-ingest",
         "evaluation",
+        "collab-workers",
     }
     assert set(parts(offline_settings(workers=False), dbs)) == {"workforce-relay", "collab-relay"}
 
