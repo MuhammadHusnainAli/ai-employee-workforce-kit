@@ -18,8 +18,15 @@ The Python backend: one self-contained service holding the modules that used to 
 | Brain | `core_python.brain` | recall, the governed write path, feedback, rules, skills (`BrainService`) | [docs/modules/brain.md](docs/modules/brain.md) |
 | Evaluation | `core_python.evaluation` | golden, regression and safety suites gating brain changes | [docs/modules/evaluation.md](docs/modules/evaluation.md) |
 
-Planned Python modules (specs only, built here when their phase comes) are listed in
-[docs/modules/](docs/modules/).
+Planned Python modules (specs only, built here when their phase comes):
+
+| Module | What it will do | Spec |
+|---|---|---|
+| Model gateway | LiteLLM plugins: fallback chains, budgets, token accounting, safe caching | [docs/modules/model_gateway.md](docs/modules/model_gateway.md) |
+| Meeting | joins meetings, transcribes, summarises, follows up (Phase 9) | [docs/modules/meeting.md](docs/modules/meeting.md) |
+| Realtime voice | the streaming voice pipeline on Pipecat (Phase 9) | [docs/modules/realtime_voice.md](docs/modules/realtime_voice.md) |
+| Tenant directory | tenants, plans, feature flags and tenant-to-cell routing (global) | [docs/modules/tenant_directory.md](docs/modules/tenant_directory.md) |
+| Billing | subscriptions, invoices and credit balances from hourly usage rollups (global) | [docs/modules/billing.md](docs/modules/billing.md) |
 
 Modules talk to each other the same way they did as services: over the gRPC contracts in `contracts/`
 (on this process's own port) and over NATS events. A module never reads another module's tables.

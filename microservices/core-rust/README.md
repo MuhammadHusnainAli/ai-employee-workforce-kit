@@ -17,7 +17,15 @@ The Rust backend: one self-contained crate and one binary holding the modules th
 | Channel | `src/channel/` | Slack, Teams, Google Chat, email and webhooks to tasks and back (`ChannelService`, `/hooks/{kind}/{binding_id}`) | [docs/modules/channel.md](docs/modules/channel.md) |
 | Sandbox | `src/sandbox/` | untrusted code in hardened containers, gVisor pods in production (`SandboxService`) | [docs/modules/sandbox.md](docs/modules/sandbox.md) |
 
-Planned Rust modules (specs only, built here when their phase comes) are listed in [docs/modules/](docs/modules/).
+Planned Rust modules (specs only, built here when their phase comes):
+
+| Module | What it will do | Spec |
+|---|---|---|
+| Integration | the tool pipeline: policy, credentials, connectors, MCP (Phase 4) | [docs/modules/integration.md](docs/modules/integration.md) |
+| Audit | append-only, hash-chained audit log (Phase 4) | [docs/modules/audit.md](docs/modules/audit.md) |
+| Usage metering | tokens, tool calls and quotas on the hot path (Phase 4) | [docs/modules/usage_metering.md](docs/modules/usage_metering.md) |
+| Identity | the employee's email, calendar, chat, git and app accounts, provisioned and removed (Phase 9) | [docs/modules/identity.md](docs/modules/identity.md) |
+| Workspace | each employee's microVM "laptop" (Phase 9) | [docs/modules/workspace.md](docs/modules/workspace.md) |
 
 Modules talk to each other the way they did as services: the channel module calls `TaskService` (on this
 service's own port, `WFK_TASK_SERVICE_ADDR`), and events go through each module's outbox and inbox on NATS. A
