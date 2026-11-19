@@ -50,18 +50,38 @@ class Limits(_message.Message):
     def __init__(self, max_steps: _Optional[int] = ..., max_cost_usd: _Optional[str] = ...) -> None: ...
 
 class Employee(_message.Message):
-    __slots__ = ("employee_id", "name", "status", "active_version", "created_at")
+    __slots__ = ("employee_id", "name", "status", "active_version", "created_at", "title", "department_id", "manager_id", "is_co_ceo")
     EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
     ACTIVE_VERSION_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    MANAGER_ID_FIELD_NUMBER: _ClassVar[int]
+    IS_CO_CEO_FIELD_NUMBER: _ClassVar[int]
     employee_id: str
     name: str
     status: EmployeeStatus
     active_version: int
     created_at: _timestamp_pb2.Timestamp
-    def __init__(self, employee_id: _Optional[str] = ..., name: _Optional[str] = ..., status: _Optional[_Union[EmployeeStatus, str]] = ..., active_version: _Optional[int] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    title: str
+    department_id: str
+    manager_id: str
+    is_co_ceo: bool
+    def __init__(self, employee_id: _Optional[str] = ..., name: _Optional[str] = ..., status: _Optional[_Union[EmployeeStatus, str]] = ..., active_version: _Optional[int] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., title: _Optional[str] = ..., department_id: _Optional[str] = ..., manager_id: _Optional[str] = ..., is_co_ceo: _Optional[bool] = ...) -> None: ...
+
+class Department(_message.Message):
+    __slots__ = ("department_id", "name", "head_employee_id", "created_at")
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    HEAD_EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    department_id: str
+    name: str
+    head_employee_id: str
+    created_at: _timestamp_pb2.Timestamp
+    def __init__(self, department_id: _Optional[str] = ..., name: _Optional[str] = ..., head_employee_id: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class EmployeeVersion(_message.Message):
     __slots__ = ("employee_id", "version", "role", "instructions", "model", "tool_grants", "auto_approve", "limits", "created_by", "created_at")
@@ -218,3 +238,69 @@ class ResumeEmployeeResponse(_message.Message):
     EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
     employee: Employee
     def __init__(self, employee: _Optional[_Union[Employee, _Mapping]] = ...) -> None: ...
+
+class CreateDepartmentRequest(_message.Message):
+    __slots__ = ("tenant", "department_id", "name")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    department_id: str
+    name: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., department_id: _Optional[str] = ..., name: _Optional[str] = ...) -> None: ...
+
+class CreateDepartmentResponse(_message.Message):
+    __slots__ = ("department",)
+    DEPARTMENT_FIELD_NUMBER: _ClassVar[int]
+    department: Department
+    def __init__(self, department: _Optional[_Union[Department, _Mapping]] = ...) -> None: ...
+
+class ListDepartmentsRequest(_message.Message):
+    __slots__ = ("tenant",)
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ...) -> None: ...
+
+class ListDepartmentsResponse(_message.Message):
+    __slots__ = ("departments",)
+    DEPARTMENTS_FIELD_NUMBER: _ClassVar[int]
+    departments: _containers.RepeatedCompositeFieldContainer[Department]
+    def __init__(self, departments: _Optional[_Iterable[_Union[Department, _Mapping]]] = ...) -> None: ...
+
+class PlaceEmployeeRequest(_message.Message):
+    __slots__ = ("tenant", "employee_id", "title", "department_id", "manager_id", "is_co_ceo", "department_head")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    MANAGER_ID_FIELD_NUMBER: _ClassVar[int]
+    IS_CO_CEO_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_HEAD_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    employee_id: str
+    title: str
+    department_id: str
+    manager_id: str
+    is_co_ceo: bool
+    department_head: bool
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., employee_id: _Optional[str] = ..., title: _Optional[str] = ..., department_id: _Optional[str] = ..., manager_id: _Optional[str] = ..., is_co_ceo: _Optional[bool] = ..., department_head: _Optional[bool] = ...) -> None: ...
+
+class PlaceEmployeeResponse(_message.Message):
+    __slots__ = ("employee",)
+    EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
+    employee: Employee
+    def __init__(self, employee: _Optional[_Union[Employee, _Mapping]] = ...) -> None: ...
+
+class GetOrgChartRequest(_message.Message):
+    __slots__ = ("tenant",)
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ...) -> None: ...
+
+class GetOrgChartResponse(_message.Message):
+    __slots__ = ("employees", "departments")
+    EMPLOYEES_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENTS_FIELD_NUMBER: _ClassVar[int]
+    employees: _containers.RepeatedCompositeFieldContainer[Employee]
+    departments: _containers.RepeatedCompositeFieldContainer[Department]
+    def __init__(self, employees: _Optional[_Iterable[_Union[Employee, _Mapping]]] = ..., departments: _Optional[_Iterable[_Union[Department, _Mapping]]] = ...) -> None: ...

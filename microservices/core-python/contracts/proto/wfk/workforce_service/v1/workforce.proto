@@ -21,6 +21,17 @@ service WorkforceService {
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
   rpc PauseEmployee(PauseEmployeeRequest) returns (PauseEmployeeResponse);
   rpc ResumeEmployee(ResumeEmployeeRequest) returns (ResumeEmployeeResponse);
+
+  // The org chart. The person who owns the workspace is the CEO and is not an employee; one
+  // employee may be the co-CEO, who reports to the person.
+  // Repeating the same create is a no-op; another name for the same id is ALREADY_EXISTS.
+  rpc CreateDepartment(CreateDepartmentRequest) returns (CreateDepartmentResponse);
+  rpc ListDepartments(ListDepartmentsRequest) returns (ListDepartmentsResponse);
+  // Set title, department and manager. INVALID_ARGUMENT when the line would loop, the manager
+  // is missing or paused, or a second co-CEO is named.
+  rpc PlaceEmployee(PlaceEmployeeRequest) returns (PlaceEmployeeResponse);
+  // Every employee with its place, and every department.
+  rpc GetOrgChart(GetOrgChartRequest) returns (GetOrgChartResponse);
 }
 
 enum EmployeeStatus {
@@ -56,6 +67,20 @@ message Employee {
   // 0 until a version is published.
   int32 active_version = 4;
   google.protobuf.Timestamp created_at = 5;
+  string title = 6;
+  // Empty when the employee is in no department.
+  string department_id = 7;
+  // Empty: reports to the person.
+  string manager_id = 8;
+  bool is_co_ceo = 9;
+}
+
+message Department {
+  string department_id = 1;
+  string name = 2;
+  // Empty until a head is named.
+  string head_employee_id = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
 message EmployeeVersion {
@@ -153,4 +178,48 @@ message ResumeEmployeeRequest {
 
 message ResumeEmployeeResponse {
   Employee employee = 1;
+}
+
+message CreateDepartmentRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string department_id = 2;
+  string name = 3;
+}
+
+message CreateDepartmentResponse {
+  Department department = 1;
+}
+
+message ListDepartmentsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+}
+
+message ListDepartmentsResponse {
+  repeated Department departments = 1;
+}
+
+message PlaceEmployeeRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string employee_id = 2;
+  string title = 3;
+  // Empty: no department.
+  string department_id = 4;
+  // Empty: reports to the person.
+  string manager_id = 5;
+  bool is_co_ceo = 6;
+  // Make this employee the head of department_id.
+  bool department_head = 7;
+}
+
+message PlaceEmployeeResponse {
+  Employee employee = 1;
+}
+
+message GetOrgChartRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+}
+
+message GetOrgChartResponse {
+  repeated Employee employees = 1;
+  repeated Department departments = 2;
 }

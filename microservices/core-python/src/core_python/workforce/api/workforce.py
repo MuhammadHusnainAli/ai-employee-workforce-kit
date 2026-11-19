@@ -17,6 +17,7 @@ from wfk.workforce_service.v1 import workforce_pb2 as pb
 from wfk.workforce_service.v1 import workforce_pb2_grpc
 
 from core_python.workforce.adapters.postgres.employees import Conflict, Employees, NotFound
+from core_python.workforce.adapters.postgres.org import Org
 from core_python.workforce.domain.employees import (
     Limits,
     Tier,
@@ -24,6 +25,7 @@ from core_python.workforce.domain.employees import (
     VersionSpec,
     valid_employee_id,
 )
+from core_python.workforce.domain.org import InvalidPlacement, valid_department_id
 
 T = TypeVar("T")
 TIER_TO_PB: dict[Tier, pb.RiskTier] = {
@@ -75,6 +77,19 @@ def employee_pb(row: DictRow) -> pb.Employee:
         status=STATUS_TO_PB[row["status"]],
         active_version=row["active_version"] or 0,
         created_at=_ts(row["created_at"]),
+        title=row.get("title") or "",
+        department_id=row.get("department_id") or "",
+        manager_id=row.get("manager_id") or "",
+        is_co_ceo=bool(row.get("is_co_ceo")),
+    )
+
+
+def department_pb(row: DictRow) -> pb.Department:
+    return pb.Department(
+        department_id=row["department_id"],
+        name=row["name"],
+        head_employee_id=row["head_employee_id"] or "",
+        created_at=_ts(row["created_at"]),
     )
 
 
@@ -117,8 +132,9 @@ def spec_from(request: pb.PublishVersionRequest) -> VersionSpec:
 
 
 class WorkforceServicer(workforce_pb2_grpc.WorkforceServiceServicer):
-    def __init__(self, employees: Employees) -> None:
+    def __init__(self, employees: Employees, org: Org) -> None:
         self.employees = employees
+        self.org = org
 
     async def _guard(
         self, context: grpc.aio.ServicerContext, call: Callable[[], Awaitable[T]]
@@ -126,7 +142,7 @@ class WorkforceServicer(workforce_pb2_grpc.WorkforceServiceServicer):
         """Map domain errors to gRPC status codes."""
         try:
             return await call()
-        except (BadRequest, ValidationError, ArithmeticError) as exc:
+        except (BadRequest, ValidationError, ArithmeticError, InvalidPlacement) as exc:
             await _abort(context, grpc.StatusCode.INVALID_ARGUMENT, str(exc))
         except NotFound as exc:
             await _abort(context, grpc.StatusCode.NOT_FOUND, str(exc))
@@ -222,5 +238,62 @@ class WorkforceServicer(workforce_pb2_grpc.WorkforceServiceServicer):
                 _tenant(request.tenant), request.employee_id, "active"
             )
             return pb.ResumeEmployeeResponse(employee=employee_pb(row))
+
+        return await self._guard(context, call)
+
+    # ---- the org chart -------------------------------------------------------------------
+
+    async def CreateDepartment(
+        self, request: pb.CreateDepartmentRequest, context: grpc.aio.ServicerContext
+    ) -> pb.CreateDepartmentResponse:
+        async def call() -> pb.CreateDepartmentResponse:
+            if not valid_department_id(request.department_id):
+                raise BadRequest(
+                    "department_id must be lowercase letters, digits and dashes, 2 to 63 long"
+                )
+            if not request.name.strip():
+                raise BadRequest("name is required")
+            row = await self.org.create_department(
+                _tenant(request.tenant), request.department_id, request.name.strip(),
+                by=_actor(request.tenant),
+            )  # fmt: skip
+            return pb.CreateDepartmentResponse(department=department_pb(row))
+
+        return await self._guard(context, call)
+
+    async def ListDepartments(
+        self, request: pb.ListDepartmentsRequest, context: grpc.aio.ServicerContext
+    ) -> pb.ListDepartmentsResponse:
+        async def call() -> pb.ListDepartmentsResponse:
+            rows = await self.org.departments(_tenant(request.tenant))
+            return pb.ListDepartmentsResponse(departments=[department_pb(r) for r in rows])
+
+        return await self._guard(context, call)
+
+    async def PlaceEmployee(
+        self, request: pb.PlaceEmployeeRequest, context: grpc.aio.ServicerContext
+    ) -> pb.PlaceEmployeeResponse:
+        async def call() -> pb.PlaceEmployeeResponse:
+            if len(request.title) > 200:
+                raise BadRequest("title is at most 200 characters")
+            row = await self.org.place(
+                _tenant(request.tenant), request.employee_id, title=request.title.strip(),
+                department_id=request.department_id or None,
+                manager_id=request.manager_id or None, is_co_ceo=request.is_co_ceo,
+                department_head=request.department_head,
+            )  # fmt: skip
+            return pb.PlaceEmployeeResponse(employee=employee_pb(row))
+
+        return await self._guard(context, call)
+
+    async def GetOrgChart(
+        self, request: pb.GetOrgChartRequest, context: grpc.aio.ServicerContext
+    ) -> pb.GetOrgChartResponse:
+        async def call() -> pb.GetOrgChartResponse:
+            people, depts = await self.org.chart(_tenant(request.tenant))
+            return pb.GetOrgChartResponse(
+                employees=[employee_pb(r) for r in people],
+                departments=[department_pb(r) for r in depts],
+            )
 
         return await self._guard(context, call)
