@@ -513,6 +513,26 @@ Notes for later:
 - `cargo-deny` still does not build on this Windows machine; the Rust dependency set is the union of the three
   crates' already-checked sets plus nothing new.
 
+## Phase O: The AI organisation
+
+Org chart with a co-CEO under the person, hiring approved by the person, delegation down the chart, employee
+messages and calls, and co-CEO standups the person can join. Design:
+[docs/superpowers/specs/2026-11-19-organization-design.md](docs/superpowers/specs/2026-11-19-organization-design.md);
+task detail: [docs/superpowers/plans/2026-11-19-organization.md](docs/superpowers/plans/2026-11-19-organization.md).
+Branch: `build/organization`.
+
+| # | Task | Commit message |
+|---|---|---|
+| O.1 | Departments, titles, reporting lines and one co-CEO in workforce | `Add departments and reporting lines to workforce` |
+| O.2 | Hire requests approved by the person; default tool grants by position | `Add hire requests approved by a person` |
+| O.3 | Sub-tasks in the task module: depth 3, 20 children, output, `task.child_finished`, cascading cancel | `Add sub-tasks with depth and fan-out caps` |
+| O.4 | `collaboration` module: direct messages, calls (6 turns), conversations the person can read | `Add collaboration module with messages and calls` |
+| O.5 | Org tools: delegate, wait, message, ask a colleague, request a hire, start a standup | `Add org tools for delegation, messages and calls` |
+| O.6 | `EmployeeRun` waits for delegated reports and hands their results back | `Wait for delegated reports in employee runs` |
+| O.7 | `Standup` workflow run by the co-CEO, joinable by the person | `Add co-CEO standups the person can join` |
+| O.8 | Web app: organisation, conversations, standups, sub-task tree | `Add organisation, conversations and standup pages` |
+| O.9 | Compose, end to end check, docs | `Run the organisation end to end on the stack` |
+
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills
