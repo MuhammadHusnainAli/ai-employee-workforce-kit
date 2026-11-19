@@ -35,7 +35,7 @@ architecture/     design docs, ADRs and the draw.io diagram
   agent-harness.md  the agent loop in depth
   adr/              architecture decision records
 microservices/    the backend as two self-contained services, one per language (ADR-0017), and the web app
-  core-python/      workforce, agent runtime, brain and evaluation modules
+  core-python/      workforce, agent runtime, brain, evaluation and collaboration modules
   core-rust/        task, channel and sandbox modules
   web-app/          the web app and public REST API
 deployments/      docker compose for the local stack

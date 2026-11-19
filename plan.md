@@ -533,6 +533,26 @@ Branch: `build/organization`.
 | O.8 | Web app: organisation, conversations, standups, sub-task tree | `Add organisation, conversations and standup pages` |
 | O.9 | Compose, end to end check, docs | `Run the organisation end to end on the stack` |
 
+### Phase O outcome
+
+| | |
+|---|---|
+| Org chart | `workforce`: departments, titles, reporting lines (no loops, an active manager), one co-CEO per workspace who reports to the person; `GetOrgChart`, `PlaceEmployee`, `CanDelegate` |
+| Hiring | Only a person hires (`HireEmployee`: employee, version 1 and place in one transaction) or approves a hire an employee asked for (`RequestHire`, `DecideHireRequest`). A hire that no longer fits stays pending. New hires get the org tools; the co-CEO also gets `request_hire` and `start_standup` |
+| Delegation | `task` (core-rust): sub-tasks with `parent_task_id`, `root_task_id`, `depth` (at most 3), at most 20 per task, the run's output kept, `task.child_finished` to the parent, cancel cascades down. `EmployeeRun` counts hand-offs, waits durably on `wait_for_reports` (and when the model tries to finish early), and gives the model the reports as untrusted data; behind `workflow.patched("org-delegation-v1")`, recorded histories replay unchanged |
+| Collaboration | New module `collaboration` (`collab_db`, `wfk.collaboration_service.v1`): direct messages, calls (6 questions, one model call per answer, no tools, under 150 words), standups as the `Standup` workflow on queue `collab` (updates from real task status, no model call for idle people, a discussion the person joins, the co-CEO's summary and optional next-step tasks) |
+| Org tools | `list_team`, `delegate_task` (10 per step), `wait_for_reports`, `send_message`, `read_messages`, `ask_colleague`, `request_hire`, `start_standup`. Evaluation and shadow runs practise only: the tools change nothing outside a live run |
+| Web app | Organisation (chart from the CEO down, give the co-CEO a goal, hire, departments, hire requests), Conversations (every message, call and standup, live, with a box to join in), Standups (start, live room, summary), the sub-task tree on a task; 12 REST routes in the OpenAPI document |
+| Verified | core-python 451 passed (6 skipped by design); core-rust full suite including integration; web app 26 tests, typecheck, build; `just e2e` passes all four flows including `deployments/e2e/organization.sh` |
+
+Notes for later:
+
+- With `local-mock` employees answer but never choose tools, so the end-to-end check covers the org chart,
+  hiring, goals, calls, messages and standups; the delegation loop is covered by the Temporal workflow tests.
+  A real model (`WFK_WORKER_MODEL=claude-haiku`) is needed to watch a co-CEO hand a goal down by itself.
+- Messages do not start a run: an employee reads them with `read_messages`. A scheduled daily standup (Temporal
+  Schedules) is not built yet.
+
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills

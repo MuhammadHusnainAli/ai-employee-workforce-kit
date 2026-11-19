@@ -7,7 +7,7 @@ process: its own database, its own API contract, its own events, its own tests a
 
 | Deployable | Language | Port (local) | Process | Modules |
 |---|---|---|---|---|
-| `core-python` | Python (+ Rust `brain-core` via PyO3) | 7001, gRPC with gRPC health | one process: the gRPC server, every Temporal worker, every outbox relay and inbox, each supervised and restarted on failure | Workforce, Agent Runtime, Brain, Evaluation. Planned: Model Gateway plugins, Meeting, Realtime Voice, Tenant & Cell Directory, Billing |
+| `core-python` | Python (+ Rust `brain-core` via PyO3) | 7001, gRPC with gRPC health | one process: the gRPC server, every Temporal worker, every outbox relay and inbox, each supervised and restarted on failure | Workforce, Agent Runtime, Brain, Evaluation, Collaboration. Planned: Model Gateway plugins, Meeting, Realtime Voice, Tenant & Cell Directory, Billing |
 | `core-rust` | Rust | 7002, HTTP (health, webhooks) and gRPC on one listener | one binary, every module's routes, services and loops | Task, Channel, Sandbox. Planned: Integration & Tools, Audit, Usage Metering, Workspace, Identity & Accounts |
 | `web-app` | TypeScript (Next.js) | 7000 | the web app and the public REST API | |
 
@@ -80,13 +80,27 @@ Communication rules:
 ### 3. Workforce (core-python, module `workforce`)
 - **Purpose:** defines AI employees.
 - **Owns:** `employees`, `employee_versions` (an **immutable** blueprint: role, instructions, model policy, tool
-  grants, knowledge bindings, guardrails), teams and reporting lines, schedules (written through to Temporal
-  Schedules).
+  grants, knowledge bindings, guardrails), the org chart (departments, titles, reporting lines, exactly one
+  co-CEO who reports to the person), hire requests, schedules (written through to Temporal Schedules).
+- **Hiring:** a hire costs money, so only a person hires (`HireEmployee`) or approves a hire an employee asked
+  for (`RequestHire`, `DecideHireRequest`). A new hire starts with the org tools; `CanDelegate` answers who may
+  hand work to whom (the co-CEO to anyone, everyone else to the people below them).
 - **Key behaviour:** editing an employee creates a new version. A run pins the version it started with, so an
   edit never changes a run that is already in flight. Rollback means pointing `active_version` back to an older
   version.
 - **DB:** `workforce_db` (pg-app). **Events out:** `employee.created`, `employee.version_published`,
-  `employee.version_activated`, `employee.paused`, `employee.resumed`.
+  `employee.version_activated`, `employee.paused`, `employee.resumed`, `employee.department_created`,
+  `employee.placed`, `employee.hire_requested`, `employee.hire_decided`.
+
+### 3b. Collaboration (core-python, module `collaboration`)
+- **Purpose:** conversations between employees and with the person: direct messages, calls (a question and
+  answer exchange, at most 6 questions) and standups run by the co-CEO. The person can read every conversation
+  and join any of them.
+- **Standups:** the `Standup` Temporal workflow (queue `collab`) reads each employee's real task status, writes
+  one short update per active employee (a fixed line, no model call, for anyone idle), opens a discussion the
+  person can join, and ends with the co-CEO's summary: where we are, where we go, next steps with owners, risks.
+- **DB:** `collab_db` (pg-app). **Events out:** `collab.message_posted`, `collab.standup_started`,
+  `collab.standup_end_requested`, `collab.standup_finished`. Spec: `core-python/docs/modules/collaboration.md`.
 
 ### 4. Agent Runtime (core-python, module `agent_runtime`)
 - **Purpose:** executes the agent loop: recall → think (LLM) → authorize → act (tool) → observe → repeat.
@@ -231,6 +245,7 @@ Built today (stream, subjects, producer, consumers with their durable consumer n
 
 | Stream | Subjects | Producer | Consumers |
 |---|---|---|---|
+| `COLLAB` | `collab.>` | Collaboration | Collaboration (`collaboration-standups`: starts and signals standups) |
 | `EMPLOYEES` | `employee.>` | Workforce | (Agent Runtime reads versions through `WorkforceService`); Audit later |
 | `TASKS` | `task.>` | Task | Agent Runtime (`agent-runtime-tasks`: starts and signals runs), Web App (live updates over SSE) |
 | `RUNS` | `run.>` | Agent Runtime | Task (`task-service-runs`: state), Brain (`brain-ingest-runs`: remember), Channel (`channel-gateway-runs`: answers) |

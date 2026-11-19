@@ -64,7 +64,7 @@ gRPC health service (`""` for liveness, `"readiness"` for readiness).
 | Port | What |
 |---|---|
 | 7000 | web-app: <http://127.0.0.1:7000> |
-| 7001 | core-python (workforce, agent runtime, brain, evaluation, and later Python modules) |
+| 7001 | core-python (workforce, agent runtime, brain, evaluation, collaboration, and later Python modules) |
 | 7002 | core-rust (task, channel, sandbox, and later Rust modules) |
 | 7003 to 7016 | spare (free since ADR-0017) |
 | 7017 | PostgreSQL |

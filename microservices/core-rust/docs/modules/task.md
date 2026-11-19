@@ -14,6 +14,10 @@ The work inbox. Creates tasks, tracks state, handles approvals and human replies
 - `tasks`: one row per task. `task_id` is also the `EmployeeRun` workflow id. Status is a projection
   of the run's events; `run_seq` is the last run ledger sequence applied, so late or repeated events
   change nothing and a finished task never changes again.
+- delegation: a task can be handed down from another (`parent_task_id`, `root_task_id`, `depth`). A goal is
+  depth 0; sub-tasks go at most 3 levels deep and a task has at most 20. A finished sub-task emits
+  `task.child_finished` to its parent (with its output, cut to 4,000 characters), which agent-runtime turns into
+  the parent run's `child_finished` signal. Cancelling a task cancels every unfinished task below it.
 - idempotency keys: `CreateTask` is unique per (tenant, key); approvals and replies derive their
   event id from (task, key), so a retry emits nothing new.
 
@@ -24,7 +28,7 @@ The work inbox. Creates tasks, tracks state, handles approvals and human replies
 ## Events
 | Direction | Stream | Subjects |
 |---|---|---|
-| Out | `TASKS` | `task.created` · `task.state_changed` · `task.cancel_requested` · `task.approval_decided` · `task.reply_given` |
+| Out | `TASKS` | `task.created` · `task.state_changed` · `task.cancel_requested` · `task.approval_decided` · `task.reply_given` · `task.child_finished` |
 | In | `RUNS` (durable consumer `task-service-runs`) | `run.started` · `run.step_completed` · `run.completed` · `run.failed` |
 
 agent-runtime consumes `task.*`: it starts `EmployeeRun` on `task.created` and turns the other
@@ -45,7 +49,7 @@ core-rust/
   src/task/api.rs       gRPC TaskService
   src/task/domain.rs    statuses and how run events move them (no I/O)
   src/task/adapters.rs  task_db: tasks, outbox events, run-event projection
-  migrations/task/      0001 outbox/inbox, 0002 tasks
+  migrations/task/      0001 outbox/inbox, 0002 tasks, 0003 delegation
   tests/                unit + integration (tasks.rs covers the API and projection)
 ```
 
