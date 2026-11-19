@@ -20,8 +20,15 @@ with workflow.unsafe.imports_passed_through():
 
     from core_python.agent_runtime.activities.contract import CONTRACTS
     from core_python.agent_runtime.harness import observe as obs
+    from core_python.agent_runtime.harness.act import wrap_untrusted
     from core_python.agent_runtime.harness.context import BuiltContext
-    from core_python.agent_runtime.harness.state import ActionResult, AgentState, ToolCalls
+    from core_python.agent_runtime.harness.reports import (
+        DELEGATE_TASK,
+        WAIT_FOR_REPORTS,
+        ChildReport,
+        render_reports,
+    )
+    from core_python.agent_runtime.harness.state import ActionResult, AgentState, Final, ToolCalls
     from core_python.agent_runtime.workflows.types import (
         TASK_QUEUE_RUNS,
         ActInput,
@@ -96,6 +103,12 @@ class EmployeeRun:
     pause        stop before the next step (a running step finishes first)
     resume       carry on after a pause
     cancel       end the run; nothing pending runs
+    child_finished   a task this run handed down has finished (task.child_finished)
+
+    Delegation: each successful delegate_task call hands a sub-task down. A wait_for_reports
+    call waits, durably, until every one of them has reported (or the wait timeout passes) and
+    its result becomes their reports. A final answer while sub-tasks are still open waits the
+    same way, and the run carries on with the reports instead of finishing.
     """
 
     def __init__(self) -> None:
@@ -105,6 +118,13 @@ class EmployeeRun:
         self._cancel_reason: str | None = None
         self._approval: ApprovalAnswer | None = None
         self._reply: str | None = None
+        self._children: dict[str, ChildReport] = {}  # in signal order, so replay is stable
+        self._reported: set[str] = set()
+        self._delegated = 0
+        # How many hand-offs a wait had covered when it timed out: a final answer does not wait
+        # for those again, the model already knows they are still working.
+        self._timed_out_at = 0
+        self._wait_timeout_s = 7 * 24 * 3600.0
 
     # ---- what people can do --------------------------------------------------------------
 
@@ -136,6 +156,10 @@ class EmployeeRun:
     def cancel(self, reason: str) -> None:
         self._cancel_reason = reason or "cancelled"
 
+    @workflow.signal
+    def child_finished(self, report: ChildReport) -> None:
+        self._children.setdefault(report.child_task_id, report)
+
     # ---- the run ---------------------------------------------------------------------------
 
     @workflow.run
@@ -144,6 +168,7 @@ class EmployeeRun:
             run_id=inp.run_id, tenant_id=inp.tenant_id, employee_id=inp.employee_id, task=inp.task
         ).model_copy(update={"mode": inp.mode, "candidate": inp.candidate})
         self._state = state
+        self._wait_timeout_s = inp.wait_timeout_s
         await _call(
             "record_start",
             StartRecord(
@@ -198,6 +223,38 @@ class EmployeeRun:
     @property
     def _cancelled(self) -> bool:
         return self._cancel_reason is not None
+
+    # ---- delegation ------------------------------------------------------------------------
+
+    @property
+    def _open_children(self) -> int:
+        return max(self._delegated - len(self._children), 0)
+
+    async def _await_reports(self) -> str:
+        """Wait until everything handed down has reported (or the wait times out), then the
+        reports not yet given to the model, wrapped as data: they are other employees' words."""
+        try:
+            await workflow.wait_condition(
+                lambda: self._open_children == 0 or self._cancelled,
+                timeout=timedelta(seconds=self._wait_timeout_s),
+            )
+        except TimeoutError:
+            self._timed_out_at = self._delegated
+        new = [c for cid, c in self._children.items() if cid not in self._reported]
+        self._reported.update(c.child_task_id for c in new)
+        return wrap_untrusted("reports", render_reports(new, still_open=self._open_children))
+
+    async def _with_reports(self, results: list[ActionResult]) -> list[ActionResult]:
+        """Count what this step handed down; fill a wait_for_reports result with the reports."""
+        self._delegated += sum(1 for r in results if r.name == DELEGATE_TASK and not r.is_error)
+        waits = any(r.name == WAIT_FOR_REPORTS for r in results)
+        if not waits or self._delegated == 0 or not workflow.patched("org-delegation-v1"):
+            return results
+        text = await self._await_reports()
+        return [
+            r.model_copy(update={"content": text}) if r.name == WAIT_FOR_REPORTS else r
+            for r in results
+        ]
 
     async def _record(self, state: AgentState, facts: Facts) -> None:
         """Write one ledger entry. Its seq makes a retried write a no-op."""
@@ -319,6 +376,31 @@ class EmployeeRun:
                 ),
                 list[ActionResult],
             )
+            results = await self._with_reports(results)
+        elif (
+            isinstance(decision, Final)
+            and self._open_children
+            and self._delegated > self._timed_out_at
+            and workflow.patched("org-delegation-v1")
+        ):
+            report = await self._await_reports()
+            new = obs.reports_back(
+                state,
+                limits,
+                response=response,
+                final_text=decision.text,
+                report=report,
+                history=built.messages if built.compacted else None,
+            )
+            facts = Facts(
+                "reports",
+                {"final_text": decision.text, "reports": report[:4000]},
+                response=response,
+                prompt_hash=built.prompt_hash,
+                recall_id=built.recall_id or None,
+                memory_degraded=built.memory_degraded,
+            )
+            return new, facts
         new = obs.observe(
             state,
             limits,

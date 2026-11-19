@@ -198,3 +198,22 @@ def budget_stop(state: AgentState, reason: str) -> AgentState:
     new = state.model_copy(deep=True)
     new.status, new.stop_reason, new.pending_reason = "waiting_human", "budget", reason
     return new
+
+
+def reports_back(
+    state: AgentState,
+    limits: Limits,
+    *,
+    response: ModelResponse,
+    final_text: str,
+    report: str,
+    history: list[Message] | None = None,
+) -> AgentState:
+    """The model wanted to finish while work it handed down was still open; that work has now
+    reported. Instead of finishing, the run carries on with the reports in front of the model."""
+    new = observe(state, limits, response=response, decision=Final(text=final_text),
+                  history=history)  # fmt: skip
+    new.status, new.stop_reason, new.output = "running", "", None
+    new.messages.append(Message.user(report).model_copy(update={"ts": response.message.ts}))
+    new.step += 1
+    return _apply_stop_conditions(new, limits)
