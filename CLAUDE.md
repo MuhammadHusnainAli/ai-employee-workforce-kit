@@ -50,9 +50,8 @@ microservices/
   core-python/                the Python backend: workforce, agent_runtime, brain, evaluation modules (port 7001)
   core-rust/                  the Rust backend: task, channel, sandbox modules (port 7002)
   web-app/                    the web app and public REST API (port 7000)
-  templates/                  service templates and new_service.py (only for splitting a module out later)
 plan.md                       phased plan and status
-justfile                      local stack and new-service only
+justfile                      local stack only
 ```
 
 ## Commands

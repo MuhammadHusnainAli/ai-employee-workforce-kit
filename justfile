@@ -1,4 +1,4 @@
-# Repo-level commands only: the local stack and creating services.
+# Repo-level commands only: the local stack.
 # Everything else (lint, test, migrate, image) is in each service's own justfile:
 #   cd microservices/<service> && just --list
 # Install just with: uv tool install rust-just
@@ -44,7 +44,3 @@ nuke:
 # Show the local stack and the microservices
 ps:
     {{compose}} --profile services ps
-
-# Create a self-contained service from a template (rare: new capabilities are modules, ADR-0017)
-new-service lang name:
-    python microservices/templates/new_service.py {{lang}} {{name}}

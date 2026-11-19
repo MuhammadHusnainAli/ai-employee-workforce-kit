@@ -140,7 +140,6 @@ for events.
                             capability (workforce, agent runtime, brain, evaluation, ...) (ADR-0017)
 /microservices/core-rust    the Rust backend: task, channel, sandbox, ... as modules of one binary
 /microservices/web-app      the web app and public REST API
-/microservices/templates    service templates and the generator, for splitting a module out later
 /platform                Helm/Kustomize for Temporal, NATS, CNPG clusters, Keycloak, OpenFGA, OpenBao…
 /cells/<cell-id>         per-cell Argo CD Application values (the cell's config is just data)
 /connectors/<tool>       MCP servers for integrations (gmail, slack, hubspot, …)

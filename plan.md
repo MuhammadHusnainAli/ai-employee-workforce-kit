@@ -102,22 +102,19 @@ no root `pyproject.toml` or `Cargo.toml`, no shared libraries. A service never p
 ```
 architecture/                design docs, ADRs, diagram
 deployments/                 docker compose for the local stack (docker-compose.yml)
-microservices/
-  templates/
-    python-service/          Python template: a real, tested service named service-template
-    rust-service/            Rust template: the same, in Rust
-    new_service.py           copies a template to microservices/<name> and renames it
-  <service>/                 one self-contained project per service:
+microservices/                (ADR-0017: two backend services, one per language; ADR-0018: no templates)
+  core-python/ core-rust/    each one self-contained project:
     pyproject.toml, uv.lock     (Python)  or  Cargo.toml, Cargo.lock, rust-toolchain.toml (Rust)
     justfile, Dockerfile        commands and image, run from this folder
-    contracts/                  common types (copied) + this service's own API (owned)
-    migrations/                 versioned SQL
-    src/<service>/              api/, domain/, adapters/
-    src/wfk_platform/           this service's copy of the platform code (Rust: src/platform/)
-    tests/
+    contracts/                  common types + each module's own API (owned)
+    migrations/<module>/        versioned SQL, one folder per module database
+    src/                        one package or module per capability: api/, domain/, adapters/
+    src/wfk_platform/           the platform code, one copy (Rust: src/platform/)
+    tests/  docs/modules/
+  web-app/                   the web app and public REST API
 platform/                    Helm and Kustomize for platform components (later)
 cells/<cell-id>/             per-cell Argo CD values (later)
-justfile                     the local stack (up, down) and new-service only
+justfile                     the local stack (up, down) only
 plan.md                      this file
 ```
 
@@ -483,6 +480,7 @@ migrations, contracts and events; only the deployable changes. Branch: `build/tw
 | R.4 | Local stack, web app and e2e on the two services | `just up-all` healthy, `just e2e` passes | `Run the local stack on two backend services` |
 | R.5 | The ten unbuilt services become module specs in the service of their language | No service folder without code is left | `Fold unbuilt service specs into module docs` |
 | R.6 | Docs: architecture, port map, CLAUDE.md, templates | No doc points at a removed service folder | `Update docs for two backend services` |
+| R.7 | ADR-0018: remove `microservices/templates/` and `just new-service` | No reference left outside history and applied migrations | `Remove service templates and new-service command` |
 
 ### Restructure outcome
 

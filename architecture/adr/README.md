@@ -22,3 +22,4 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 | [0015](0015-self-contained-microservices.md) | Every microservice is a self-contained project: own manifest, lockfile, platform code and contracts | Accepted; applies to the two services of 0017 |
 | [0016](0016-harness-package-as-dependency.md) | agent-harness-adk used unchanged as a dependency; the step loop lives in Agent Runtime | Accepted |
 | [0017](0017-two-backend-services.md) | Two backend services, one per language: core-python and core-rust, each former service a module | Accepted |
+| [0018](0018-remove-service-templates.md) | Remove the service templates and `just new-service`; new capabilities are modules | Accepted |

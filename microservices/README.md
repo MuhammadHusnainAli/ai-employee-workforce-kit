@@ -60,8 +60,8 @@ core-<lang>/
 Build it as a module in the service of its language: a package under `src/`, its migrations under
 `migrations/<module>/` (starting with the platform outbox and inbox schema), its API under
 `contracts/proto/wfk/<package>/v1/`, and its spec in `docs/modules/`. Wire it into the service's composition
-(`core_python/main.py` and `app.py`, or `core-rust/src/lib.rs`). `just new-service` and [templates/](templates/README.md)
-are only for splitting a module out into its own service later.
+(`core_python/main.py` and `app.py`, or `core-rust/src/lib.rs`). To split a module out into its own service later,
+copy its service's project and keep only that module ([ADR-0018](../architecture/adr/0018-remove-service-templates.md)).
 
 ## Rules every module follows
 

@@ -17,7 +17,7 @@ that take tasks, join meetings, write code and improve over time, under human co
 
 ## Architecture at a glance
 
-- **Microservices:** 16 per-cell services plus 2 global ones, each owning one database
+- **Two backend services, one per language:** 16 per-cell capabilities plus 2 global ones built as modules, each owning one database
 - **PostgreSQL** is the only system of record (CloudNativePG, sync replication, point-in-time recovery)
 - **Temporal** makes every agent run durable: a crash resumes from the last step, never repeats an action
 - **Cell-based isolation:** one failing cell or noisy tenant never affects the others
@@ -34,8 +34,10 @@ architecture/     design docs, ADRs and the draw.io diagram
   brain.md          the per-employee brain (memory, recall, learning)
   agent-harness.md  the agent loop in depth
   adr/              architecture decision records
-microservices/    one self-contained project per service (own manifest, lockfile, platform code, contracts)
-  templates/        Python and Rust service templates, and the generator
+microservices/    the backend as two self-contained services, one per language (ADR-0017), and the web app
+  core-python/      workforce, agent runtime, brain and evaluation modules
+  core-rust/        task, channel and sandbox modules
+  web-app/          the web app and public REST API
 deployments/      docker compose for the local stack
 plan.md           the phased implementation plan
 LICENSE           Apache License 2.0
