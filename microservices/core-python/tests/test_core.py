@@ -20,7 +20,10 @@ PG = "postgresql://wfk:wfk@127.0.0.1:7017"
 
 
 def offline_settings(**kw: object) -> config.Settings:
-    urls = {f"{m}_database_url": UNREACHABLE for m in ("workforce", "runtime", "brain", "eval")}
+    urls = {
+        f"{m}_database_url": UNREACHABLE
+        for m in ("workforce", "runtime", "brain", "eval", "collab")
+    }
     return config.Settings(host="127.0.0.1", readiness_timeout_s=1.0, **(urls | kw))  # type: ignore[arg-type]
 
 
@@ -55,6 +58,7 @@ async def test_one_port_serves_every_module() -> None:
             "/wfk.workforce_service.v1.WorkforceService/ListEmployees",
             "/wfk.agent_runtime.v1.RunService/GetRun",
             "/wfk.brain_service.v1.BrainService/Recall",
+            "/wfk.collaboration_service.v1.CollaborationService/ListConversations",
         ):
             assert await call(port, method) != grpc.StatusCode.UNIMPLEMENTED, method
         assert await call(port, "/wfk.billing.v1.Billing/Charge") == grpc.StatusCode.UNIMPLEMENTED
@@ -68,6 +72,7 @@ def test_modules_call_each_other_on_this_process_port() -> None:
     assert config.runtime(s).brain_address == "127.0.0.1:7099"
     assert config.runtime(s).workforce_address == "127.0.0.1:7099"
     assert config.evaluation(s).brain_address == "127.0.0.1:7099"
+    assert config.collaboration(s).workforce_address == "127.0.0.1:7099"
 
 
 def test_each_module_keeps_its_own_database() -> None:
@@ -77,8 +82,11 @@ def test_each_module_keeps_its_own_database() -> None:
         config.runtime(s).database_url,
         config.brain(s).database_url,
         config.evaluation(s).database_url,
+        config.collaboration(s).database_url,
     }
-    assert {u.rsplit("/", 1)[1] for u in urls} == {"workforce_db", "run_db", "brain_db", "eval_db"}
+    assert {u.rsplit("/", 1)[1] for u in urls} == {
+        "workforce_db", "run_db", "brain_db", "eval_db", "collab_db",
+    }  # fmt: skip
 
 
 def test_workers_can_be_turned_off() -> None:
@@ -86,12 +94,13 @@ def test_workers_can_be_turned_off() -> None:
     dbs = Databases.from_settings(s)
     assert set(parts(s, dbs)) == {
         "workforce-relay",
+        "collab-relay",
         "runtime-workers",
         "runtime-eval-workers",
         "brain-ingest",
         "evaluation",
     }
-    assert set(parts(offline_settings(workers=False), dbs)) == {"workforce-relay"}
+    assert set(parts(offline_settings(workers=False), dbs)) == {"workforce-relay", "collab-relay"}
 
 
 async def test_a_failing_part_is_restarted_until_stopped() -> None:
@@ -134,7 +143,10 @@ async def test_a_part_stopping_itself_does_not_stop_the_process() -> None:
 
 @pytest.mark.integration
 def test_migrate_applies_every_module_to_its_own_database_once() -> None:
-    names = {m: f"core_python_{m}_migrate_test" for m in ("workforce", "runtime", "brain", "eval")}
+    names = {
+        m: f"core_python_{m}_migrate_test"
+        for m in ("workforce", "runtime", "brain", "eval", "collab")
+    }
     try:
         admin = psycopg.connect(f"{PG}/postgres", autocommit=True)
     except psycopg.OperationalError as exc:
@@ -152,6 +164,7 @@ def test_migrate_applies_every_module_to_its_own_database_once() -> None:
         "runtime": "runs",
         "brain": "memories",
         "eval": "eval_runs",
+        "collab": "conversations",
     }
     for module, table in tables.items():
         with psycopg.connect(f"{PG}/{names[module]}") as c:

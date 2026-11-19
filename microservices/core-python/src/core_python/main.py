@@ -2,8 +2,10 @@
 
 `core-python` (or `core-python serve`) runs, until SIGINT / SIGTERM:
 
-- one gRPC server on one port: health, WorkforceService, RunService, BrainService;
+- one gRPC server on one port: health, WorkforceService, RunService, BrainService,
+  CollaborationService;
 - workforce: the outbox relay (employee.* to EMPLOYEES);
+- collaboration: the outbox relay (collab.* to COLLAB);
 - agent_runtime: the live Temporal workers (runs, llm, tools), the run outbox relay (RUNS)
   and the task inbox (TASKS); and the evaluation workers (eval-runs, eval-llm, eval-tools),
   workflows only, so evaluations never take live work;
@@ -41,6 +43,7 @@ MODULES = {
     "agent_runtime": "runtime_database_url",
     "brain": "brain_database_url",
     "evaluation": "eval_database_url",
+    "collaboration": "collab_database_url",
 }
 
 Part = Callable[[asyncio.Event], Awaitable[None]]
@@ -78,6 +81,7 @@ def parts(s: config.Settings, dbs: Databases) -> dict[str, Part]:
     """Every background part of the process, by name."""
     from core_python.agent_runtime.main import run_workers
     from core_python.brain.ingest import ingest
+    from core_python.collaboration import app as collab_app
     from core_python.evaluation.main import evaluate
     from core_python.workforce.app import STREAM, SUBJECTS
 
@@ -101,7 +105,11 @@ def parts(s: config.Settings, dbs: Databases) -> dict[str, Part]:
     def gate(stop: asyncio.Event) -> Awaitable[None]:
         return evaluate(evaluation, stop=stop, db=dbs.eval)
 
-    named: dict[str, Part] = {"workforce-relay": employees}
+    def conversations(stop: asyncio.Event) -> Awaitable[None]:
+        return run_outbox_relay(dbs.collab, s.nats_url, stream=collab_app.STREAM,
+                                subjects=collab_app.SUBJECTS, stop=stop)  # fmt: skip
+
+    named: dict[str, Part] = {"workforce-relay": employees, "collab-relay": conversations}
     if s.workers:
         named |= {
             "runtime-workers": live,

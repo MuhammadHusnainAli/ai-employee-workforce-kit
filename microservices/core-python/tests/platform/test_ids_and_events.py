@@ -58,6 +58,6 @@ def test_template_migration_matches_library_schema() -> None:
     library = resources.files("wfk_platform").joinpath("sql/outbox_inbox.sql").read_bytes()
     templates = sorted(root.glob("migrations/*/0001_platform_outbox_inbox.up.sql"))
     modules = [t.parent.name for t in templates]
-    assert modules == ["agent_runtime", "brain", "evaluation", "workforce"]
+    assert modules == ["agent_runtime", "brain", "collaboration", "evaluation", "workforce"]
     for template in templates:
         assert template.read_bytes() == library, template
