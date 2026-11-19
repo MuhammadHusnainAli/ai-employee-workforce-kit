@@ -32,6 +32,16 @@ service WorkforceService {
   rpc PlaceEmployee(PlaceEmployeeRequest) returns (PlaceEmployeeResponse);
   // Every employee with its place, and every department.
   rpc GetOrgChart(GetOrgChartRequest) returns (GetOrgChartResponse);
+
+  // Hiring. A hire costs money, so only a person (actor kind HUMAN) hires or decides a request;
+  // anyone else gets PERMISSION_DENIED. A new hire starts with the default org tools.
+  // Create, publish version 1 and place, in one transaction. Idempotent on idempotency_key.
+  rpc HireEmployee(HireEmployeeRequest) returns (HireEmployeeResponse);
+  // An employee asks for a hire. Nothing is created until a person approves it.
+  rpc RequestHire(RequestHireRequest) returns (RequestHireResponse);
+  rpc ListHireRequests(ListHireRequestsRequest) returns (ListHireRequestsResponse);
+  // Approve (hires, exactly as HireEmployee) or reject. FAILED_PRECONDITION once decided.
+  rpc DecideHireRequest(DecideHireRequestRequest) returns (DecideHireRequestResponse);
 }
 
 enum EmployeeStatus {
@@ -222,4 +232,86 @@ message GetOrgChartRequest {
 message GetOrgChartResponse {
   repeated Employee employees = 1;
   repeated Department departments = 2;
+}
+
+// Who to hire, where they sit, and what their first version says.
+message Hire {
+  string employee_id = 1;
+  string name = 2;
+  string title = 3;
+  string department_id = 4;
+  // Empty: reports to the person.
+  string manager_id = 5;
+  bool is_co_ceo = 6;
+  bool department_head = 7;
+  string role = 8;
+  string instructions = 9;
+  string model = 10;
+  // US dollars per run, as a decimal string. Empty: the default.
+  string max_cost_usd = 11;
+}
+
+enum HireRequestStatus {
+  HIRE_REQUEST_STATUS_UNSPECIFIED = 0;
+  HIRE_REQUEST_STATUS_PENDING = 1;
+  HIRE_REQUEST_STATUS_APPROVED = 2;
+  HIRE_REQUEST_STATUS_REJECTED = 3;
+}
+
+message HireRequest {
+  string request_id = 1;
+  Hire hire = 2;
+  string reason = 3;
+  string requested_by = 4;
+  HireRequestStatus status = 5;
+  string decided_by = 6;
+  string decision_note = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp decided_at = 9;
+}
+
+message HireEmployeeRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  Hire hire = 3;
+}
+
+message HireEmployeeResponse {
+  Employee employee = 1;
+  EmployeeVersion version = 2;
+}
+
+message RequestHireRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  Hire hire = 3;
+  // Why the company needs this hire, for the person deciding.
+  string reason = 4;
+}
+
+message RequestHireResponse {
+  HireRequest request = 1;
+}
+
+message ListHireRequestsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // Unspecified: any.
+  HireRequestStatus status = 2;
+}
+
+message ListHireRequestsResponse {
+  repeated HireRequest requests = 1;
+}
+
+message DecideHireRequestRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string request_id = 2;
+  bool approved = 3;
+  string note = 4;
+}
+
+message DecideHireRequestResponse {
+  HireRequest request = 1;
+  // Set when approved.
+  Employee employee = 2;
 }

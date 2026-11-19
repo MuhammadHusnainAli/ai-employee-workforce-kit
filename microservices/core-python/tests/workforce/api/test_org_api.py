@@ -36,17 +36,35 @@ async def test_departments_and_reporting_lines_make_an_org_chart(stub: Stub) -> 
         pb.CreateDepartmentRequest(tenant=tenant(t), department_id="sales", name="Sales")
     )
     assert again.department.department_id == "sales"
-    assert await code(stub.CreateDepartment(
-        pb.CreateDepartmentRequest(tenant=tenant(t), department_id="sales", name="Selling")
-    )) == grpc.StatusCode.ALREADY_EXISTS  # fmt: skip
+    assert (
+        await code(
+            stub.CreateDepartment(
+                pb.CreateDepartmentRequest(tenant=tenant(t), department_id="sales", name="Selling")
+            )
+        )
+        == grpc.StatusCode.ALREADY_EXISTS
+    )
 
     ceo = await hire(stub, t, "co-ceo", title="Co-CEO", is_co_ceo=True)
     assert ceo.is_co_ceo and ceo.manager_id == ""
-    head = await hire(stub, t, "sales-head", title="Head of Sales", department_id="sales",
-                      manager_id="co-ceo", department_head=True)  # fmt: skip
+    head = await hire(
+        stub,
+        t,
+        "sales-head",
+        title="Head of Sales",
+        department_id="sales",
+        manager_id="co-ceo",
+        department_head=True,
+    )
     assert (head.title, head.department_id, head.manager_id) == ("Head of Sales", "sales", "co-ceo")
-    await hire(stub, t, "sales-junior", title="Junior Sales", department_id="sales",
-               manager_id="sales-head")  # fmt: skip
+    await hire(
+        stub,
+        t,
+        "sales-junior",
+        title="Junior Sales",
+        department_id="sales",
+        manager_id="sales-head",
+    )
 
     chart = await stub.GetOrgChart(pb.GetOrgChartRequest(tenant=tenant(t)))
     by_id = {e.employee_id: e for e in chart.employees}

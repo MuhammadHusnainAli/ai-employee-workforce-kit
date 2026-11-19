@@ -24,6 +24,13 @@ class RiskTier(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     RISK_TIER_R1: _ClassVar[RiskTier]
     RISK_TIER_R2: _ClassVar[RiskTier]
     RISK_TIER_R3: _ClassVar[RiskTier]
+
+class HireRequestStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    HIRE_REQUEST_STATUS_UNSPECIFIED: _ClassVar[HireRequestStatus]
+    HIRE_REQUEST_STATUS_PENDING: _ClassVar[HireRequestStatus]
+    HIRE_REQUEST_STATUS_APPROVED: _ClassVar[HireRequestStatus]
+    HIRE_REQUEST_STATUS_REJECTED: _ClassVar[HireRequestStatus]
 EMPLOYEE_STATUS_UNSPECIFIED: EmployeeStatus
 EMPLOYEE_STATUS_ACTIVE: EmployeeStatus
 EMPLOYEE_STATUS_PAUSED: EmployeeStatus
@@ -32,6 +39,10 @@ RISK_TIER_R0: RiskTier
 RISK_TIER_R1: RiskTier
 RISK_TIER_R2: RiskTier
 RISK_TIER_R3: RiskTier
+HIRE_REQUEST_STATUS_UNSPECIFIED: HireRequestStatus
+HIRE_REQUEST_STATUS_PENDING: HireRequestStatus
+HIRE_REQUEST_STATUS_APPROVED: HireRequestStatus
+HIRE_REQUEST_STATUS_REJECTED: HireRequestStatus
 
 class ToolGrant(_message.Message):
     __slots__ = ("tool", "tier")
@@ -304,3 +315,121 @@ class GetOrgChartResponse(_message.Message):
     employees: _containers.RepeatedCompositeFieldContainer[Employee]
     departments: _containers.RepeatedCompositeFieldContainer[Department]
     def __init__(self, employees: _Optional[_Iterable[_Union[Employee, _Mapping]]] = ..., departments: _Optional[_Iterable[_Union[Department, _Mapping]]] = ...) -> None: ...
+
+class Hire(_message.Message):
+    __slots__ = ("employee_id", "name", "title", "department_id", "manager_id", "is_co_ceo", "department_head", "role", "instructions", "model", "max_cost_usd")
+    EMPLOYEE_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    MANAGER_ID_FIELD_NUMBER: _ClassVar[int]
+    IS_CO_CEO_FIELD_NUMBER: _ClassVar[int]
+    DEPARTMENT_HEAD_FIELD_NUMBER: _ClassVar[int]
+    ROLE_FIELD_NUMBER: _ClassVar[int]
+    INSTRUCTIONS_FIELD_NUMBER: _ClassVar[int]
+    MODEL_FIELD_NUMBER: _ClassVar[int]
+    MAX_COST_USD_FIELD_NUMBER: _ClassVar[int]
+    employee_id: str
+    name: str
+    title: str
+    department_id: str
+    manager_id: str
+    is_co_ceo: bool
+    department_head: bool
+    role: str
+    instructions: str
+    model: str
+    max_cost_usd: str
+    def __init__(self, employee_id: _Optional[str] = ..., name: _Optional[str] = ..., title: _Optional[str] = ..., department_id: _Optional[str] = ..., manager_id: _Optional[str] = ..., is_co_ceo: _Optional[bool] = ..., department_head: _Optional[bool] = ..., role: _Optional[str] = ..., instructions: _Optional[str] = ..., model: _Optional[str] = ..., max_cost_usd: _Optional[str] = ...) -> None: ...
+
+class HireRequest(_message.Message):
+    __slots__ = ("request_id", "hire", "reason", "requested_by", "status", "decided_by", "decision_note", "created_at", "decided_at")
+    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    HIRE_FIELD_NUMBER: _ClassVar[int]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    REQUESTED_BY_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    DECIDED_BY_FIELD_NUMBER: _ClassVar[int]
+    DECISION_NOTE_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    DECIDED_AT_FIELD_NUMBER: _ClassVar[int]
+    request_id: str
+    hire: Hire
+    reason: str
+    requested_by: str
+    status: HireRequestStatus
+    decided_by: str
+    decision_note: str
+    created_at: _timestamp_pb2.Timestamp
+    decided_at: _timestamp_pb2.Timestamp
+    def __init__(self, request_id: _Optional[str] = ..., hire: _Optional[_Union[Hire, _Mapping]] = ..., reason: _Optional[str] = ..., requested_by: _Optional[str] = ..., status: _Optional[_Union[HireRequestStatus, str]] = ..., decided_by: _Optional[str] = ..., decision_note: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., decided_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+
+class HireEmployeeRequest(_message.Message):
+    __slots__ = ("tenant", "idempotency_key", "hire")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _ClassVar[int]
+    HIRE_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    idempotency_key: _common_pb2.IdempotencyKey
+    hire: Hire
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., idempotency_key: _Optional[_Union[_common_pb2.IdempotencyKey, _Mapping]] = ..., hire: _Optional[_Union[Hire, _Mapping]] = ...) -> None: ...
+
+class HireEmployeeResponse(_message.Message):
+    __slots__ = ("employee", "version")
+    EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
+    employee: Employee
+    version: EmployeeVersion
+    def __init__(self, employee: _Optional[_Union[Employee, _Mapping]] = ..., version: _Optional[_Union[EmployeeVersion, _Mapping]] = ...) -> None: ...
+
+class RequestHireRequest(_message.Message):
+    __slots__ = ("tenant", "idempotency_key", "hire", "reason")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _ClassVar[int]
+    HIRE_FIELD_NUMBER: _ClassVar[int]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    idempotency_key: _common_pb2.IdempotencyKey
+    hire: Hire
+    reason: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., idempotency_key: _Optional[_Union[_common_pb2.IdempotencyKey, _Mapping]] = ..., hire: _Optional[_Union[Hire, _Mapping]] = ..., reason: _Optional[str] = ...) -> None: ...
+
+class RequestHireResponse(_message.Message):
+    __slots__ = ("request",)
+    REQUEST_FIELD_NUMBER: _ClassVar[int]
+    request: HireRequest
+    def __init__(self, request: _Optional[_Union[HireRequest, _Mapping]] = ...) -> None: ...
+
+class ListHireRequestsRequest(_message.Message):
+    __slots__ = ("tenant", "status")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    status: HireRequestStatus
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., status: _Optional[_Union[HireRequestStatus, str]] = ...) -> None: ...
+
+class ListHireRequestsResponse(_message.Message):
+    __slots__ = ("requests",)
+    REQUESTS_FIELD_NUMBER: _ClassVar[int]
+    requests: _containers.RepeatedCompositeFieldContainer[HireRequest]
+    def __init__(self, requests: _Optional[_Iterable[_Union[HireRequest, _Mapping]]] = ...) -> None: ...
+
+class DecideHireRequestRequest(_message.Message):
+    __slots__ = ("tenant", "request_id", "approved", "note")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    APPROVED_FIELD_NUMBER: _ClassVar[int]
+    NOTE_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    request_id: str
+    approved: bool
+    note: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., request_id: _Optional[str] = ..., approved: _Optional[bool] = ..., note: _Optional[str] = ...) -> None: ...
+
+class DecideHireRequestResponse(_message.Message):
+    __slots__ = ("request", "employee")
+    REQUEST_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
+    request: HireRequest
+    employee: Employee
+    def __init__(self, request: _Optional[_Union[HireRequest, _Mapping]] = ..., employee: _Optional[_Union[Employee, _Mapping]] = ...) -> None: ...

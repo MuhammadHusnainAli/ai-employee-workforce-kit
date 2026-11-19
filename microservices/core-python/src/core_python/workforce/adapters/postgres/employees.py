@@ -24,6 +24,43 @@ class Conflict(Exception):
     pass
 
 
+class Precondition(Exception):
+    pass
+
+
+async def insert_version(
+    conn: Conn, source: str, tenant: str, employee_id: str, key: str, spec: VersionSpec, *, by: str
+) -> DictRow:
+    """Store the next version of an employee and activate it, inside an open transaction."""
+    await Employees._employee(conn, employee_id, lock=True)  # one publisher at a time
+    cur = await conn.execute(
+        "SELECT coalesce(max(version), 0) + 1 AS v FROM employee_versions WHERE employee_id = %s",
+        (employee_id,),
+    )
+    version = (await cur.fetchone() or {"v": 1})["v"]
+    cur = await conn.execute(
+        "INSERT INTO employee_versions (tenant_id, employee_id, version, role,"
+        " instructions, model, tool_grants, auto_approve, limits, idempotency_key,"
+        " created_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
+        (
+            tenant, employee_id, version, spec.role, spec.instructions, spec.model,
+            Jsonb([g.model_dump() for g in spec.tool_grants]), spec.auto_approve,
+            Jsonb(spec.limits.model_dump(mode="json")), key, by,
+        ),
+    )  # fmt: skip
+    row = await cur.fetchone()
+    assert row is not None
+    await conn.execute(
+        "UPDATE employees SET active_version = %s, updated_at = now() WHERE employee_id = %s",
+        (version, employee_id),
+    )
+    data = {"employee_id": employee_id, "version": version, "by": by}
+    await enqueue(
+        conn, new_event("employee.version_published", source, tenant, data, subject=employee_id)
+    )
+    return row
+
+
 class Employees:
     def __init__(self, db: Database, source: str) -> None:
         self.db = db
@@ -78,35 +115,7 @@ class Employees:
                 if seen["employee_id"] != employee_id:
                     raise Conflict("idempotency key already used for another employee")
                 return seen
-            await self._employee(conn, employee_id, lock=True)  # one publisher at a time
-            cur = await conn.execute(
-                "SELECT coalesce(max(version), 0) + 1 AS v FROM employee_versions"
-                " WHERE employee_id = %s",
-                (employee_id,),
-            )
-            version = (await cur.fetchone() or {"v": 1})["v"]
-            cur = await conn.execute(
-                "INSERT INTO employee_versions (tenant_id, employee_id, version, role,"
-                " instructions, model, tool_grants, auto_approve, limits, idempotency_key,"
-                " created_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
-                (
-                    tenant, employee_id, version, spec.role, spec.instructions, spec.model,
-                    Jsonb([g.model_dump() for g in spec.tool_grants]), spec.auto_approve,
-                    Jsonb(spec.limits.model_dump(mode="json")), key, by,
-                ),
-            )  # fmt: skip
-            row = await cur.fetchone()
-            assert row is not None
-            await conn.execute(
-                "UPDATE employees SET active_version = %s, updated_at = now()"
-                " WHERE employee_id = %s",
-                (version, employee_id),
-            )
-            await self._event(
-                conn, tenant, "employee.version_published",
-                {"employee_id": employee_id, "version": version, "by": by},
-            )  # fmt: skip
-            return row
+            return await insert_version(conn, self.source, tenant, employee_id, key, spec, by=by)
 
     async def set_active(self, tenant: str, employee_id: str, version: int) -> DictRow:
         async with self.db.tenant_tx(tenant) as conn:
