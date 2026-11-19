@@ -1,6 +1,4 @@
-.venv
-**/__pycache__
-**/.pytest_cache
-**/.ruff_cache
-*.log
+# Not needed to build the image: the local build output (rebuilt inside the image) and docs.
 target
+docs
+*.log

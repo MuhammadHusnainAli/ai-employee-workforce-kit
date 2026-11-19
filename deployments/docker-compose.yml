@@ -26,6 +26,14 @@ x-migrate: &migrate
     postgres:
       condition: service_healthy
 
+# What each service needs healthy before it starts. core-rust uses only Postgres and NATS;
+# core-python also needs Temporal, Valkey, S3 and the Model Gateway.
+x-stack-rust: &stack-rust
+  postgres:
+    condition: service_healthy
+  nats:
+    condition: service_healthy
+
 x-stack: &stack
   postgres:
     condition: service_healthy
@@ -40,11 +48,14 @@ x-stack: &stack
   model-gateway:
     condition: service_healthy
 
-# Every setting names a stack container on its internal port.
+# Every setting names a stack container on its internal port. Both services read these...
 x-service-env: &service-env
   WFK_ENVIRONMENT: local
   WFK_CELL_ID: cell-local
   WFK_NATS_URL: nats://nats:4222
+
+# ...and only core-python reads these.
+x-python-env: &python-env
   WFK_TEMPORAL_ADDRESS: temporal:7233
   WFK_VALKEY_URL: redis://valkey:6379/0
   WFK_S3_ENDPOINT: http://seaweedfs:8333
@@ -252,7 +263,7 @@ services:
       core-python-migrate:
         condition: service_completed_successfully
     environment:
-      <<: [*service-env, *core-python-db]
+      <<: [*service-env, *python-env, *core-python-db]
       WFK_WORKER_MODEL: ${WFK_WORKER_MODEL:-local-mock}
       WFK_EXTRACTOR: ${WFK_BRAIN_EXTRACTOR:-baseline}
       WFK_EXTRACTION_MODEL: ${WFK_BRAIN_EXTRACTION_MODEL:-claude-haiku}
@@ -282,7 +293,7 @@ services:
     image: wfk/core-rust:local
     user: "0:0"
     depends_on:
-      <<: *stack
+      <<: *stack-rust
       core-rust-migrate:
         condition: service_completed_successfully
     environment:

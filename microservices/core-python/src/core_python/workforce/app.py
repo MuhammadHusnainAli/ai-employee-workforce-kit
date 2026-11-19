@@ -12,6 +12,10 @@ from core_python.workforce.adapters.postgres.employees import Employees
 from core_python.workforce.api.workforce import WorkforceServicer
 from core_python.workforce.settings import Settings
 
+# This module's event stream: it owns every employee.* subject.
+STREAM = "EMPLOYEES"
+SUBJECTS = ["employee.>"]
+
 
 def create_server(
     settings: Settings, db: Database, *, port: int | None = None

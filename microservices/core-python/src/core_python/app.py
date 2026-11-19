@@ -13,7 +13,7 @@ from wfk_platform.db import Database
 from core_python import settings as config
 from core_python.agent_runtime import app as runtime_app
 from core_python.brain import app as brain_app
-from core_python.brain.main import embedder, pinned_cache
+from core_python.brain.app import embedder, pinned_cache
 from core_python.brain.recall import Recall
 from core_python.workforce import app as workforce_app
 

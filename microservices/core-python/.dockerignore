@@ -1,5 +1,10 @@
+# Not needed to build the image: caches, the local venv, brain-core's Rust build output
+# (rebuilt inside the image), tests and docs.
 .venv
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache
+brain-core/target
+tests
+docs
 *.log

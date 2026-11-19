@@ -79,7 +79,7 @@ def parts(s: config.Settings, dbs: Databases) -> dict[str, Part]:
     from core_python.agent_runtime.main import run_workers
     from core_python.brain.ingest import ingest
     from core_python.evaluation.main import evaluate
-    from core_python.workforce.main import STREAM, SUBJECTS
+    from core_python.workforce.app import STREAM, SUBJECTS
 
     runtime, brain, evaluation = config.runtime(s), config.brain(s), config.evaluation(s)
     model = s.worker_model

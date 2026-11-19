@@ -1,49 +1,22 @@
-"""Entry point: one gRPC server on one port (health included), plus subcommands."""
+"""The agent runtime's workers (part `runtime-workers` of core-python), and two commands for
+development: `worker` (the workers as their own process, which the demo kills and restarts) and
+`demo-run`. In the service, core_python.main runs `run_workers`."""
 
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
-import signal
 import sys
 from collections.abc import Callable
 
-from wfk_platform import configure_logging, setup_telemetry
 from wfk_platform.db import Database
 
-from core_python.agent_runtime.app import create_server
 from core_python.agent_runtime.settings import Settings
 
 log = logging.getLogger(__name__)
 
 #: The stream agent-runtime publishes its run.* events to (task-service reads it).
 RUNS_STREAM = "RUNS"
-
-
-async def serve(settings: Settings) -> None:
-    """One gRPC server on one port (health included), until SIGINT / SIGTERM."""
-    configure_logging(settings.service_name, settings.log_level, json_output=settings.log_json)
-    telemetry = setup_telemetry(settings)
-    db = Database(settings.database_url, tenant_role=settings.db_tenant_role)
-    # Do not wait for the database: the service starts, and readiness says when it is usable.
-    await db.open(wait=False)
-    server, health, port = create_server(settings, db, port=settings.port)
-    await server.start()
-    log.info("started", extra={"port": port})
-
-    stop = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        with contextlib.suppress(NotImplementedError):  # Windows: Ctrl-C raises instead
-            loop.add_signal_handler(sig, stop.set)
-    try:
-        await stop.wait()
-    finally:
-        health.shutdown()  # NOT_SERVING first, so traffic drains
-        await server.stop(grace=5)
-        await db.close()
-        telemetry.shutdown()
 
 
 async def work(settings: Settings, *, prefix: str, model: str, loops: bool = True) -> None:
@@ -155,7 +128,6 @@ def run(argv: list[str] | None = None) -> None:
 
     parser = argparse.ArgumentParser(prog="agent-runtime")
     sub = parser.add_subparsers(dest="cmd")
-    sub.add_parser("serve", help="HTTP and gRPC servers (the default)")
     worker = sub.add_parser("worker", help="Temporal workers")
     worker.add_argument("--prefix", default="", help="task queue prefix")
     worker.add_argument("--model", default="local-mock", help="scripted, local-mock, claude-haiku")
@@ -181,7 +153,8 @@ def run(argv: list[str] | None = None) -> None:
             settings=settings,
         )
     else:
-        main = serve(settings)
+        parser.print_help()
+        return
     # psycopg's async driver needs a selector loop; Windows defaults to Proactor.
     factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
     asyncio.run(main, loop_factory=factory)  # type: ignore[arg-type]

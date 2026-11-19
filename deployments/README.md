@@ -32,7 +32,8 @@ service from its folder (`cd microservices/<service> && just run`) on its usual 
   databases: `workforce_db`, `run_db`, `brain_db`, `eval_db` (core-python) and `task_db`, `channel_db`,
   `sandbox_db` (core-rust).
 - Inside the network, services use the stack's internal addresses (`postgres:5432`, `nats:4222`, `temporal:7233`,
-  `valkey:6379`, `seaweedfs:8333`, `model-gateway:4000`), set once in `x-service-env`.
+  `valkey:6379`, `seaweedfs:8333`, `model-gateway:4000`), set once: `x-service-env` for both services and
+  `x-python-env` for what only core-python reads. core-rust waits only for Postgres and NATS.
 - Health: core-python is probed through gRPC health (`readiness`, which checks every module's database),
   core-rust with `/service healthcheck` (the image is distroless: no shell, no curl).
 - The agent uses the `local-mock` model. Set `WFK_WORKER_MODEL=claude-haiku` (and `ANTHROPIC_API_KEY`) in

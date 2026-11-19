@@ -1,4 +1,4 @@
-"""brain-ingest: the write path's deployable (brain.md section 8). `brain-service ingest`.
+"""brain-ingest: the write path (brain.md section 8), part `brain-ingest` of core-python.
 
 One process, three loops:
 
@@ -13,9 +13,7 @@ It scales on the ingest backlog, apart from `brain-api`, so remembering never sl
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
-import signal
 
 from temporalio.client import Client
 from temporalio.common import WorkflowIDReusePolicy
@@ -23,7 +21,6 @@ from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.exceptions import WorkflowAlreadyStartedError
 from temporalio.worker import Worker
 
-from wfk_platform import configure_logging, setup_telemetry
 from wfk_platform.db import Conn, Database
 from wfk_platform.messaging import run_inbox_consumer, run_outbox_relay
 from wfk_platform.outbox import CloudEvent
@@ -152,25 +149,10 @@ def worker(client: Client, activities: IngestActivities, task_queue: str = TASK_
     )
 
 
-async def run_ingest(settings: Settings) -> None:
-    """brain-ingest as its own process, until SIGINT / SIGTERM."""
-    configure_logging(settings.service_name, settings.log_level, json_output=settings.log_json)
-    telemetry = setup_telemetry(settings)
-    stop = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        with contextlib.suppress(NotImplementedError):  # Windows: Ctrl-C raises instead
-            loop.add_signal_handler(sig, stop.set)
-    try:
-        await ingest(settings, stop=stop)
-    finally:
-        telemetry.shutdown()
-
-
 async def ingest(settings: Settings, *, stop: asyncio.Event, db: Database | None = None) -> None:
     """The write path until `stop` is set. `db` is brain_db; when given it is shared and stays
     open, otherwise this opens its own."""
-    from core_python.brain.main import embedder
+    from core_python.brain.app import embedder
 
     own_db = db is None
     if db is None:
