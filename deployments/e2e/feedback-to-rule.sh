@@ -2,11 +2,11 @@
 # End to end through the containers (just up-all): a person's correction becomes a rule, a second
 # person approves it, and the employee's next run has it pinned; graph recall links the runs.
 #
-#   1. task A runs (it names a project); brain-ingest stores its episode and the project entity
+#   1. task A runs (it names a project); brain ingest (core-python) stores its episode and the project entity
 #   2. a person corrects run A through Brain.Feedback: a rule proposal appears
-#   3. evaluation-service runs the suites with and without the rule; it must pass
+#   3. the evaluation module runs the suites with and without the rule; it must pass
 #   4. the proposal is high risk, so its author cannot approve it; a second person does
-#   5. task B runs: brain-service pins the rule in B's recall (and in the Valkey fallback)
+#   5. task B runs: the brain module pins the rule in B's recall (and in the Valkey fallback)
 #   6. B's recall log shows the graph retriever found A's episode through the project
 #
 # Run from the repo root:  just e2e
@@ -20,8 +20,8 @@ EMPLOYEE="summariser"
 TAG="Orion$RANDOM"
 
 host_path() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
-TASK_PROTOS="$(host_path "$ROOT/microservices/task-service/contracts/proto")"
-BRAIN_PROTOS="$(host_path "$ROOT/microservices/brain-service/contracts/proto")"
+TASK_PROTOS="$(host_path "$ROOT/microservices/core-rust/contracts/proto")"
+BRAIN_PROTOS="$(host_path "$ROOT/microservices/core-python/contracts/proto")"
 
 as() {  # as <person id>: a TenantContext JSON fragment for a human actor
   echo "\"tenant\":{\"tenant_id\":\"$TENANT\",\"actor\":{\"kind\":\"ACTOR_KIND_HUMAN\",\"id\":\"$1\"}}"
@@ -30,9 +30,9 @@ grpc() {  # grpc <proto dir> <proto file> <address> <method> <json>
   docker run --rm --network wfk_default -v "$1:/protos" fullstorydev/grpcurl:v1.9.3 \
     -plaintext -import-path /protos -proto "$2" -d "$5" "$3" "$4"
 }
-task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7004 \
+task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto core-rust:7002 \
   "wfk.task_service.v1.TaskService/$1" "$2"; }
-brain() { grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7003 \
+brain() { grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto core-python:7001 \
   "wfk.brain_service.v1.BrainService/$1" "$2"; }
 sql() { "${COMPOSE[@]}" exec -T postgres psql -U wfk -d "$1" -Atc "$2"; }
 field() { grep -o "\"$1\": \"[^\"]*\"" | head -1 | cut -d'"' -f4; }
@@ -72,7 +72,7 @@ P=$(brain Feedback "{$(as maria),\"idempotency_key\":{\"value\":\"fb-$A\"},\"emp
 [ -n "$P" ] || fail "the correction proposed no rule"
 echo "   proposal $P"
 
-echo "3. evaluation-service evaluates it (golden, regression and safety suites)"
+echo "3. the evaluation module evaluates it (golden, regression and safety suites)"
 EVAL=""
 for _ in $(seq 1 240); do
   EVAL=$(brain ListProposals "{$(as maria),\"employee_id\":\"$EMPLOYEE\"}" | python -c "

@@ -221,215 +221,77 @@ services:
       - lgtm-data:/data
 
   # ---- microservices ------------------------------------------------------------------------
-  # Profile "services": `just up-all` builds and starts them after the stack above; `just up`
-  # alone starts only the stack, so a service can run from its folder on the same port.
-  # Each service has a one-shot `<name>-migrate` that must succeed before the service starts.
+  # Two backend services (ADR-0017) and the web app. Profile "services": `just up-all` builds and
+  # starts them after the stack above; `just up` alone starts only the stack, so a service can run
+  # from its folder on the same port. Each service has a one-shot `<name>-migrate` that applies
+  # every module's migrations to that module's own database before the service starts.
   # Inside the network services reach the stack on its internal ports (postgres:5432 ...).
 
-  workforce-migrate:
+  core-python-migrate:
     <<: *migrate
-    image: wfk/workforce-service:local
-    build: ../microservices/workforce-service
-    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/workforce_db", "--dir", "/app/migrations", "--create-db"]
+    image: wfk/core-python:local
+    build: ../microservices/core-python
+    command: ["core-python", "migrate"]
+    environment: &core-python-db
+      WFK_WORKFORCE_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/workforce_db
+      WFK_RUNTIME_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
+      WFK_BRAIN_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
+      WFK_EVAL_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/eval_db
 
-  workforce-service:
+  # The Python backend in one process: WorkforceService, RunService and BrainService on 7001,
+  # the agent's Temporal workers (live, and evaluation queues apart), brain ingest and nightly
+  # consolidation, evaluations, and every outbox relay and inbox.
+  # The model is local-mock through the gateway; set WFK_WORKER_MODEL=claude-haiku for a real
+  # one. WFK_BRAIN_EXTRACTOR=gateway adds facts, preferences and lessons from a real model
+  # (WFK_BRAIN_EXTRACTION_MODEL, needs ANTHROPIC_API_KEY).
+  core-python:
     <<: *service
-    image: wfk/workforce-service:local
+    image: wfk/core-python:local
     depends_on:
       <<: *stack
-      workforce-migrate:
+      core-python-migrate:
         condition: service_completed_successfully
     environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/workforce_db
+      <<: [*service-env, *core-python-db]
+      WFK_WORKER_MODEL: ${WFK_WORKER_MODEL:-local-mock}
+      WFK_EXTRACTOR: ${WFK_BRAIN_EXTRACTOR:-baseline}
+      WFK_EXTRACTION_MODEL: ${WFK_BRAIN_EXTRACTION_MODEL:-claude-haiku}
     ports:
-      - "127.0.0.1:${WFK_WORKFORCE_PORT:-7001}:7001"
+      - "127.0.0.1:${WFK_CORE_PYTHON_PORT:-7001}:7001"
     healthcheck:
       <<: *grpc-health
       test: ["CMD", "python", "-c", *grpc-probe, "7001"]
 
-  agent-runtime-migrate:
+  core-rust-migrate:
     <<: *migrate
-    image: wfk/agent-runtime:local
-    build: ../microservices/agent-runtime
-    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/run_db", "--dir", "/app/migrations", "--create-db"]
-
-  # RunService (read API for run history).
-  agent-runtime:
-    <<: *service
-    image: wfk/agent-runtime:local
-    depends_on: &agent-runtime-deps
-      <<: *stack
-      agent-runtime-migrate:
-        condition: service_completed_successfully
-    environment: &agent-runtime-env
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
-      WFK_BRAIN_ADDRESS: brain-service:7003
-      WFK_WORKFORCE_ADDRESS: workforce-service:7001
-    ports:
-      - "127.0.0.1:${WFK_AGENT_RUNTIME_PORT:-7002}:7002"
-    healthcheck:
-      <<: *grpc-health
-      test: ["CMD", "python", "-c", *grpc-probe, "7002"]
-
-  # Temporal workers, the run outbox relay (RUNS) and the task inbox (TASKS). No port.
-  # The model is local-mock through the gateway; set WFK_WORKER_MODEL=claude-haiku for a real one.
-  agent-runtime-worker:
-    <<: *service
-    image: wfk/agent-runtime:local
-    depends_on: *agent-runtime-deps
-    environment: *agent-runtime-env
-    command: ["agent-runtime", "worker", "--model", "${WFK_WORKER_MODEL:-local-mock}"]
-
-  brain-migrate:
-    <<: *migrate
-    image: wfk/brain-service:local
-    build: ../microservices/brain-service
-    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/brain_db", "--dir", "/app/migrations", "--create-db"]
-
-  brain-service:
-    <<: *service
-    image: wfk/brain-service:local
-    depends_on:
-      <<: *stack
-      brain-migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
-    ports:
-      - "127.0.0.1:${WFK_BRAIN_PORT:-7003}:7003"
-    healthcheck:
-      <<: *grpc-health
-      test: ["CMD", "python", "-c", *grpc-probe, "7003"]
-
-  # The write path: finished runs (RUNS stream) become memories through BrainIngest on the
-  # Temporal queue brain-ingest. No port. WFK_BRAIN_EXTRACTOR=gateway adds facts, preferences
-  # and lessons from a real model (WFK_BRAIN_EXTRACTION_MODEL, needs ANTHROPIC_API_KEY).
-  brain-ingest:
-    <<: *service
-    image: wfk/brain-service:local
-    depends_on:
-      <<: *stack
-      brain-migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
-      WFK_EXTRACTOR: ${WFK_BRAIN_EXTRACTOR:-baseline}
-      WFK_EXTRACTION_MODEL: ${WFK_BRAIN_EXTRACTION_MODEL:-claude-haiku}
-    command: ["brain-service", "ingest"]
-
-  task-migrate:
-    <<: *migrate
-    image: wfk/task-service:local
-    build: ../microservices/task-service
+    image: wfk/core-rust:local
+    build: ../microservices/core-rust
     command: ["migrate"]
-    environment:
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
+    environment: &core-rust-db
+      WFK_TASK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
+      WFK_CHANNEL_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
+      WFK_SANDBOX_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/sandbox_db
 
-  task-service:
+  # The Rust backend in one binary: TaskService, ChannelService and SandboxService, and the
+  # channel webhooks, on 7002. Providers post to http://<host>:7002/hooks/{kind}/{binding_id}.
+  # The sandbox runs untrusted code in hardened containers through the Docker socket: locally
+  # only. That is why this container runs as root here; production uses gVisor pods instead
+  # (no socket, no root). Set WFK_SANDBOX_RUNTIME=runsc where gVisor is installed.
+  core-rust:
     <<: *service
-    image: wfk/task-service:local
-    depends_on:
-      <<: *stack
-      task-migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/task_db
-    ports:
-      - "127.0.0.1:${WFK_TASK_PORT:-7004}:7004"
-    healthcheck:
-      <<: *grpc-health
-      test: ["CMD", "/service", "healthcheck"]
-
-  # agent-runtime's evaluation queues (eval-runs, eval-llm, eval-tools): evaluations never
-  # compete with live work. Workflows only: no outbox relay, no task inbox.
-  agent-runtime-eval-worker:
-    <<: *service
-    image: wfk/agent-runtime:local
-    depends_on: *agent-runtime-deps
-    environment: *agent-runtime-env
-    command: ["agent-runtime", "worker", "--prefix", "eval-", "--no-loops",
-              "--model", "${WFK_WORKER_MODEL:-local-mock}"]
-
-  evaluation-migrate:
-    <<: *migrate
-    image: wfk/evaluation-service:local
-    build: ../microservices/evaluation-service
-    command: ["wfk-migrate", "up", "--dsn", "postgresql://wfk:wfk@postgres:5432/eval_db", "--dir", "/app/migrations", "--create-db"]
-
-  # Evaluates every proposed brain change (golden, regression, safety suites) through the
-  # evaluation queues above. A Temporal worker: no port.
-  evaluation-service:
-    <<: *service
-    image: wfk/evaluation-service:local
-    depends_on:
-      <<: *stack
-      evaluation-migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/eval_db
-      WFK_BRAIN_ADDRESS: brain-service:7003
-    command: ["evaluation-service"]
-
-  channel-migrate:
-    <<: *migrate
-    image: wfk/channel-gateway:local
-    build: ../microservices/channel-gateway
-    command: ["migrate"]
-    environment:
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
-
-  # Webhooks from Slack, Teams, Google Chat, mail relays and others become tasks; answers go
-  # back to the thread. Providers post to http://<host>:7005/hooks/{kind}/{binding_id}.
-  channel-gateway:
-    <<: *service
-    image: wfk/channel-gateway:local
-    depends_on:
-      <<: *stack
-      channel-migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/channel_db
-      WFK_TASK_SERVICE_ADDR: http://task-service:7004
-    ports:
-      - "127.0.0.1:${WFK_CHANNEL_PORT:-7005}:7005"
-    healthcheck:
-      <<: *grpc-health
-      test: ["CMD", "/service", "healthcheck"]
-
-  sandbox-migrate:
-    <<: *migrate
-    image: wfk/sandbox-runner:local
-    build: ../microservices/sandbox-runner
-    command: ["migrate"]
-    environment:
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/sandbox_db
-
-  # Runs untrusted code in hardened containers through the Docker socket: locally only. It runs
-  # as root to reach the socket; production uses gVisor pods instead (no socket, no root).
-  # Set WFK_SANDBOX_RUNTIME=runsc where gVisor is installed.
-  sandbox-runner:
-    <<: *service
-    image: wfk/sandbox-runner:local
+    image: wfk/core-rust:local
     user: "0:0"
     depends_on:
       <<: *stack
-      sandbox-migrate:
+      core-rust-migrate:
         condition: service_completed_successfully
     environment:
-      <<: *service-env
-      WFK_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/sandbox_db
+      <<: [*service-env, *core-rust-db]
       WFK_SANDBOX_RUNTIME: ${WFK_SANDBOX_RUNTIME:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "127.0.0.1:${WFK_SANDBOX_PORT:-7006}:7006"
+      - "127.0.0.1:${WFK_CORE_RUST_PORT:-7002}:7002"
     healthcheck:
       <<: *grpc-health
       test: ["CMD", "/service", "healthcheck"]
@@ -440,19 +302,15 @@ services:
     image: wfk/web-app:local
     build: ../microservices/web-app
     depends_on:
-      task-service:
+      core-python:
         condition: service_healthy
-      agent-runtime:
-        condition: service_healthy
-      brain-service:
-        condition: service_healthy
-      workforce-service:
+      core-rust:
         condition: service_healthy
     environment:
-      WFK_TASK_SERVICE_ADDR: task-service:7004
-      WFK_RUN_SERVICE_ADDR: agent-runtime:7002
-      WFK_BRAIN_SERVICE_ADDR: brain-service:7003
-      WFK_WORKFORCE_SERVICE_ADDR: workforce-service:7001
+      WFK_TASK_SERVICE_ADDR: core-rust:7002
+      WFK_RUN_SERVICE_ADDR: core-python:7001
+      WFK_BRAIN_SERVICE_ADDR: core-python:7001
+      WFK_WORKFORCE_SERVICE_ADDR: core-python:7001
       WFK_NATS_URL: nats://nats:4222
       WFK_AUTH_MODE: dev
       WFK_API_TOKEN: ${WFK_API_TOKEN:-}

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# End to end through the containers (just up-all): a task's run is remembered by brain-ingest,
+# End to end through the containers (just up-all): a task's run is remembered by brain ingest,
 # and the next run of the same employee recalls it.
 #
-#   1. task A (a unique fact) runs to completion through task-service and agent-runtime-worker
-#   2. brain-ingest turns run.completed into an episode in brain_db
+#   1. task A (a unique fact) runs to completion through the task module (core-rust) and the agent runtime (core-python)
+#   2. brain ingest turns run.completed into an episode in brain_db
 #   3. task B asks about the same fact; its run calls Recall
 #   4. B's run ledger cites a recall whose items include A's episode
 #   5. the Brain Inspector lists that memory, with its trust and source
@@ -20,14 +20,14 @@ T="\"tenant\":{\"tenant_id\":\"$TENANT\",\"actor\":{\"id\":\"e2e\"}}"
 TAG="zephyr-$RANDOM$RANDOM"
 
 host_path() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
-TASK_PROTOS="$(host_path "$ROOT/microservices/task-service/contracts/proto")"
-BRAIN_PROTOS="$(host_path "$ROOT/microservices/brain-service/contracts/proto")"
+TASK_PROTOS="$(host_path "$ROOT/microservices/core-rust/contracts/proto")"
+BRAIN_PROTOS="$(host_path "$ROOT/microservices/core-python/contracts/proto")"
 
 grpc() {  # grpc <proto dir> <proto file> <address> <method> <json>
   docker run --rm --network wfk_default -v "$1:/protos" fullstorydev/grpcurl:v1.9.3 \
     -plaintext -import-path /protos -proto "$2" -d "$5" "$3" "$4"
 }
-task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto task-service:7004 \
+task() { grpc "$TASK_PROTOS" wfk/task_service/v1/tasks.proto core-rust:7002 \
   "wfk.task_service.v1.TaskService/$1" "$2"; }
 sql() { "${COMPOSE[@]}" exec -T postgres psql -U wfk -d "$1" -Atc "$2"; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -52,7 +52,7 @@ echo "1. task A: a fact to remember"
 A=$(run_task "Project $TAG ships on Friday; Ana owns the launch checklist.")
 echo "   run $A completed"
 
-echo "2. brain-ingest remembers it"
+echo "2. brain ingest remembers it"
 MEMORY=""
 for _ in $(seq 1 60); do
   MEMORY=$(sql brain_db "select memory_id from episodes where run_id = '$A'")
@@ -74,9 +74,9 @@ FOUND=$(sql brain_db "select count(*) from recall_log where id = any(string_to_a
 echo "   recall_log cites memory $MEMORY"
 
 echo "5. the Brain Inspector shows it"
-LISTED=$(grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto brain-service:7003 \
+LISTED=$(grpc "$BRAIN_PROTOS" wfk/brain_service/v1/brain.proto core-python:7001 \
   wfk.brain_service.v1.BrainService/GetMemory "{$T,\"memory_id\":\"$MEMORY\"}")
 echo "$LISTED" | grep -q "\"runId\": \"$A\"" || fail "GetMemory does not show run $A: $LISTED"
 echo "   GetMemory: episode of run $A, trust $(echo "$LISTED" | grep -o '"trust": "[^"]*"' | head -1 | cut -d'"' -f4)"
 
-echo "PASS: remembered by brain-ingest, recalled by the next run, visible in the Inspector"
+echo "PASS: remembered by brain ingest, recalled by the next run, visible in the Inspector"

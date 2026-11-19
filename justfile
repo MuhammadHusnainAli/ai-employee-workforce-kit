@@ -19,11 +19,11 @@ up:
 up-all: up
     {{compose}} --profile services up -d --build --wait
 
-# Rebuild and restart one microservice container: just restart task-service
+# Rebuild and restart one microservice container: just restart core-rust
 restart service:
     {{compose}} --profile services up -d --build --wait {{service}}
 
-# Follow a microservice's logs: just logs agent-runtime-worker
+# Follow a microservice's logs: just logs core-python
 logs service:
     {{compose}} --profile services logs -f {{service}}
 
@@ -45,6 +45,6 @@ nuke:
 ps:
     {{compose}} --profile services ps
 
-# Create a self-contained service from a template: just new-service rust task-service
+# Create a self-contained service from a template (rare: new capabilities are modules, ADR-0017)
 new-service lang name:
     python microservices/templates/new_service.py {{lang}} {{name}}

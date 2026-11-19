@@ -8,9 +8,9 @@ const WAIT_MS = 1_500;
 function targets(): Record<string, string> {
     const env = process.env;
     return {
-        "task-service": env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7004",
-        "agent-runtime": env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7002",
-        "brain-service": env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7003",
+        "task-service": env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7002",
+        "agent-runtime": env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7001",
+        "brain-service": env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7001",
         "workforce-service": env.WFK_WORKFORCE_SERVICE_ADDR ?? "127.0.0.1:7001",
     };
 }

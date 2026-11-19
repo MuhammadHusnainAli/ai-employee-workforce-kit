@@ -5,9 +5,9 @@
 #
 #   1. a receiver container stands in for the customer's system (it logs what it is sent)
 #   2. a webhook binding for the summariser, replying to that receiver
-#   3. a signed message to channel-gateway; a forged one is refused
+#   3. a signed message to the channel module (core-rust); a forged one is refused
 #   4. the message became a task (public API) and the task completed
-#   5. the answer reached the receiver, signed by channel-gateway
+#   5. the answer reached the receiver, signed by the channel module
 #   6. the web app serves the task's page and the live API
 #   7. the sandbox runs Python, with no network
 #
@@ -18,14 +18,14 @@ export MSYS_NO_PATHCONV=1  # Git Bash on Windows: keep container paths as they a
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TENANT="0193a7c4-0000-7000-8000-00000000d3e0"
 WEB="http://127.0.0.1:7000"
-HOOKS="http://127.0.0.1:7005"
+HOOKS="http://127.0.0.1:7002"
 SECRET="e2e-signing-secret-$RANDOM$RANDOM"
 RECEIVER="wfk-e2e-receiver"
 T="\"tenant\":{\"tenant_id\":\"$TENANT\",\"actor\":{\"kind\":\"ACTOR_KIND_HUMAN\",\"id\":\"e2e\"}}"
 
 host_path() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
-CHANNEL_PROTOS="$(host_path "$ROOT/microservices/channel-gateway/contracts/proto")"
-SANDBOX_PROTOS="$(host_path "$ROOT/microservices/sandbox-runner/contracts/proto")"
+CHANNEL_PROTOS="$(host_path "$ROOT/microservices/core-rust/contracts/proto")"
+SANDBOX_PROTOS="$(host_path "$ROOT/microservices/core-rust/contracts/proto")"
 
 grpc() {  # grpc <proto dir> <proto file> <address> <method> <json>
   docker run --rm --network wfk_default -v "$1:/protos" fullstorydev/grpcurl:v1.9.3 \
@@ -56,7 +56,7 @@ http.server.HTTPServer(("0.0.0.0", 8080), H).serve_forever()
 echo "   $RECEIVER listening"
 
 echo "2. a webhook binding for the summariser"
-B=$(grpc "$CHANNEL_PROTOS" wfk/channel_gateway/v1/channels.proto channel-gateway:7005 \
+B=$(grpc "$CHANNEL_PROTOS" wfk/channel_gateway/v1/channels.proto core-rust:7002 \
   wfk.channel_gateway.v1.ChannelService/CreateBinding \
   "{$T,\"idempotency_key\":{\"value\":\"e2e-$SECRET\"},\"kind\":\"CHANNEL_KIND_WEBHOOK\",\"employee_id\":\"summariser\",\"name\":\"e2e\",\"secret\":\"$SECRET\",\"outbound\":{\"url\":\"http://$RECEIVER:8080/reply\"}}")
 HOOK=$(echo "$B" | field webhookPath)
@@ -118,7 +118,7 @@ assert d['run'] and d['run']['status'] == 'completed', d
 print('   page 200, ready, run', d['run']['status'])"
 
 echo "7. the sandbox"
-OUT=$(grpc "$SANDBOX_PROTOS" wfk/sandbox_runner/v1/sandbox.proto sandbox-runner:7006 \
+OUT=$(grpc "$SANDBOX_PROTOS" wfk/sandbox_runner/v1/sandbox.proto core-rust:7002 \
   wfk.sandbox_runner.v1.SandboxService/RunSandbox \
   "{\"tenant\":{\"tenant_id\":\"$TENANT\"},\"idempotency_key\":{\"value\":\"e2e-$RANDOM$RANDOM\"},\"image\":\"python-3.13\",\"code\":\"import socket\\ntry:\\n    socket.create_connection(('1.1.1.1', 53), timeout=3)\\n    print('ONLINE')\\nexcept OSError:\\n    print('offline', 6 * 7)\"}")
 echo "$OUT" | grep -q 'offline 42' || fail "sandbox: $OUT"

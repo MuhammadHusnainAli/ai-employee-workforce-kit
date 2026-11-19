@@ -33,7 +33,7 @@ the contract: `tests/contract.test.ts` fails when a route exists without it or i
 - Errors are `{"error": {code, message, retryable}}` with the matching status (400, 401, 403, 404, 409, 429, 503,
   504); retryable ones carry `Retry-After`.
 - Every backend call has a 5 s deadline.
-- `/healthz` (liveness) and `/readyz` (task-service, agent-runtime and brain-service reachable).
+- `/healthz` (liveness) and `/readyz` (TaskService, RunService, BrainService and WorkforceService reachable).
 
 ## Pages
 
@@ -63,13 +63,13 @@ acts as one tenant (`WFK_DEV_TENANT`) and `X-WFK-Actor` names the person; set `W
 
 ## Depends on
 
-|                      | Setting                      | Default                 |
-| -------------------- | ---------------------------- | ----------------------- |
-| workforce-service    | `WFK_WORKFORCE_SERVICE_ADDR` | `127.0.0.1:7001`        |
-| task-service         | `WFK_TASK_SERVICE_ADDR`      | `127.0.0.1:7004`        |
-| agent-runtime (runs) | `WFK_RUN_SERVICE_ADDR`       | `127.0.0.1:7002`        |
-| brain-service        | `WFK_BRAIN_SERVICE_ADDR`     | `127.0.0.1:7003`        |
-| NATS                 | `WFK_NATS_URL`               | `nats://127.0.0.1:7020` |
+| API (service)                  | Setting                      | Default                 |
+| ------------------------------ | ---------------------------- | ----------------------- |
+| WorkforceService (core-python) | `WFK_WORKFORCE_SERVICE_ADDR` | `127.0.0.1:7001`        |
+| TaskService (core-rust)        | `WFK_TASK_SERVICE_ADDR`      | `127.0.0.1:7002`        |
+| RunService (core-python)       | `WFK_RUN_SERVICE_ADDR`       | `127.0.0.1:7001`        |
+| BrainService (core-python)     | `WFK_BRAIN_SERVICE_ADDR`     | `127.0.0.1:7001`        |
+| NATS                           | `WFK_NATS_URL`               | `nats://127.0.0.1:7020` |
 
 The contracts are this app's copies (`contracts/proto`), like every other caller.
 

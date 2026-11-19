@@ -94,15 +94,15 @@ export function realBackends(): Backends {
         backends = {
             tasks: service(
                 "wfk.task_service.v1.TaskService",
-                env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7004",
+                env.WFK_TASK_SERVICE_ADDR ?? "127.0.0.1:7002",
             ),
             runs: service(
                 "wfk.agent_runtime.v1.RunService",
-                env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7002",
+                env.WFK_RUN_SERVICE_ADDR ?? "127.0.0.1:7001",
             ),
             brain: service(
                 "wfk.brain_service.v1.BrainService",
-                env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7003",
+                env.WFK_BRAIN_SERVICE_ADDR ?? "127.0.0.1:7001",
             ),
             workforce: service(
                 "wfk.workforce_service.v1.WorkforceService",
