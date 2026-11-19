@@ -45,6 +45,40 @@ impl Status {
     }
 }
 
+/// How deep delegation may go: the goal is depth 0, its sub-tasks 1, and so on.
+pub const MAX_DEPTH: i16 = 3;
+/// How many sub-tasks one task may have, over its whole life.
+pub const MAX_CHILDREN: i64 = 20;
+/// How much of a sub-task's output travels up to its parent, in characters.
+pub const MAX_CHILD_OUTPUT: usize = 4_000;
+
+/// The depth of a new sub-task, or why the parent cannot take another one.
+pub fn check_child(parent: Status, parent_depth: i16, children: i64) -> Result<i16, String> {
+    if parent.is_finished() {
+        return Err(format!(
+            "the parent task is already {}, so it takes no more sub-tasks",
+            parent.as_str()
+        ));
+    }
+    if parent_depth >= MAX_DEPTH {
+        return Err(format!("sub-tasks go at most {MAX_DEPTH} levels deep"));
+    }
+    if children >= MAX_CHILDREN {
+        return Err(format!("a task has at most {MAX_CHILDREN} sub-tasks"));
+    }
+    Ok(parent_depth + 1)
+}
+
+/// A sub-task's output, cut to what its parent receives.
+pub fn child_output(output: &str) -> String {
+    if output.chars().count() <= MAX_CHILD_OUTPUT {
+        return output.to_string();
+    }
+    let mut cut: String = output.chars().take(MAX_CHILD_OUTPUT).collect();
+    cut.push('…');
+    cut
+}
+
 /// What one run event says about the task.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RunUpdate {
@@ -112,6 +146,35 @@ pub fn applies(current: Status, current_seq: i64, update: &RunUpdate) -> bool {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn a_child_sits_one_level_below_an_open_parent() {
+        assert_eq!(check_child(Status::Running, 0, 0), Ok(1));
+        assert_eq!(check_child(Status::Queued, 2, 19), Ok(3));
+    }
+
+    #[test]
+    fn children_are_capped_in_depth_and_number() {
+        assert!(
+            check_child(Status::Running, MAX_DEPTH, 0).is_err(),
+            "too deep"
+        );
+        assert!(
+            check_child(Status::Running, 0, MAX_CHILDREN).is_err(),
+            "too many"
+        );
+        assert!(check_child(Status::Completed, 0, 0).is_err(), "parent done");
+        assert!(check_child(Status::Cancelled, 0, 0).is_err(), "parent done");
+    }
+
+    #[test]
+    fn child_output_is_cut_on_a_character_boundary() {
+        let long = "é".repeat(MAX_CHILD_OUTPUT + 10);
+        let cut = child_output(&long);
+        assert_eq!(cut.chars().count(), MAX_CHILD_OUTPUT + 1);
+        assert!(cut.ends_with('…'));
+        assert_eq!(child_output("short"), "short");
+    }
 
     #[test]
     fn reads_every_run_event() {

@@ -40,6 +40,11 @@ pub struct TaskRow {
     pub created_by: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub parent_task_id: Option<Uuid>,
+    pub root_task_id: Option<Uuid>,
+    pub depth: i16,
+    pub output: String,
+    pub delegated_by: String,
 }
 
 impl TaskRow {
@@ -58,6 +63,11 @@ impl TaskRow {
             created_by: r.try_get("created_by")?,
             created_at: r.try_get("created_at")?,
             updated_at: r.try_get("updated_at")?,
+            parent_task_id: r.try_get("parent_task_id")?,
+            root_task_id: r.try_get("root_task_id")?,
+            depth: r.try_get("depth")?,
+            output: r.try_get("output")?,
+            delegated_by: r.try_get("delegated_by")?,
         })
     }
 }
@@ -69,6 +79,18 @@ pub struct NewTask {
     pub input: String,
     pub priority: i32,
     pub created_by: String,
+    /// Hand the task down from this one (delegation).
+    pub parent_task_id: Option<Uuid>,
+}
+
+/// What ListTasks narrows to. `None` means any.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ListFilter<'a> {
+    pub employee_id: Option<&'a str>,
+    pub status: Option<Status>,
+    pub parent_task_id: Option<Uuid>,
+    pub root_task_id: Option<Uuid>,
+    pub limit: i64,
 }
 
 #[derive(Clone)]
@@ -124,13 +146,30 @@ impl Tasks {
     /// same task; reusing a key for a different task is a conflict.
     pub async fn create(&self, tenant: Uuid, new: NewTask) -> Result<TaskRow, TaskError> {
         let mut tx = self.db.tenant_tx(tenant).await?;
+        let task_id = Uuid::now_v7();
+        let (root, depth, delegated_by) = match new.parent_task_id {
+            None => (task_id, 0, String::new()),
+            Some(parent_id) => {
+                // Locked, so two sub-tasks created at once cannot both pass the cap.
+                let parent = fetch(&mut tx, parent_id, true).await?;
+                let children: i64 =
+                    sqlx::query_scalar("SELECT count(*) FROM tasks WHERE parent_task_id = $1")
+                        .bind(parent_id)
+                        .fetch_one(&mut *tx)
+                        .await?;
+                let depth = domain::check_child(parent.status, parent.depth, children)
+                    .map_err(TaskError::Precondition)?;
+                let root = parent.root_task_id.unwrap_or(parent.task_id);
+                (root, depth, new.created_by.clone())
+            }
+        };
         let inserted = sqlx::query(
             "INSERT INTO tasks (task_id, tenant_id, employee_id, title, input, priority,
-                idempotency_key, created_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                idempotency_key, created_by, parent_task_id, root_task_id, depth, delegated_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              ON CONFLICT (tenant_id, idempotency_key) DO NOTHING RETURNING *",
         )
-        .bind(Uuid::now_v7())
+        .bind(task_id)
         .bind(tenant)
         .bind(&new.employee_id)
         .bind(&new.title)
@@ -138,6 +177,10 @@ impl Tasks {
         .bind(new.priority)
         .bind(&new.idempotency_key)
         .bind(&new.created_by)
+        .bind(new.parent_task_id)
+        .bind(root)
+        .bind(depth)
+        .bind(&delegated_by)
         .fetch_optional(&mut *tx)
         .await?;
         let task = match inserted {
@@ -146,6 +189,8 @@ impl Tasks {
                 let data = json!({
                     "task_id": task.task_id, "employee_id": task.employee_id,
                     "title": task.title, "input": task.input, "priority": task.priority,
+                    "parent_task_id": task.parent_task_id, "root_task_id": task.root_task_id,
+                    "depth": task.depth,
                 });
                 self.emit(&mut tx, tenant, "task.created", task.task_id, data, None)
                     .await?;
@@ -157,7 +202,10 @@ impl Tasks {
                     .fetch_one(&mut *tx)
                     .await?;
                 let task = TaskRow::from_row(&r)?;
-                if task.employee_id != new.employee_id || task.input != new.input {
+                if task.employee_id != new.employee_id
+                    || task.input != new.input
+                    || task.parent_task_id != new.parent_task_id
+                {
                     return Err(TaskError::Conflict(
                         "idempotency key already used for a different task".into(),
                     ));
@@ -177,19 +225,21 @@ impl Tasks {
     pub async fn list(
         &self,
         tenant: Uuid,
-        employee_id: Option<&str>,
-        status: Option<Status>,
-        limit: i64,
+        filter: ListFilter<'_>,
     ) -> Result<Vec<TaskRow>, TaskError> {
         let mut tx = self.db.tenant_tx(tenant).await?;
         let rows = sqlx::query(
             "SELECT * FROM tasks
              WHERE ($1::text IS NULL OR employee_id = $1) AND ($2::text IS NULL OR status = $2)
+               AND ($4::uuid IS NULL OR parent_task_id = $4)
+               AND ($5::uuid IS NULL OR root_task_id = $5 OR task_id = $5)
              ORDER BY created_at DESC LIMIT $3",
         )
-        .bind(employee_id)
-        .bind(status.map(Status::as_str))
-        .bind(limit)
+        .bind(filter.employee_id)
+        .bind(filter.status.map(Status::as_str))
+        .bind(filter.limit)
+        .bind(filter.parent_task_id)
+        .bind(filter.root_task_id)
         .fetch_all(&mut *tx)
         .await?;
         rows.iter()
@@ -213,22 +263,59 @@ impl Tasks {
                 task.status.as_str()
             )));
         }
-        if task.status == Status::Queued {
-            task = self
-                .set_status(&mut tx, &task, Status::Cancelled, "cancelled", task.run_seq)
+        task = self.cancel_one(&mut tx, task, reason, by).await?;
+        // Everything handed down from it stops too.
+        let below = sqlx::query(
+            "WITH RECURSIVE below AS (
+                 SELECT task_id FROM tasks WHERE parent_task_id = $1
+                 UNION ALL
+                 SELECT t.task_id FROM tasks t JOIN below b ON t.parent_task_id = b.task_id)
+             SELECT * FROM tasks WHERE task_id IN (SELECT task_id FROM below)
+               AND status NOT IN ('completed', 'failed', 'cancelled')
+             ORDER BY depth, created_at FOR UPDATE",
+        )
+        .bind(task_id)
+        .fetch_all(&mut *tx)
+        .await?;
+        for r in &below {
+            self.cancel_one(&mut tx, TaskRow::from_row(r)?, reason, by)
                 .await?;
         }
-        let data = json!({"task_id": task_id, "reason": reason, "by": by});
+        tx.commit().await?;
+        Ok(task)
+    }
+
+    /// Ask one task's run to stop; a queued task (no run yet) is cancelled at once.
+    async fn cancel_one(
+        &self,
+        conn: &mut PgConnection,
+        task: TaskRow,
+        reason: &str,
+        by: &str,
+    ) -> Result<TaskRow, TaskError> {
+        let task = if task.status == Status::Queued {
+            self.set_status(
+                conn,
+                &task,
+                Status::Cancelled,
+                "cancelled",
+                task.run_seq,
+                None,
+            )
+            .await?
+        } else {
+            task
+        };
+        let data = json!({"task_id": task.task_id, "reason": reason, "by": by});
         self.emit(
-            &mut tx,
-            tenant,
+            conn,
+            task.tenant_id,
             "task.cancel_requested",
-            task_id,
+            task.task_id,
             data,
             None,
         )
         .await?;
-        tx.commit().await?;
         Ok(task)
     }
 
@@ -272,15 +359,18 @@ impl Tasks {
         status: Status,
         stop_reason: &str,
         run_seq: i32,
+        output: Option<&str>,
     ) -> Result<TaskRow, TaskError> {
         let r = sqlx::query(
-            "UPDATE tasks SET status = $2, stop_reason = $3, run_seq = $4, updated_at = now()
+            "UPDATE tasks SET status = $2, stop_reason = $3, run_seq = $4, updated_at = now(),
+                 output = coalesce($5, output)
              WHERE task_id = $1 RETURNING *",
         )
         .bind(task.task_id)
         .bind(status.as_str())
         .bind(stop_reason)
         .bind(run_seq)
+        .bind(output)
         .fetch_one(&mut *conn)
         .await?;
         let updated = TaskRow::from_row(&r)?;
@@ -298,6 +388,24 @@ impl Tasks {
                 None,
             )
             .await?;
+            if let (Some(parent), true) = (updated.parent_task_id, status.is_finished()) {
+                // Addressed to the parent: its run waits for this.
+                let data = json!({
+                    "task_id": parent, "child_task_id": updated.task_id,
+                    "employee_id": updated.employee_id, "title": updated.title,
+                    "status": status.as_str(), "stop_reason": stop_reason,
+                    "output": domain::child_output(&updated.output),
+                });
+                self.emit(
+                    conn,
+                    task.tenant_id,
+                    "task.child_finished",
+                    parent,
+                    data,
+                    None,
+                )
+                .await?;
+            }
         }
         Ok(updated)
     }
@@ -327,7 +435,12 @@ impl Tasks {
             return Ok(());
         }
         let seq = i32::try_from(update.seq).unwrap_or(i32::MAX);
-        self.set_status(conn, &task, update.status, &update.stop_reason, seq)
+        let output = event
+            .data
+            .get("output")
+            .and_then(|v| v.as_str())
+            .filter(|_| update.status.is_finished());
+        self.set_status(conn, &task, update.status, &update.stop_reason, seq, output)
             .await?;
         Ok(())
     }

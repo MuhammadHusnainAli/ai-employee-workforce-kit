@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::contracts::wfk::common::v1::TenantContext;
 use crate::contracts::wfk::task_service::v1 as pb;
 use crate::contracts::wfk::task_service::v1::task_service_server::TaskService;
-use crate::task::adapters::{NewTask, TaskError, TaskRow, Tasks};
+use crate::task::adapters::{ListFilter, NewTask, TaskError, TaskRow, Tasks};
 use crate::task::domain::Status;
 
 const MAX_INPUT: usize = 100_000;
@@ -54,7 +54,22 @@ fn task_pb(t: TaskRow) -> pb::Task {
         created_by: t.created_by,
         created_at: Some(ts(t.created_at)),
         updated_at: Some(ts(t.updated_at)),
+        parent_task_id: t.parent_task_id.map(|u| u.to_string()).unwrap_or_default(),
+        root_task_id: t.root_task_id.unwrap_or(t.task_id).to_string(),
+        depth: i32::from(t.depth),
+        output: t.output,
+        delegated_by: t.delegated_by,
     }
+}
+
+/// An optional task id: empty means none.
+fn optional_task_id(s: &str, field: &str) -> Result<Option<Uuid>, RpcStatus> {
+    if s.is_empty() {
+        return Ok(None);
+    }
+    Uuid::parse_str(s)
+        .map(Some)
+        .map_err(|_| bad(&format!("{field} must be a UUID")))
 }
 
 fn bad(msg: &str) -> RpcStatus {
@@ -138,6 +153,7 @@ impl TaskService for TaskApi {
                     input: r.input,
                     priority: r.priority,
                     created_by: actor,
+                    parent_task_id: optional_task_id(&r.parent_task_id, "parent_task_id")?,
                 },
             )
             .await?;
@@ -169,11 +185,14 @@ impl TaskService for TaskApi {
             n @ 1..=200 => i64::from(n),
             _ => return Err(bad("limit must be 1 to 200")),
         };
-        let employee = Some(r.employee_id.as_str()).filter(|e| !e.is_empty());
-        let tasks = self
-            .0
-            .list(tenant, employee, status_from_pb(r.status), limit)
-            .await?;
+        let filter = ListFilter {
+            employee_id: Some(r.employee_id.as_str()).filter(|e| !e.is_empty()),
+            status: status_from_pb(r.status),
+            parent_task_id: optional_task_id(&r.parent_task_id, "parent_task_id")?,
+            root_task_id: optional_task_id(&r.root_task_id, "root_task_id")?,
+            limit,
+        };
+        let tasks = self.0.list(tenant, filter).await?;
         Ok(Response::new(pb::ListTasksResponse {
             tasks: tasks.into_iter().map(task_pb).collect(),
         }))

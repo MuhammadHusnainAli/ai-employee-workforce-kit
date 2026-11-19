@@ -116,6 +116,7 @@ impl Forwarder {
             title,
             input: text,
             priority: 0,
+            parent_task_id: String::new(),
         };
         let mut call = tonic::Request::new(req);
         call.set_timeout(Duration::from_secs(10));

@@ -15,7 +15,7 @@ service TaskService {
   rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
-  // FAILED_PRECONDITION when the task is already finished.
+  // FAILED_PRECONDITION when the task is already finished. Cancels every unfinished sub-task too.
   rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
   // Answer an approval the run waits for. FAILED_PRECONDITION unless the task waits for a person.
   rpc DecideApproval(DecideApprovalRequest) returns (DecideApprovalResponse);
@@ -45,6 +45,15 @@ message Task {
   string created_by = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
+  // Delegation: the task this one was handed down from (empty for a goal), the goal at the top
+  // of the tree, and how far down it sits (0 for a goal, at most 3).
+  string parent_task_id = 11;
+  string root_task_id = 12;
+  int32 depth = 13;
+  // The run's final answer, once it has one.
+  string output = 14;
+  // The employee who handed this task down; empty for a goal.
+  string delegated_by = 15;
 }
 
 message CreateTaskRequest {
@@ -55,6 +64,10 @@ message CreateTaskRequest {
   string input = 5;
   // 0 (default) to 9 (most urgent).
   int32 priority = 6;
+  // Hand this task down from another one. FAILED_PRECONDITION when the parent is finished, sits
+  // 3 levels deep already, or has 20 sub-tasks. When the sub-task finishes, task.child_finished
+  // tells the parent's run, with the sub-task's output.
+  string parent_task_id = 7;
 }
 
 message CreateTaskResponse {
@@ -77,6 +90,10 @@ message ListTasksRequest {
   TaskStatus status = 3;
   // At most 200, default 50. Newest first.
   int32 limit = 4;
+  // The direct sub-tasks of a task.
+  string parent_task_id = 5;
+  // A goal and every task below it.
+  string root_task_id = 6;
 }
 
 message ListTasksResponse {
