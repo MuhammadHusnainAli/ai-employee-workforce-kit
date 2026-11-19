@@ -32,7 +32,11 @@ from core_python.workforce.domain.employees import (
     valid_employee_id,
 )
 from core_python.workforce.domain.hiring import Hire
-from core_python.workforce.domain.org import InvalidPlacement, valid_department_id
+from core_python.workforce.domain.org import (
+    InvalidPlacement,
+    delegation_refusal,
+    valid_department_id,
+)
 
 T = TypeVar("T")
 TIER_TO_PB: dict[Tier, pb.RiskTier] = {
@@ -380,6 +384,16 @@ class WorkforceServicer(workforce_pb2_grpc.WorkforceServiceServicer):
                 employees=[employee_pb(r) for r in people],
                 departments=[department_pb(r) for r in depts],
             )
+
+        return await self._guard(context, call)
+
+    async def CanDelegate(
+        self, request: pb.CanDelegateRequest, context: grpc.aio.ServicerContext
+    ) -> pb.CanDelegateResponse:
+        async def call() -> pb.CanDelegateResponse:
+            people = await self.org.members(_tenant(request.tenant))
+            why = delegation_refusal(people, request.from_employee, request.to_employee)
+            return pb.CanDelegateResponse(allowed=why is None, reason=why or "")
 
         return await self._guard(context, call)
 

@@ -60,6 +60,8 @@ def runtime(s: Settings) -> RuntimeSettings:
         port=s.port,
         brain_address=s.self_address,
         workforce_address=s.self_address,
+        task_address=s.task_address,
+        collab_address=s.self_address,
     )
 
 

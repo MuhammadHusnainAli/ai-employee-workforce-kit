@@ -104,3 +104,26 @@ async def test_placing_emits_an_event_and_other_tenants_see_nothing(
         assert [r["type"] for r in await cur.fetchall()] == ["employee.created", "employee.placed"]
     other = await stub.GetOrgChart(pb.GetOrgChartRequest(tenant=tenant(OTHER_TENANT)))
     assert eid not in {e.employee_id for e in other.employees}
+
+
+async def test_can_delegate_follows_the_chart(stub: Stub) -> None:
+    t = fresh_tenant()
+    await hire(stub, t, "co-ceo", is_co_ceo=True)
+    await hire(stub, t, "head", manager_id="co-ceo")
+    await hire(stub, t, "junior", manager_id="head")
+    await hire(stub, t, "other")
+
+    async def check(frm: str, to: str) -> tuple[bool, str]:
+        got = await stub.CanDelegate(
+            pb.CanDelegateRequest(tenant=tenant(t), from_employee=frm, to_employee=to)
+        )
+        return got.allowed, got.reason
+
+    assert (await check("co-ceo", "other"))[0]
+    assert (await check("head", "junior"))[0]
+    allowed, reason = await check("junior", "head")
+    assert not allowed and "below" in reason
+    allowed, reason = await check("head", "ghost")
+    assert not allowed and "ghost" in reason
+    allowed, reason = await check("head", "head")
+    assert not allowed

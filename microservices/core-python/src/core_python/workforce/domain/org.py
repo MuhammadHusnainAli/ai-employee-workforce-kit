@@ -66,13 +66,25 @@ def check_placement(
         raise InvalidPlacement(f"{manager_id!r} is {manager.status}")
 
 
-def can_delegate(members: dict[str, Member], from_id: str, to_id: str) -> bool:
-    """The co-CEO may hand work to any active employee but itself; anyone else to the active
-    employees below them."""
+def delegation_refusal(members: dict[str, Member], from_id: str, to_id: str) -> str | None:
+    """Why `from_id` may not hand work to `to_id`, or None when it may. The co-CEO may hand
+    work to any active employee but itself; anyone else to the active employees below them."""
     sender, target = members.get(from_id), members.get(to_id)
-    if sender is None or target is None or from_id == to_id or target.status != "active":
-        return False
-    return sender.is_co_ceo or to_id in below(members, from_id)
+    if sender is None:
+        return f"there is no employee {from_id!r}"
+    if target is None:
+        return f"there is no employee {to_id!r}"
+    if from_id == to_id:
+        return "you cannot hand work to yourself"
+    if target.status != "active":
+        return f"{to_id} is {target.status}"
+    if not sender.is_co_ceo and to_id not in below(members, from_id):
+        return f"{to_id} is not below you in the org chart; ask them or their manager instead"
+    return None
+
+
+def can_delegate(members: dict[str, Member], from_id: str, to_id: str) -> bool:
+    return delegation_refusal(members, from_id, to_id) is None
 
 
 def valid_department_id(department_id: str) -> bool:

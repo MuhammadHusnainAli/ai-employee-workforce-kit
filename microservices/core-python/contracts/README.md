@@ -8,6 +8,8 @@ hand-written. Each module owns its API under the package name of the service it 
 proto/wfk/common/v1/          common types (tenant context, errors, paging). Infrastructure only.
 proto/wfk/<module>/v1/        each module's own API. The module owns it; callers outside this service
                               copy it to call us.
+proto/wfk/task_service/v1/    a copy of core-rust's task contract: the org tools create sub-tasks
+                              through it. core-rust owns it; copy it again when it changes.
 events/                       CloudEvents envelope and example events
 ```
 

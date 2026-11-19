@@ -96,6 +96,11 @@ class WorkforceServiceStub:
                 request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.SerializeToString,
                 response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.FromString,
                 _registered_method=True)
+        self.CanDelegate = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/CanDelegate',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.FromString,
+                _registered_method=True)
         self.HireEmployee = channel.unary_unary(
                 '/wfk.workforce_service.v1.WorkforceService/HireEmployee',
                 request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeRequest.SerializeToString,
@@ -206,6 +211,14 @@ class WorkforceServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CanDelegate(self, request, context):
+        """May one employee hand work to another? The co-CEO to any active employee but itself;
+        anyone else to the active employees below them.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def HireEmployee(self, request, context):
         """Hiring. A hire costs money, so only a person (actor kind HUMAN) hires or decides a request;
         anyone else gets PERMISSION_DENIED. A new hire starts with the default org tools.
@@ -297,6 +310,11 @@ def add_WorkforceServiceServicer_to_server(servicer, server):
                     servicer.GetOrgChart,
                     request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.FromString,
                     response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.SerializeToString,
+            ),
+            'CanDelegate': grpc.unary_unary_rpc_method_handler(
+                    servicer.CanDelegate,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.SerializeToString,
             ),
             'HireEmployee': grpc.unary_unary_rpc_method_handler(
                     servicer.HireEmployee,
@@ -645,6 +663,33 @@ class WorkforceService:
             '/wfk.workforce_service.v1.WorkforceService/GetOrgChart',
             wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.SerializeToString,
             wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CanDelegate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/CanDelegate',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.FromString,
             options,
             channel_credentials,
             insecure,

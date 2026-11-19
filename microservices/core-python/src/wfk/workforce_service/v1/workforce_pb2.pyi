@@ -433,3 +433,21 @@ class DecideHireRequestResponse(_message.Message):
     request: HireRequest
     employee: Employee
     def __init__(self, request: _Optional[_Union[HireRequest, _Mapping]] = ..., employee: _Optional[_Union[Employee, _Mapping]] = ...) -> None: ...
+
+class CanDelegateRequest(_message.Message):
+    __slots__ = ("tenant", "from_employee", "to_employee")
+    TENANT_FIELD_NUMBER: _ClassVar[int]
+    FROM_EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
+    TO_EMPLOYEE_FIELD_NUMBER: _ClassVar[int]
+    tenant: _common_pb2.TenantContext
+    from_employee: str
+    to_employee: str
+    def __init__(self, tenant: _Optional[_Union[_common_pb2.TenantContext, _Mapping]] = ..., from_employee: _Optional[str] = ..., to_employee: _Optional[str] = ...) -> None: ...
+
+class CanDelegateResponse(_message.Message):
+    __slots__ = ("allowed", "reason")
+    ALLOWED_FIELD_NUMBER: _ClassVar[int]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    allowed: bool
+    reason: str
+    def __init__(self, allowed: _Optional[bool] = ..., reason: _Optional[str] = ...) -> None: ...

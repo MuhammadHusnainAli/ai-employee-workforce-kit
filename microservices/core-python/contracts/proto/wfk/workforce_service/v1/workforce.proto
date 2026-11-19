@@ -32,6 +32,9 @@ service WorkforceService {
   rpc PlaceEmployee(PlaceEmployeeRequest) returns (PlaceEmployeeResponse);
   // Every employee with its place, and every department.
   rpc GetOrgChart(GetOrgChartRequest) returns (GetOrgChartResponse);
+  // May one employee hand work to another? The co-CEO to any active employee but itself;
+  // anyone else to the active employees below them.
+  rpc CanDelegate(CanDelegateRequest) returns (CanDelegateResponse);
 
   // Hiring. A hire costs money, so only a person (actor kind HUMAN) hires or decides a request;
   // anyone else gets PERMISSION_DENIED. A new hire starts with the default org tools.
@@ -314,4 +317,16 @@ message DecideHireRequestResponse {
   HireRequest request = 1;
   // Set when approved.
   Employee employee = 2;
+}
+
+message CanDelegateRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string from_employee = 2;
+  string to_employee = 3;
+}
+
+message CanDelegateResponse {
+  bool allowed = 1;
+  // Why not, in words the employee can act on. Empty when allowed.
+  string reason = 2;
 }

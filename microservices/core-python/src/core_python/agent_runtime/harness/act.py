@@ -68,6 +68,7 @@ async def act(
                 "idempotency_key": key,
                 "tenant_id": state.tenant_id,
                 "employee_id": state.employee_id,
+                "mode": state.mode,
             },
         )
         async with gate:

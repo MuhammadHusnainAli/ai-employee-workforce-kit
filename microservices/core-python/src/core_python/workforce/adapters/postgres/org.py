@@ -138,3 +138,7 @@ class Org:
             people = await conn.execute("SELECT * FROM employees ORDER BY employee_id")
             depts = await conn.execute("SELECT * FROM departments ORDER BY name, department_id")
             return list(await people.fetchall()), list(await depts.fetchall())
+
+    async def members(self, tenant: str) -> dict[str, Member]:
+        async with self.db.tenant_tx(tenant) as conn:
+            return await members(conn)
