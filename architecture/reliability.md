@@ -22,7 +22,9 @@ fixes until it recovers.
 
 | What fails | Impact | Why it is contained | Recovery |
 |---|---|---|---|
-| Agent Runtime pod crashes mid-run | none visible | Workflow state is in Temporal. Another worker picks up the task after the activity's heartbeat timeout | automatic, seconds |
+| A `core-python` pod crashes mid-run (it holds the Agent Runtime workers) | none visible | Workflow state is in Temporal. A worker in another replica picks up the task after the activity's heartbeat timeout. Pending events wait in each module's outbox | automatic, seconds |
+| One background part of `core-python` fails (Temporal or NATS unreachable, a loop crashes) | that part pauses | Each part (live workers, evaluation workers, brain ingest, evaluation, relays) is supervised: the failure is logged and the part restarts after a pause. The gRPC server and the other parts keep running | automatic, seconds |
+| One module exhausts memory or CPU in a shared process | the other modules in that service slow down or restart with it | Not contained inside the process: modules of one service share its resources ([ADR-0017](adr/0017-two-backend-services.md)). Contained between the two services and by replicas. Live and evaluation runs still use separate Temporal queues | restart; split the module into its own deployment if it recurs |
 | LLM provider outage or 429 storm | slower runs | Model Gateway falls back to the next provider. Activities retry with backoff. Run queues back up but nothing is lost | automatic. KEDA adds workers when the provider recovers |
 | All LLM providers down | runs pause | Activities keep retrying under their retry policy (up to hours). Tasks stay `RUNNING`, then the timeout moves them to `WAITING_HUMAN` | automatic resume |
 | Tool / SaaS API down | that tool fails | Per-connector circuit breaker. The run gets a "tool unavailable" observation and can choose another path or wait | automatic |
@@ -50,22 +52,22 @@ fixes until it recovers.
 | Pattern | Implementation |
 |---|---|
 | Durable execution | Temporal for runs, ingestion, schedules, connector syncs |
-| Transactional outbox / inbox | every service database (see data.md §5) |
+| Transactional outbox / inbox | every module database (see data.md §5) |
 | Idempotency keys | public API (`Idempotency-Key`), `CreateTask`, tool calls (`run_id:step:call_idx`), outbox `Nats-Msg-Id` |
 | Timeouts and deadline propagation | gRPC deadlines on every call (default 2 s, never infinite). Temporal `StartToClose` on every activity |
 | Retries with exponential backoff and full jitter | gRPC client interceptors, with a **retry budget** (≤ 10 % extra load) to prevent retry storms. Only idempotent methods are retried |
-| Circuit breakers / outlier detection | Istio for service-to-service calls. A per-connector breaker in the Integration service |
-| Bulkheads | separate Temporal task queues and worker pools (`runs`, `llm`, `tools`, `sandbox`). Separate Postgres clusters by workload. Separate node pools (sandbox on gVisor nodes) |
+| Circuit breakers / outlier detection | Istio for calls between services. Module-to-module calls inside a service go over its own port with the same deadlines. A per-connector breaker in the Integration module |
+| Bulkheads | separate Temporal task queues and workers (`runs`, `llm`, `tools`, and `eval-*` for evaluations). Two backend services, so a Python failure never stops the Rust modules and the other way round. Separate Postgres clusters by workload. Separate node pools (sandbox on gVisor nodes) |
 | Back-pressure | JetStream `max_ack_pending`. Temporal worker concurrency limits. Envoy rate limits return 429 with `Retry-After` |
 | Load shedding | Envoy rejects low-priority traffic (e.g. bulk API) first when the overload manager trips |
 | Graceful degradation | Memory recall is optional for a run. LLM response cache. Read-only mode if pg-app is in failover |
-| Health checks | `readiness` checks dependencies the pod needs to serve traffic. `liveness` checks only the process itself, so a database blip does not restart every pod in a cascade |
+| Health checks | `readiness` checks dependencies the pod needs to serve traffic, including every module's database. `liveness` checks only the process itself, so a database blip does not restart every pod in a cascade |
 | Graceful shutdown | `preStop` sleep, then drain. Temporal workers stop polling and finish in-flight activities within `terminationGracePeriodSeconds` |
 
 ## 4. Capacity and scaling
 
-- **Stateless services:** HPA on CPU and requests-per-second. Minimum 3 replicas, spread across AZs.
-- **Temporal workers:** KEDA scales each task queue on backlog (`llm` and `tools` scale separately).
+- **Backend services:** HPA on CPU and requests-per-second. Minimum 3 replicas, spread across AZs.
+- **Temporal workers:** KEDA scales `core-python` on task-queue backlog. When one queue must scale apart from the rest (`llm` and `tools` first), its workers move into their own deployment.
 - **Stream consumers:** KEDA on JetStream consumer lag.
 - **Postgres:** scale up vertically first, offload reads to replicas, then split databases into their own
   clusters, then add cells. Sharding inside a cell is not needed, because **cells are the shards**.

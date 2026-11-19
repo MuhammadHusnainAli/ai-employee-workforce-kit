@@ -72,7 +72,7 @@ Recall degrades to cached identity + rules and never blocks a run; writes are id
 ## Folder layout (inside core-python)
 A module of `core-python` ([ADR-0017](../../../../architecture/adr/0017-two-backend-services.md)), with
 its Rust hot path (`brain-core`, PyO3) built inside it. The modules follow
-[brain.md section 8](../../../../architecture/brain.md#8-building-the-brain-service); later phases add
+[brain.md section 8](../../../../architecture/brain.md#8-building-the-brain); later phases add
 `consolidate/` and `learn/`.
 
 ```

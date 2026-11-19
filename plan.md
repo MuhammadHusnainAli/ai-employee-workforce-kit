@@ -481,6 +481,7 @@ migrations, contracts and events; only the deployable changes. Branch: `build/tw
 | R.5 | The ten unbuilt services become module specs in the service of their language | No service folder without code is left | `Fold unbuilt service specs into module docs` |
 | R.6 | Docs: architecture, port map, CLAUDE.md, templates | No doc points at a removed service folder | `Update docs for two backend services` |
 | R.7 | ADR-0018: remove `microservices/templates/` and `just new-service` | No reference left outside history and applied migrations | `Remove service templates and new-service command` |
+| R.8 | Architecture docs and diagram describe the two services and their modules: catalogue, deployment, data, reliability, flows, brain build, diagram pages 1, 9 and 11 | Every architecture doc and diagram page matches the code; links resolve | `Update architecture for two backend services` |
 
 ### Restructure outcome
 

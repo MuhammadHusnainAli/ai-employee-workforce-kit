@@ -17,15 +17,15 @@ tenants.
 
 | Document | What it answers |
 |---|---|
-| [services.md](services.md) | Which services exist, what each owns, how they talk |
+| [services.md](services.md) | The two backend services, the capability modules inside them, what each owns, how they talk |
 | [runtime-flow.md](runtime-flow.md) | Exact lifecycle of a task and an agent run, step by step |
 | [agent-harness.md](agent-harness.md) | Inside the agent loop: context engine, model call, validation, tool router, stop conditions, evals |
-| [brain.md](brain.md) | **Each employee's own brain**: memory stores, recall and write pipelines, consolidation, gated evolution, autonomy ladder, how the service is built |
+| [brain.md](brain.md) | **Each employee's own brain**: memory stores, recall and write pipelines, consolidation, gated evolution, autonomy ladder, how the module is built |
 | [digital-employee.md](digital-employee.md) | Meetings and live voice, own laptop, coding workflow, digital identity, disclosure |
-| [data.md](data.md) | PostgreSQL topology, database-per-service, tenancy, key tables |
+| [data.md](data.md) | PostgreSQL topology, one database per module, tenancy, key tables |
 | [reliability.md](reliability.md) | Failure-mode table, resilience patterns, SLOs |
 | [security.md](security.md) | Threat model for autonomous agents and the controls for it |
-| [deployment.md](deployment.md) | Kubernetes, cells, multi-AZ, DR, GitOps |
+| [deployment.md](deployment.md) | The two deployables, Kubernetes, cells, multi-AZ, DR, GitOps |
 | [adr/](adr/) | Architecture Decision Records: why each major choice was made |
 | [diagrams/ai-workforce-architecture.drawio](diagrams/ai-workforce-architecture.drawio) | draw.io diagrams (12 pages) |
 
@@ -34,7 +34,7 @@ Open the diagram at <https://app.diagrams.net>, in the draw.io desktop app, or i
 
 | # | Page | Shows |
 |---|---|---|
-| 1 | System Architecture | Every service, platform component and database, and how they connect |
+| 1 | System Architecture | Every capability module (coloured by the service that holds it), platform component and database, and how they connect |
 | 2 | Agent Run Orchestration | Swimlanes across services, plus the activity timeout/retry contract and the error taxonomy |
 | 3 | Agent Harness | One iteration in depth: context engine → model → validation → tool router → observe/stop |
 | 4 | Tool Call Pipeline | Nine stages with failure handling, the unknown-outcome tree, the connector contract, the circuit breaker |
@@ -42,9 +42,9 @@ Open the diagram at <https://app.diagrams.net>, in the draw.io desktop app, or i
 | 6 | Workspace & Digital Identity | The own laptop (microVM), coding workflow, accounts, org placement, a day in the life |
 | 7 | Data & PostgreSQL | CNPG HA topology, database ownership, outbox/inbox, RLS |
 | 8 | Reliability | Defence-in-depth layers and 20 failure modes with their outcomes |
-| 9 | Deployment & Cells | Regions, cells, namespaces, DR, GitOps pipeline |
+| 9 | Deployment & Cells | Regions, cells, namespaces (core-python, core-rust, web-app), DR, GitOps pipeline |
 | 10 | Employee Brain | Identity, working memory, five long-term stores, scopes, the recall and write pipelines |
-| 11 | Brain Service Internals | brain_db data model, gRPC API, ranking formula, deployables, reliability |
+| 11 | Brain Service Internals | brain_db data model, gRPC API, ranking formula, the brain's parts in core-python, reliability |
 | 12 | Brain Evolution | Consolidation, learning signals, credit assignment, safe promotion, autonomy ladder, brain safety |
 
 ---
@@ -55,9 +55,9 @@ These rules are not negotiable. Every design choice below follows from one of th
 
 1. **No work lives only in memory.** Every agent run is a durable Temporal workflow persisted in PostgreSQL.
    If a pod dies mid-run, another worker continues from the last completed step.
-2. **One writer per piece of data.** Each service owns its database. No service reads another service's tables.
-   Data moves through APIs (synchronous) or events (asynchronous).
-3. **State change and event publication commit together.** The service writes the event into an outbox table
+2. **One writer per piece of data.** Each module owns its database. No module reads another module's tables, not
+   even inside the same process. Data moves through APIs (synchronous) or events (asynchronous).
+3. **State change and event publication commit together.** The module writes the event into an outbox table
    in the same transaction as the state change. A relay publishes it afterwards. Events are never lost and are
    never published for a rolled-back change.
 4. **Every side effect is idempotent or reconciled.** Each tool call carries the key `run_id:step`. If a tool
@@ -70,11 +70,12 @@ These rules are not negotiable. Every design choice below follows from one of th
    outside the model authorizes every action it requests.
 7. **Boring, open-source, replaceable.** Only OSI-licensed components. Each one sits behind a standard
    interface (S3, OIDC, OpenTelemetry, SQL, MCP), so it can be replaced.
-8. **Services are cut by business capability, not by entity.** There are 16 cell services, not 60. Every service
-   boundary adds a network hop, a failure mode and an operational cost, so each one has to justify itself.
-   These boundaries are built as **modules of two deployables, one per language** (`core-python` and
-   `core-rust`, [ADR-0017](adr/0017-two-backend-services.md)): each module keeps its own database, contracts and
-   events, so it can be split out into its own service when it needs to scale or fail on its own.
+8. **Boundaries follow business capability; deployables follow need.** There are 16 cell capabilities plus 2
+   global ones, cut by capability, not by entity ([ADR-0001](adr/0001-service-boundaries.md)). They are built as
+   **modules of two backend services, one per language**: `core-python` and `core-rust`
+   ([ADR-0017](adr/0017-two-backend-services.md)). Every deployable adds a failure mode and an operational cost,
+   so a module becomes its own service only when it must scale or fail on its own. Its database, contracts and
+   events are already separate, which keeps that split cheap.
 
 ## 2. Architecture at a glance
 
@@ -83,13 +84,19 @@ These rules are not negotiable. Every design choice below follows from one of th
                 │
    ┌────────────┴──────────────── GLOBAL CONTROL PLANE ─────────────────────────┐
    │ Keycloak (identity) · Tenant & Cell Directory · Billing · pg-global         │
+   │ (Directory and Billing: planned core-python modules, deployed globally)     │
    └─────────────────────────────────────────────────────────────────────────────┘
    ┌──────────────────────────────── CELL (N copies) ───────────────────────────┐
-   │ Domain:   Channel Gateway · Task · Workforce · Agent Runtime · Model Gateway│
-   │           Integration & Tools · Sandbox Runner · Brain Service (per-employee)│
-   │           Audit · Usage Metering                                            │
-   │ Real-employee: Meeting Service · Realtime Voice · Workspace Manager ·       │
-   │           Identity & Accounts · Evaluation Service · GPU inference pool      │
+   │ web-app   Web App + public REST API                                         │
+   │ core-python (one process)                                                   │
+   │           Workforce · Agent Runtime · Brain (per-employee) · Evaluation     │
+   │           planned: Model Gateway plugins · Meeting · Realtime Voice         │
+   │ core-rust (one binary)                                                      │
+   │           Task · Channel · Sandbox                                          │
+   │           planned: Integration & Tools · Audit · Usage Metering ·           │
+   │           Workspace · Identity & Accounts                                   │
+   │ Other workloads: sandbox pods · meeting bots · employee microVMs ·          │
+   │           GPU inference pool                                                │
    │ Platform: Temporal · NATS JetStream · OpenFGA · OpenBao · Valkey ·          │
    │           SeaweedFS (S3) · Egress Proxy                                     │
    │ Data:     CloudNativePG clusters: pg-app · pg-ledger · pg-brain ·           │
@@ -124,26 +131,27 @@ These rules are not negotiable. Every design choice below follows from one of th
 | Meeting platforms | adapters: Zoom Meeting SDK · Teams Graph media bot · Meet Media API · browser bot fallback | vendor SDKs behind our interface | One adapter interface, so the voice pipeline is platform-agnostic |
 | Own laptop | **Kata Containers** / KubeVirt microVM, KasmVNC, code-server, Playwright | Apache-2.0 / GPL-2.0 / MIT | A persistent, hardware-isolated workstation per employee. Humans can watch live and take over |
 
-Languages ([ADR-0013](adr/0013-rust-and-python.md)): **Rust** for the throughput-heavy and latency-critical
-services (Channel, Task, Integration, Sandbox, Audit, Usage, Workspace, Identity & Accounts) and for hot-path modules
-called from Python through PyO3. **Python** for every Temporal workflow, the Agent Runtime (built on
-[agent-harness-adk](adr/0014-agent-harness-adk-step-loop.md)), Brain, Model Gateway, Meetings, Voice, Evaluation and
-the light control-plane services (Workforce, Directory, Billing).
+Languages ([ADR-0013](adr/0013-rust-and-python.md)), one backend service each
+([ADR-0017](adr/0017-two-backend-services.md)): **`core-rust`** holds the throughput-heavy and latency-critical
+modules (Task, Channel, Sandbox; later Integration, Audit, Usage, Workspace, Identity & Accounts). **`core-python`**
+holds every Temporal workflow and the LLM-facing and control-plane modules: the Agent Runtime (built on
+[agent-harness-adk](adr/0016-harness-package-as-dependency.md)), Workforce, Brain (with its Rust hot path
+`brain-core` through PyO3) and Evaluation; later Model Gateway plugins, Meetings, Voice, Directory and Billing.
 Contracts are **Protobuf (gRPC)** with `buf breaking` in CI for synchronous calls, and **CloudEvents + AsyncAPI**
 for events.
 
-## 4. Suggested repository layout
+## 4. Repository layout
 
 ```
-/architecture            ← this folder
-/microservices/core-python  the Python backend: one self-contained project (ADR-0015) with one module per
-                            capability (workforce, agent runtime, brain, evaluation, ...) (ADR-0017)
-/microservices/core-rust    the Rust backend: task, channel, sandbox, ... as modules of one binary
-/microservices/web-app      the web app and public REST API
-/platform                Helm/Kustomize for Temporal, NATS, CNPG clusters, Keycloak, OpenFGA, OpenBao…
-/cells/<cell-id>         per-cell Argo CD Application values (the cell's config is just data)
-/connectors/<tool>       MCP servers for integrations (gmail, slack, hubspot, …)
-/web                     frontend (Next.js)
+/architecture               ← this folder
+/microservices/core-python  the Python backend: one self-contained project (ADR-0015), one module per
+                            capability, all in one process (ADR-0017)
+/microservices/core-rust    the Rust backend: one crate, one module per capability, one binary
+/microservices/web-app      the web app and public REST API (Next.js)
+/deployments                the local stack (docker compose) and end-to-end checks
+/platform                   Helm/Kustomize for Temporal, NATS, CNPG clusters, Keycloak, OpenFGA, OpenBao (later)
+/cells/<cell-id>            per-cell Argo CD Application values; the cell's config is just data (later)
+/connectors/<tool>          MCP servers for integrations: gmail, slack, hubspot and others (later)
 ```
 
 ## 5. What is deliberately *not* here
@@ -151,7 +159,9 @@ for events.
 - **No Kafka, Elasticsearch, MongoDB or separate vector DB.** PostgreSQL plus NATS covers these needs at
   this stage. Add an engine only when a measured limit forces it.
 - **No home-made scheduler or job queue.** Temporal Schedules and workflows cover recurring work.
-- **No shared database or shared "common" library holding domain logic.** Those couple services through the
-  back door.
+- **No shared database or shared "common" library holding domain logic.** Those couple modules through the
+  back door, even when the modules share a process.
+- **No module reaching into another module's code.** Modules in one service still talk through their gRPC
+  contracts and events, never by importing each other's domain code.
 - **No synchronous call chain deeper than two hops on a user request.** Anything longer goes through a
   workflow or an event.

@@ -18,14 +18,18 @@ Diagrams: **5 · Meetings & Real-time Voice** and **6 · Workspace & Digital Ide
 
 ---
 
-## 1. New services (per cell)
+## 1. New modules (per cell)
 
-| Service | Owns | DB | Key points |
+These capabilities are modules of the two backend services ([ADR-0017](adr/0017-two-backend-services.md)): Meeting
+and Realtime Voice in `core-python`, Workspace and Identity & Accounts in `core-rust`. The bot pods, the microVMs and
+the GPU pool they drive are separate workloads.
+
+| Module (service) | Owns | DB | Key points |
 |---|---|---|---|
-| **Meeting Service** | Meeting attendances, bot sessions, transcripts, notes, action items | `meeting_db` (pg-ledger) | One `MeetingAttendance` Temporal workflow per employee per meeting supervises a bot pod |
-| **Realtime Voice** | Nothing persistent (stateless workers) | n/a | Pipecat streaming pipeline VAD → STT → turn-taking → LLM → TTS, running next to the bot on GPU nodes |
-| **Workspace Manager** | Each employee's laptop: VM, volume, lifecycle, live-view sessions | `workspace_db` (pg-app) | One persistent Kata microVM (or KubeVirt VM) per employee |
-| **Identity & Accounts** | The employee's identity and every external account (mail, calendar, chat, git, apps) | `identity_db` (pg-app) | Provisions and de-provisions through SCIM 2.0 and admin APIs. Secrets in OpenBao |
+| **Meeting** (core-python) | Meeting attendances, bot sessions, transcripts, notes, action items | `meeting_db` (pg-ledger) | One `MeetingAttendance` Temporal workflow per employee per meeting supervises a bot pod |
+| **Realtime Voice** (core-python) | Nothing persistent (stateless workers) | n/a | Pipecat streaming pipeline VAD → STT → turn-taking → LLM → TTS, running next to the bot on GPU nodes |
+| **Workspace** (core-rust) | Each employee's laptop: VM, volume, lifecycle, live-view sessions | `workspace_db` (pg-app) | One persistent Kata microVM (or KubeVirt VM) per employee |
+| **Identity & Accounts** (core-rust) | The employee's identity and every external account (mail, calendar, chat, git, apps) | `identity_db` (pg-app) | Provisions and de-provisions through SCIM 2.0 and admin APIs. Secrets in OpenBao |
 | **GPU Inference Pool** (platform) | n/a | n/a | faster-whisper STT, Kokoro TTS, pyannote diarization, vLLM. Autoscaled on queue depth |
 
 New event stream `MEETING` with subjects `meeting.scheduled`, `meeting.joined`, `meeting.transcript.segment`,
@@ -146,16 +150,16 @@ are the gate, exactly as for a human engineer.
 
 ## 4. Digital identity
 
-The **Identity & Accounts** service provisions every account the employee needs, through SCIM 2.0 and the
+The **Identity & Accounts** module provisions every account the employee needs, through SCIM 2.0 and the
 platforms' admin APIs, and removes them all automatically when the employee is archived.
 
 | Account | How |
 |---|---|
 | Email and calendar | Google Workspace or Microsoft 365 mailbox, or self-hosted mail (Stalwart). Accepting an invite starts `MeetingAttendance` |
-| Chat | Slack, Microsoft Teams, Google Chat, as a user or app identity depending on tenant policy. DMs and channels flow through the Channel Gateway |
+| Chat | Slack, Microsoft Teams, Google Chat, as a user or app identity depending on tenant policy. DMs and channels flow through the Channel module |
 | Meetings | Joins Zoom, Teams and Meet as itself. Name and avatar are marked "(AI)". Has its own voice profile |
 | Code hosting | GitHub/GitLab bot user or GitHub App. Signed commits (key in OpenBao). Branch protection applies |
-| Business apps | CRM, ticketing and docs through OAuth, with scopes approved by the tenant admin. Tokens are refreshed by the Integration Service |
+| Business apps | CRM, ticketing and docs through OAuth, with scopes approved by the tenant admin. Tokens are refreshed by the Integration module |
 | Workstation | Its own laptop, browser profile and files |
 
 **Place in the organisation:**

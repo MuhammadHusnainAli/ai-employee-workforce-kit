@@ -166,39 +166,43 @@ R3 always needs a human. An incident or an eval drop moves the employee down a l
 | Right to be forgotten | `Forget(subject)` uses `memory_entities` to find every memory about a person. An erasure workflow plus crypto-shredding of payloads. A retention TTL per memory kind |
 | Opacity | The Brain Inspector shows what the employee knows and why. Humans can edit, delete or pin memories. Every recall is cited in `run_steps` |
 
-## 8. Building the Brain Service
+## 8. Building the Brain
 
-**One bounded context, one database (`brain_db` on its own CloudNativePG cluster `pg-brain`), four deployables
-from one codebase.** Today the brain is a module of `core-python` ([ADR-0017](adr/0017-two-backend-services.md)), and
-all four run in its one process; the split below is the target when the brain needs to scale on its own:
+**One bounded context, one database (`brain_db` on its own CloudNativePG cluster `pg-brain`).** The brain is a
+module of `core-python` ([ADR-0017](adr/0017-two-backend-services.md)): its four parts run in that one process today,
+each supervised on its own, and each becomes a separate deployable when the brain must scale on its own. The
+database, the API and the events stay as they are when that happens.
 
-| Deployable | Runs | Scales on | SLO |
-|---|---|---|---|
-| `brain-api` | Recall, Inspect, Feedback (gRPC) | RPS and p95 latency (HPA) | p95 < 300 ms, 99.95 % |
-| `brain-ingest` | write pipeline (Temporal queue `brain-ingest`) | backlog (KEDA) | event → committed < 60 s |
-| `brain-consolidate` | nightly consolidation (queue `brain-batch`) | backlog, off-peak window | every employee nightly |
-| `brain-learn` | lesson and skill mining, proposals | backlog (KEDA) | daily |
+| Part | Runs | Today | As its own deployable: scales on | SLO |
+|---|---|---|---|---|
+| `brain-api` | Recall, Inspect, Feedback, rules, skills (gRPC `BrainService`) | core-python's gRPC server | RPS and p95 latency (HPA) | p95 < 300 ms, 99.95 % |
+| `brain-ingest` | write pipeline (Temporal queue `brain-ingest`) | core-python part `brain-ingest` | backlog (KEDA) | event → committed < 60 s |
+| `brain-consolidate` | nightly consolidation (queue `brain-batch`) | inside `brain-ingest` | backlog, off-peak window | every employee nightly |
+| `brain-learn` | lesson and skill mining, proposals | inside consolidation | backlog (KEDA) | daily |
 
-Suggested internal module layout (hexagonal: domain in the middle, adapters at the edge):
+Module layout (hexagonal: domain in the middle, adapters at the edge), in
+`microservices/core-python/src/core_python/brain/`:
 
 ```
-services/brain/
-  api/            gRPC handlers: Recall, Remember, Feedback, Forget, GetBrain, Propose/Approve/Rollback, Inspect
+brain/
+  api/            gRPC handlers: Recall, the Inspector, Feedback, proposals, rules, skills
   domain/
-    memory/       Memory, Entity, Relation, Episode, Skill, Rule, BrainVersion (invariants live here)
-    recall/       planner, retrievers (interface), fusion, packer
-    write/        extractor port, governance, resolver, committer
-    consolidate/  workflow + activities
-    learn/        miners (lesson, skill, rule), proposal builder, credit assignment
-    govern/       trust model, PII / secret filters, poisoning detection, erasure
+    memory/       memories, episodes, identity core, brain versions (invariants live here)
+    recall/       planner, retrievers, fusion, packer
+    write/        sources, extraction schema, governance, resolver
+    graph/        entities and relations, name normal form
+    feedback.py   what each kind of feedback becomes
+  remember.py     govern, embed in one batch, commit
+  recall.py       the read path
+  ingest.py       BrainIngest worker, nightly schedule, RUNS and EVAL inboxes, BRAIN outbox relay
   adapters/
-    postgres/     repositories, recursive-CTE graph queries, pgvector, partition management
+    postgres/     repositories, recursive-CTE graph queries, pgvector, the write commit, consolidation, learning
     modelgw/      LLM + embedding client (via Model Gateway)
-    temporal/     workflows, activities, schedules
-    nats/         outbox relay, inbox consumers
-    cache/        Valkey recall cache
-  migrations/     plain versioned SQL (wfk-migrate), expand → contract
-  evals/          golden sets per role, regression and safety suites
+    temporal/     workflows, activities
+    cache/        Valkey pinned-context cache
+core-python/brain-core/       Rust hot path through PyO3: ranking and the governance filter
+core-python/migrations/brain/ plain versioned SQL, expand → contract
+core-python/suites/           golden and safety suites (the Evaluation module runs them)
 ```
 
 **API (gRPC):** `Recall`, `Remember`, `Feedback`, `Forget`, `GetBrain`, `ProposeChange`, `ApproveChange`,

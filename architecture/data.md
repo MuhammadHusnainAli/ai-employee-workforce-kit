@@ -4,8 +4,10 @@ Diagram: page **7 · Data & PostgreSQL** in [diagrams/ai-workforce-architecture.
 
 ## 1. Topology
 
-There are a few **physical clusters** and many **logical databases**. Each service owns exactly one database and
-one login role. Databases are grouped into clusters by **workload shape**, so a heavy workload cannot hurt a
+There are a few **physical clusters** and many **logical databases**. Each module owns exactly one database and
+one login role, also when several modules run in the same service
+([ADR-0017](adr/0017-two-backend-services.md)): core-python holds one pool per module database, core-rust one
+per module too. Databases are grouped into clusters by **workload shape**, so a heavy workload cannot hurt a
 latency-sensitive one.
 
 | Cluster (CloudNativePG) | Scope | Databases | Workload shape |
@@ -16,8 +18,9 @@ latency-sensitive one.
 | `pg-brain` | per cell | `brain_db` (employee brains: memories, graph, skills, rules, tenant knowledge), `eval_db` | the most critical data: vectors, graph, bi-temporal facts ([brain.md](brain.md)) |
 | `pg-temporal` | per cell | `temporal`, `temporal_visibility` | high write rate, owned by Temporal |
 
-Moving a database to its own cluster later takes logical replication and a connection-string change. No service
-code changes, because no service ever crossed a database boundary.
+Moving a database to its own cluster later takes logical replication and a connection-string change. No module
+code changes, because no module ever crossed a database boundary. The same holds for moving a module into its own
+service: its database goes with it untouched.
 
 ## 2. High availability and durability (every cluster)
 
@@ -73,16 +76,18 @@ COMMIT;
 - **Timestamps:** `timestamptz` only. **Money:** `numeric(20,6)` in micro-units. Never use float for money.
 - **Optimistic concurrency:** a `version int` column, with `UPDATE … WHERE id = $1 AND version = $2`.
 - **Soft delete only where the business needs it** (employees). Ledgers are never updated or deleted.
-- **JSONB** for flexible, schema-light payloads (tool arguments, model settings), validated by the service against
+- **JSONB** for flexible, schema-light payloads (tool arguments, model settings), validated by the module against
   a JSON Schema before writing.
 - **Partitioning:** `run_steps`, `audit_events`, `usage_events`, `outbox` and `inbox` are range-partitioned by month
   with **pg_partman**. Old partitions are detached and archived to object storage, not deleted with `DELETE`.
-- **Migrations:** versioned plain SQL (`wfk-migrate`, the same tool for Rust and Python services), applied by an Argo CD PreSync Job. Every change
-  follows **expand → migrate → contract** across at least two releases, so the old and new versions of a service
-  can run side by side during a rolling deploy. `CREATE INDEX CONCURRENTLY` only. `lock_timeout = '3s'` on
+- **Migrations:** versioned plain SQL in `migrations/<module>/` (the same file format for Rust and Python), one
+  folder per module database. `core-python migrate` and `core-rust migrate` apply every module's pending
+  migrations to its own database, as a one-shot job before the service starts (an Argo CD PreSync Job in
+  production). Every change follows **expand → migrate → contract** across at least two releases, so the old and
+  new versions of a service can run side by side during a rolling deploy. `CREATE INDEX CONCURRENTLY` only. `lock_timeout = '3s'` on
   migration sessions.
 
-## 5. Reliable messaging tables (in every service database)
+## 5. Reliable messaging tables (in every module database)
 
 ```sql
 -- Transactional outbox: written in the SAME transaction as the business change
@@ -105,7 +110,7 @@ CREATE TABLE inbox (
 );
 ```
 
-**Relay** (one per service, leader-elected through a Postgres advisory lock):
+**Relay** (one per module database, leader-elected through a Postgres advisory lock):
 `SELECT … FROM outbox WHERE published_at IS NULL ORDER BY created_at LIMIT 100 FOR UPDATE SKIP LOCKED` →
 publish with `Nats-Msg-Id = id` → wait for the JetStream ack → `UPDATE … SET published_at = now()`. If the relay
 crashes between the publish and the update, the next attempt re-publishes and JetStream's dedupe window removes the

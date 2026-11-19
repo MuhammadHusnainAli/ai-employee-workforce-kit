@@ -4,8 +4,8 @@ Diagram: page **9 · Deployment & Cells** in [diagrams/ai-workforce-architecture
 
 ## 1. Cell-based architecture
 
-A **cell** is a complete, independent copy of the tenant-facing stack: all cell services, Temporal, NATS and the
-Postgres clusters. Each tenant lives in exactly one cell. A thin **global control plane** (identity, tenant
+A **cell** is a complete, independent copy of the tenant-facing stack: `core-python`, `core-rust` and the web app
+with every cell module, Temporal, NATS and the Postgres clusters. Each tenant lives in exactly one cell. A thin **global control plane** (identity, tenant
 directory, billing) sits above the cells.
 
 Why cells:
@@ -32,20 +32,30 @@ an ETL project.
 
 One Kubernetes cluster per cell per region, spread across **3 availability zones**.
 
-The backend ships as two deployables, `core-python` and `core-rust` ([ADR-0017](adr/0017-two-backend-services.md)).
-The namespaces below show where each capability's workload goes once it is split out to scale or fail on its own;
-until then it runs inside the deployable of its language.
+The backend ships as **two deployables**, `core-python` and `core-rust`, plus the web app
+([ADR-0017](adr/0017-two-backend-services.md)). Every cell module runs inside the deployable of its language:
+
+| Deployment | Namespace | Holds | Scales on |
+|---|---|---|---|
+| `core-python` | `app` | Workforce, Agent Runtime (live and evaluation queues), Brain, Evaluation; later Model Gateway plugins, Meeting, Realtime Voice | Temporal task-queue backlog (KEDA) and gRPC RPS |
+| `core-rust` | `app` | Task, Channel, Sandbox; later Integration, Audit, Usage Metering, Workspace, Identity & Accounts | RPS and stream lag |
+| `web-app` | `app` | the web app and public REST API | RPS |
+
+Some modules launch workloads that are never part of a service process: sandbox runs (gVisor pods), meeting bots,
+employee microVMs, and the GPU inference pool. When a module must scale or fail on its own (the brain API on its
+latency SLO, one Temporal queue on its backlog, realtime voice on GPU locality), it is split into its own
+deployment in the namespace the table below names for it. Its database, contracts and events need no change.
 
 | Namespace | Contents | Node pool |
 |---|---|---|
 | `edge` | Envoy Gateway data plane (cell-local ingress) | general |
-| `app` | Task, Workforce, Channel, Integration, Model Gateway, Audit, Usage, Evaluation | general |
-| `brain` | brain-api, brain-ingest, brain-consolidate, brain-learn | general (brain-api: dedicated priority class) |
-| `runtime` | Agent Runtime worker deployments (one per task queue) | general (autoscaled) |
-| `sandbox` | Sandbox pods, `runtimeClassName: gvisor`, tainted nodes | sandbox (isolated) |
-| `meetings` | Meeting bot pods (warm pool), Realtime Voice workers | general + GPU |
+| `app` | `core-python`, `core-rust`, `web-app` | general |
+| `brain` | when split out: brain-api, brain-ingest, brain-consolidate, brain-learn | general (brain-api: dedicated priority class) |
+| `runtime` | when split out: Agent Runtime worker deployments, one per task queue | general (autoscaled) |
+| `sandbox` | Sandbox run pods, `runtimeClassName: gvisor`, tainted nodes | sandbox (isolated) |
+| `meetings` | Meeting bot pods (warm pool); Realtime Voice workers when split out | general + GPU |
 | `inference` | STT / TTS / diarization / vLLM model servers | GPU (autoscaled) |
-| `workspaces` | One Kata microVM per employee (`runtimeClassName: kata`), Workspace Manager | workspace (nested-virt capable, isolated) |
+| `workspaces` | One Kata microVM per employee (`runtimeClassName: kata`) | workspace (nested-virt capable, isolated) |
 | `temporal` | Temporal services + UI | general |
 | `messaging` | NATS JetStream | stateful (local NVMe) |
 | `data` | CloudNativePG clusters + Poolers, SeaweedFS | stateful (local NVMe) |
@@ -54,7 +64,7 @@ until then it runs inside the deployable of its language.
 
 Rules for every workload:
 - At least 3 replicas, `topologySpreadConstraints` across zones, and a `PodDisruptionBudget` (`maxUnavailable: 1`).
-- Requests and limits set. Priority classes: platform > domain services > workers > batch.
+- Requests and limits set. Priority classes: platform > backend services > workers > batch.
 - Stateful sets use local NVMe through a CSI driver that supports topology. Postgres and NATS replicate at the
   application layer, so they do not need network block storage.
 
@@ -98,7 +108,16 @@ year and time each step.
 
 ## 6. Local development
 
-`docker compose up` brings up one instance each of Postgres (with pgvector), Temporal (`temporal server
-start-dev` or the auto-setup image on Postgres), NATS with JetStream, Keycloak, OpenFGA, OpenBao (dev mode),
-Valkey, SeaweedFS and LiteLLM. These run the **same images and the same migrations** as production, so local
-behaviour matches production behaviour.
+`just up` (Docker Compose in `deployments/`) brings up one instance each of Postgres 18 with pgvector, Temporal on
+Postgres, NATS with JetStream, Valkey, SeaweedFS, LiteLLM and Grafana LGTM, on ports 7017 to 7027. `just up-all`
+adds the three application containers, each after a one-shot migrate job that applies every module's migrations:
+
+| Container | Port | Waits for |
+|---|---|---|
+| `core-python` | 7001 | Postgres, NATS, Temporal, Valkey, SeaweedFS, Model Gateway |
+| `core-rust` | 7002 | Postgres, NATS |
+| `web-app` | 7000 | both backends healthy |
+
+They run the **same images and the same migrations** as production, so local behaviour matches production
+behaviour. `just e2e` checks the main flows end to end against these containers. Keycloak, OpenFGA and OpenBao
+join the local stack with the modules that need them.

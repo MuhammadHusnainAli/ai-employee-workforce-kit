@@ -59,7 +59,10 @@ You cannot fully prevent prompt injection, so the design assumes it will happen 
   refresh tokens.
 - **API clients:** OAuth2 client-credentials or scoped API keys. Keys are stored hashed and can be rotated.
 - **Service-to-service:** mTLS through Istio ambient (SPIFFE identities), plus authorization policies that list
-  exactly which service may call which. Default: deny.
+  exactly which service may call which. Default: deny. With two backend services
+  ([ADR-0017](adr/0017-two-backend-services.md)) most module-to-module calls stay inside one service's process and
+  port. They still go through each module's gRPC contract and its own validation, so splitting a module out later
+  puts the same calls behind mTLS without code changes. Each module still uses its own database login.
 - **Network:** Cilium `NetworkPolicy` default-deny per namespace. Only the egress proxy may reach the internet. The
   sandbox namespace has no route except the proxy.
 - **Encryption:** TLS 1.3 everywhere. Encrypted volumes. Per-tenant data keys (OpenBao transit) for Temporal
@@ -68,7 +71,7 @@ You cannot fully prevent prompt injection, so the design assumes it will happen 
 - **Secrets:** OpenBao only. Kubernetes pods get short-lived DB credentials through OpenBao's database secrets
   engine. No secrets in Git or in environment manifests.
 - **Data governance:** per-tenant retention settings, data export and erasure (GDPR) implemented as a Temporal
-  workflow that fans out to every service. Optional PII redaction (Microsoft Presidio, MIT) in the Model Gateway
+  workflow that fans out to every module. Optional PII redaction (Microsoft Presidio, MIT) in the Model Gateway
   for tenants that need it.
 
 ## 5. Platform hardening

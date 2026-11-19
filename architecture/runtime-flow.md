@@ -18,7 +18,8 @@ This is the core path of the product. Diagrams: pages **2 · Agent Run Orchestra
                                                                   └──────────┘
 ```
 `WAITING_HUMAN` covers: approval required, clarification question, budget limit reached, and unknown tool outcome
-(needs reconciliation). Only the Task Service writes task state. It learns about run progress from `run.*` events.
+(needs reconciliation). Only the Task module (core-rust) writes task state. It learns about run progress from
+`run.*` events.
 
 ## The `EmployeeRun` workflow
 
@@ -26,17 +27,17 @@ Workflow ID = `task_id`. Task queue = `runs`. Every activity has an explicit tim
 
 | # | Step | Where | Failure handling |
 |---|---|---|---|
-| 1 | **Intake.** Task arrives from API, channel, schedule or another employee (delegation) | Task Service | `Idempotency-Key` / provider message ID → unique index, so a duplicate request returns the existing task |
+| 1 | **Intake.** Task arrives from API, channel, schedule or another employee (delegation) | Task module (core-rust) | `Idempotency-Key` / provider message ID → unique index, so a duplicate request returns the existing task |
 | 2 | **Persist + outbox.** `INSERT task` and `INSERT outbox(task.created)` in **one transaction** | task_db | Atomic: either both rows exist or neither does |
-| 3 | **Start workflow** with ID = task_id | Outbox relay → Temporal | `WorkflowIdReusePolicy=RejectDuplicate`: re-delivery is harmless |
+| 3 | **Start workflow** with ID = task_id | Task outbox relay → `TASKS` stream → Agent Runtime inbox (core-python) → Temporal | Inbox dedupe plus `WorkflowIdReusePolicy=RejectDuplicate`: re-delivery is harmless |
 | 4 | **Load & pin blueprint.** Fetch the employee's `active_version` and store it in workflow state | Activity → Workforce | Retried. Later edits do not affect this run |
 | 5 | **Guardrail check.** Step count < `max_steps`, cost < `max_cost`, wall-clock < `max_duration`, tenant quota OK, employee not paused | Workflow code (deterministic) | Limit reached → `WAITING_HUMAN` (budget) or `FAILED` (hard limit). No silent overrun |
-| 6 | **Recall.** Relevant knowledge chunks and employee memory | Activity (`llm` queue) → Brain Service (`Recall`) | Retried. If degraded, continue without memory and flag it in the step record |
+| 6 | **Recall.** Relevant knowledge chunks and employee memory | Activity (`llm` queue) → Brain module (`Recall`) | Retried. If degraded, continue without memory and flag it in the step record |
 | 7 | **Think.** Model call with system prompt, task, context and tool schemas | Activity (`llm` queue) → Model Gateway | Gateway falls back across providers. Activity retries 429/5xx with backoff and heartbeats while streaming. Response is stored in S3 and only a reference goes into history |
 | 8 | **Decide.** Final answer → step 12. Tool call(s) → step 9 | Workflow | Malformed tool call → feed the validation error back to the model (max 2 times), then fail the step |
 | 9 | **Authorize.** OpenFGA relation check plus risk-tier policy | Activity → Integration | Denied → result goes back to the model as "not permitted" and an audit event is written |
-| 10 | **Approval (if the tier requires it).** Create the approval, notify the human, then `await signal("approval")` with a timer | Workflow + Task Service | Timer expiry → escalate to the manager, then `CANCELLED`. The workflow survives days of waiting with no resources held |
-| 11 | **Act.** Execute the tool with `idempotency_key = run_id:step:call_idx` | Activity (`tools`/`sandbox` queue) → Integration / Sandbox | See "Unknown outcomes" below. Record the result, then loop back to **step 5** |
+| 10 | **Approval (if the tier requires it).** Create the approval, notify the human, then `await signal("approval")` with a timer | Workflow + Task module | Timer expiry → escalate to the manager, then `CANCELLED`. The workflow survives days of waiting with no resources held |
+| 11 | **Act.** Execute the tool with `idempotency_key = run_id:step:call_idx` | Activity (`tools` queue) → Integration / Sandbox modules | See "Unknown outcomes" below. Record the result, then loop back to **step 5** |
 | 12 | **Finalize.** Deliver the result (reply in channel or webhook), write memories, emit `run.completed` | Activities | Each delivery is idempotent. Memory write is best-effort and retried, and never blocks completion |
 
 Signals the workflow accepts at any point: `approval`, `human_reply`, `pause`, `resume`, `cancel`.

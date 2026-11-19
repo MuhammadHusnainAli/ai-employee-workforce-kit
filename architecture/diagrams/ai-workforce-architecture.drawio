@@ -1,350 +1,415 @@
-<?xml version='1.0' encoding='utf-8'?>
-<mxfile host="app.diagrams.net" agent="architecture-generator" version="24.7.17" type="device">
+<mxfile host="Electron" agent="architecture-generator" pages="12">
   <diagram id="sys" name="1 · System Architecture">
-    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="1650" background="#F8FAFC" math="0" shadow="0">
+    <mxGraphModel dx="2742" dy="1682" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="1650" background="#F8FAFC" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="sys-title" value="&lt;b style=&quot;font-size:24px&quot;&gt;AI Employee Workforce Kit: System Architecture&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#CBD5E1&quot;&gt;Cell-based microservices  ·  PostgreSQL system of record  ·  Temporal durable execution  ·  100 % OSI-licensed components&lt;/span&gt;" style="rounded=1;absoluteArcSize=1;arcSize=16;html=1;whiteSpace=wrap;fillColor=#0F172A;strokeColor=none;fontColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=26;shadow=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="20" y="16" width="2380" height="66" as="geometry" />
+        <mxCell id="sys-title" parent="1" style="rounded=1;absoluteArcSize=1;arcSize=16;html=1;whiteSpace=wrap;fillColor=#0F172A;strokeColor=none;fontColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=26;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:24px&quot;&gt;AI Employee Workforce Kit: System Architecture&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#CBD5E1&quot;&gt;Cell-based  ·  two backend services: core-python and core-rust, one module per capability  ·  PostgreSQL system of record  ·  Temporal durable execution  ·  100 % OSI-licensed components&lt;/span&gt;" vertex="1">
+          <mxGeometry height="66" width="2380" x="20" y="16" as="geometry" />
         </mxCell>
-        <mxCell id="sys-glob" value="GLOBAL CONTROL PLANE  ·  single instance  ·  3 AZ" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#6D28D9;swimlaneFillColor=#F5F3FF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="20" y="100" width="600" height="290" as="geometry" />
+        <mxCell id="sys-glob" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#6D28D9;swimlaneFillColor=#F5F3FF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="GLOBAL CONTROL PLANE  ·  single instance  ·  3 AZ" vertex="1">
+          <mxGeometry height="290" width="600" x="20" y="100" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kc" value="Keycloak" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-glob">
-          <mxGeometry x="20" y="45" width="180" height="105" as="geometry" />
+        <mxCell id="sys-kc" parent="sys-glob" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Keycloak" vertex="1">
+          <mxGeometry height="105" width="180" x="20" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kc_b" value="OIDC / SAML · SSO&lt;br&gt;Organization per tenant" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kc">
-          <mxGeometry x="8" y="31" width="164" height="49" as="geometry" />
+        <mxCell id="sys-kc_b" parent="sys-kc" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="OIDC / SAML · SSO&lt;br&gt;Organization per tenant" vertex="1">
+          <mxGeometry height="49" width="164" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kc_p1" value="MFA" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kc">
-          <mxGeometry x="8" y="83" width="33" height="16" as="geometry" />
+        <mxCell id="sys-kc_p1" parent="sys-kc" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="MFA" vertex="1">
+          <mxGeometry height="16" width="33" x="8" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kc_p2" value="JWKS" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kc">
-          <mxGeometry x="47" y="83" width="38" height="16" as="geometry" />
+        <mxCell id="sys-kc_p2" parent="sys-kc" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="JWKS" vertex="1">
+          <mxGeometry height="16" width="38" x="47" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="sys-dir" value="Tenant &amp;amp; Cell Directory" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-glob">
-          <mxGeometry x="210" y="45" width="180" height="105" as="geometry" />
+        <mxCell id="sys-dir" parent="sys-glob" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Tenant &amp;amp; Cell Directory" vertex="1">
+          <mxGeometry height="105" width="180" x="210" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-dir_b" value="tenants · plans · flags&lt;br&gt;tenant → cell map" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-dir">
-          <mxGeometry x="8" y="31" width="164" height="49" as="geometry" />
+        <mxCell id="sys-dir_b" parent="sys-dir" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="tenants · plans · flags&lt;br&gt;tenant → cell map" vertex="1">
+          <mxGeometry height="49" width="164" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-dir_p3" value="pushed to edge" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-dir">
-          <mxGeometry x="8" y="83" width="95" height="16" as="geometry" />
+        <mxCell id="sys-dir_p3" parent="sys-dir" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="pushed to edge" vertex="1">
+          <mxGeometry height="16" width="95" x="8" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bill" value="Billing" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-glob">
-          <mxGeometry x="400" y="45" width="180" height="105" as="geometry" />
+        <mxCell id="sys-bill" parent="sys-glob" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Billing" vertex="1">
+          <mxGeometry height="105" width="180" x="400" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bill_b" value="subscriptions · invoices&lt;br&gt;← hourly usage rollups" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-bill">
-          <mxGeometry x="8" y="31" width="164" height="49" as="geometry" />
+        <mxCell id="sys-bill_b" parent="sys-bill" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="subscriptions · invoices&lt;br&gt;← hourly usage rollups" vertex="1">
+          <mxGeometry height="49" width="164" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bill_p4" value="async" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-bill">
-          <mxGeometry x="8" y="83" width="44" height="16" as="geometry" />
+        <mxCell id="sys-bill_p4" parent="sys-bill" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F5F3FF;strokeColor=#6D28D9;fontColor=#6D28D9;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="async" vertex="1">
+          <mxGeometry height="16" width="44" x="8" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="sys-pgg" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-global&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;CloudNativePG ×3 · sync quorum&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;keycloak_db · directory_db · billing_db&lt;/span&gt;" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-glob">
-          <mxGeometry x="150" y="182" width="300" height="98" as="geometry" />
+        <mxCell id="sys-pgg" parent="sys-glob" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-global&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;CloudNativePG ×3 · sync quorum&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;keycloak_db · directory_db · billing_db&lt;/span&gt;" vertex="1">
+          <mxGeometry height="98" width="300" x="150" y="182" as="geometry" />
         </mxCell>
-        <mxCell id="sys-web" value="Web App" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="680" y="104" width="170" height="70" as="geometry" />
+        <mxCell id="sys-web" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Web App" vertex="1">
+          <mxGeometry height="70" width="170" x="680" y="104" as="geometry" />
         </mxCell>
-        <mxCell id="sys-web_b" value="Next.js · same public API" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-web">
-          <mxGeometry x="8" y="31" width="154" height="34" as="geometry" />
+        <mxCell id="sys-web_b" parent="sys-web" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Next.js · same public API" vertex="1">
+          <mxGeometry height="34" width="154" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-api" value="Public API / SDK" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="865" y="104" width="175" height="70" as="geometry" />
+        <mxCell id="sys-api" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Public API / SDK" vertex="1">
+          <mxGeometry height="70" width="175" x="865" y="104" as="geometry" />
         </mxCell>
-        <mxCell id="sys-api_b" value="REST · OpenAPI · webhooks" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-api">
-          <mxGeometry x="8" y="31" width="159" height="34" as="geometry" />
+        <mxCell id="sys-api_b" parent="sys-api" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="REST · OpenAPI · webhooks" vertex="1">
+          <mxGeometry height="34" width="159" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-chan" value="Channels" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1055" y="104" width="185" height="70" as="geometry" />
+        <mxCell id="sys-chan" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#475569;swimlaneFillColor=#FFFFFF;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Channels" vertex="1">
+          <mxGeometry height="70" width="185" x="1055" y="104" as="geometry" />
         </mxCell>
-        <mxCell id="sys-chan_b" value="Email · Slack · Teams&lt;br&gt;Google Chat · webhooks" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-chan">
-          <mxGeometry x="8" y="31" width="169" height="34" as="geometry" />
+        <mxCell id="sys-chan_b" parent="sys-chan" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Email · Slack · Teams&lt;br&gt;Google Chat · webhooks" vertex="1">
+          <mxGeometry height="34" width="169" x="8" y="18" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy" value="Envoy Gateway  ·  Gateway API" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#C2410C;swimlaneFillColor=#FFFFFF;strokeColor=#C2410C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="680" y="206" width="560" height="100" as="geometry" />
+        <mxCell id="sys-envoy" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#C2410C;swimlaneFillColor=#FFFFFF;strokeColor=#C2410C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Envoy Gateway  ·  Gateway API" vertex="1">
+          <mxGeometry height="100" width="560" x="680" y="206" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_b" value="TLS termination · local JWT validation · per-tenant rate limits · load shedding · tenant → cell routing" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="8" y="31" width="544" height="44" as="geometry" />
+        <mxCell id="sys-envoy_b" parent="sys-envoy" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="TLS termination · local JWT validation · per-tenant rate limits · load shedding · tenant → cell routing" vertex="1">
+          <mxGeometry height="44" width="544" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_p5" value="TLS 1.3" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="8" y="78" width="55" height="16" as="geometry" />
+        <mxCell id="sys-envoy_p5" parent="sys-envoy" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="TLS 1.3" vertex="1">
+          <mxGeometry height="16" width="55" x="8" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_p6" value="JWT (cached JWKS)" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="69" y="78" width="112" height="16" as="geometry" />
+        <mxCell id="sys-envoy_p6" parent="sys-envoy" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="JWT (cached JWKS)" vertex="1">
+          <mxGeometry height="16" width="112" x="69" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_p7" value="429 + Retry-After" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="187" y="78" width="112" height="16" as="geometry" />
+        <mxCell id="sys-envoy_p7" parent="sys-envoy" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="429 + Retry-After" vertex="1">
+          <mxGeometry height="16" width="112" x="187" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_p8" value="overload manager" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="305" y="78" width="107" height="16" as="geometry" />
+        <mxCell id="sys-envoy_p8" parent="sys-envoy" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="overload manager" vertex="1">
+          <mxGeometry height="16" width="107" x="305" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="sys-envoy_p9" value="tenant→cell" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-envoy">
-          <mxGeometry x="418" y="78" width="78" height="16" as="geometry" />
+        <mxCell id="sys-envoy_p9" parent="sys-envoy" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFF7ED;strokeColor=#C2410C;fontColor=#C2410C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="tenant→cell" vertex="1">
+          <mxGeometry height="16" width="78" x="418" y="78" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" edge="1" parent="1" source="sys-web" target="sys-envoy">
+        <mxCell id="sys-e10" edge="1" parent="1" source="sys-web" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" target="sys-envoy" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" edge="1" parent="1" source="sys-api" target="sys-envoy">
+        <mxCell id="sys-e11" edge="1" parent="1" source="sys-api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" target="sys-envoy" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" edge="1" parent="1" source="sys-chan" target="sys-envoy">
+        <mxCell id="sys-e12" edge="1" parent="1" source="sys-chan" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" target="sys-envoy" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e13" value="JWKS + routing table (cached at edge)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.52;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-envoy" target="sys-dir">
+        <mxCell id="sys-e13" edge="1" parent="1" source="sys-envoy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.52;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="sys-dir" value="JWKS + routing table (cached at edge)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.64;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-envoy" target="sys-kc">
+        <mxCell id="sys-e14" edge="1" parent="1" source="sys-envoy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.64;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="sys-kc" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-ext" value="EXTERNAL SYSTEMS" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#64748B;swimlaneFillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1340" y="100" width="620" height="180" as="geometry" />
+        <mxCell id="sys-ext" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#64748B;swimlaneFillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="EXTERNAL SYSTEMS" vertex="1">
+          <mxGeometry height="180" width="620" x="1340" y="100" as="geometry" />
         </mxCell>
-        <mxCell id="sys-llm" value="LLM Providers" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ext">
-          <mxGeometry x="15" y="45" width="190" height="115" as="geometry" />
+        <mxCell id="sys-llm" parent="sys-ext" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="LLM Providers" vertex="1">
+          <mxGeometry height="115" width="190" x="15" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-llm_b" value="Anthropic Claude · hosted APIs&lt;br&gt;self-hosted vLLM" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-llm">
-          <mxGeometry x="8" y="31" width="174" height="59" as="geometry" />
+        <mxCell id="sys-llm_b" parent="sys-llm" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Anthropic Claude · hosted APIs&lt;br&gt;self-hosted vLLM" vertex="1">
+          <mxGeometry height="59" width="174" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-llm_p15" value="fallback chain" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-llm">
-          <mxGeometry x="8" y="93" width="95" height="16" as="geometry" />
+        <mxCell id="sys-llm_p15" parent="sys-llm" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="fallback chain" vertex="1">
+          <mxGeometry height="16" width="95" x="8" y="93" as="geometry" />
         </mxCell>
-        <mxCell id="sys-saas" value="Tenant SaaS / Tools" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ext">
-          <mxGeometry x="217" y="45" width="190" height="115" as="geometry" />
+        <mxCell id="sys-saas" parent="sys-ext" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Tenant SaaS / Tools" vertex="1">
+          <mxGeometry height="115" width="190" x="217" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-saas_b" value="Gmail · Slack · HubSpot&lt;br&gt;Salesforce · Jira · Drive" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-saas">
-          <mxGeometry x="8" y="31" width="174" height="59" as="geometry" />
+        <mxCell id="sys-saas_b" parent="sys-saas" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Gmail · Slack · HubSpot&lt;br&gt;Salesforce · Jira · Drive" vertex="1">
+          <mxGeometry height="59" width="174" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-saas_p16" value="MCP connectors" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-saas">
-          <mxGeometry x="8" y="93" width="95" height="16" as="geometry" />
+        <mxCell id="sys-saas_p16" parent="sys-saas" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="MCP connectors" vertex="1">
+          <mxGeometry height="16" width="95" x="8" y="93" as="geometry" />
         </mxCell>
-        <mxCell id="sys-meet" value="Meeting Platforms" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ext">
-          <mxGeometry x="419" y="45" width="186" height="115" as="geometry" />
+        <mxCell id="sys-meet" parent="sys-ext" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#64748B;swimlaneFillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Meeting Platforms" vertex="1">
+          <mxGeometry height="115" width="186" x="419" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-meet_b" value="Zoom · Microsoft Teams&lt;br&gt;Google Meet · Google Chat" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-meet">
-          <mxGeometry x="8" y="31" width="170" height="59" as="geometry" />
+        <mxCell id="sys-meet_b" parent="sys-meet" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Zoom · Microsoft Teams&lt;br&gt;Google Meet · Google Chat" vertex="1">
+          <mxGeometry height="59" width="170" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-meet_p17" value="adapters" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-meet">
-          <mxGeometry x="8" y="93" width="61" height="16" as="geometry" />
+        <mxCell id="sys-meet_p17" parent="sys-meet" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#F8FAFC;strokeColor=#64748B;fontColor=#64748B;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="adapters" vertex="1">
+          <mxGeometry height="16" width="61" x="8" y="93" as="geometry" />
         </mxCell>
-        <mxCell id="sys-cell" value="CELL   ·   one of N   ·   complete independent stack   ·   Kubernetes   ·   3 availability zones" style="swimlane;html=1;whiteSpace=wrap;startSize=34;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#0F172A;swimlaneFillColor=#FFFFFF;strokeColor=#0F172A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=14;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="20" y="440" width="1960" height="1185" as="geometry" />
+        <mxCell id="sys-cell" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=34;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#0F172A;swimlaneFillColor=#FFFFFF;strokeColor=#0F172A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=14;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="CELL   ·   one of N   ·   complete independent stack   ·   Kubernetes   ·   3 availability zones" vertex="1">
+          <mxGeometry height="1185" width="1960" x="20" y="440" as="geometry" />
         </mxCell>
-        <mxCell id="sys-ldom" value="DOMAIN SERVICES  ·  Rust / Python  ·  gRPC + CloudEvents  ·  each owns ONE database" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#1D4ED8;swimlaneFillColor=#EFF6FF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=right;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-cell">
-          <mxGeometry x="20" y="44" width="1920" height="430" as="geometry" />
+        <mxCell id="sys-ldom" parent="sys-cell" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#1D4ED8;swimlaneFillColor=#EFF6FF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=right;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="DOMAIN MODULES  ·  in core-python (blue) or core-rust (rust)  ·  gRPC + CloudEvents  ·  each module owns ONE database" vertex="1">
+          <mxGeometry height="430" width="1920" x="20" y="44" as="geometry" />
         </mxCell>
-        <mxCell id="sys-cgw" value="Channel Gateway" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="20" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-cgw" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Channel Gateway" vertex="1">
+          <mxGeometry height="110" width="210" x="20" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-cgw_b" value="webhook verify · msg-id dedupe&lt;br&gt;inbound → CreateTask&lt;br&gt;DB: channel_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-cgw">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-cgw_b" parent="sys-cgw" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="webhook verify · msg-id dedupe&lt;br&gt;inbound → CreateTask&lt;br&gt;DB: channel_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-cgw_p18" value="signed" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-cgw">
-          <mxGeometry x="8" y="88" width="50" height="16" as="geometry" />
+        <mxCell id="sys-cgw_p18" parent="sys-cgw" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="signed" vertex="1">
+          <mxGeometry height="16" width="50" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-cgw_p19" value="dedupe" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-cgw">
-          <mxGeometry x="64" y="88" width="50" height="16" as="geometry" />
+        <mxCell id="sys-cgw_p19" parent="sys-cgw" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="dedupe" vertex="1">
+          <mxGeometry height="16" width="50" x="64" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-task" value="Task Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="270" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-task" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Task Service" vertex="1">
+          <mxGeometry height="110" width="210" x="270" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-task_b" value="inbox · states · approvals&lt;br&gt;starts / signals runs&lt;br&gt;DB: task_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-task">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-task_b" parent="sys-task" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="inbox · states · approvals&lt;br&gt;starts / signals runs&lt;br&gt;DB: task_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-task_p20" value="outbox" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-task">
-          <mxGeometry x="8" y="88" width="50" height="16" as="geometry" />
+        <mxCell id="sys-task_p20" parent="sys-task" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="outbox" vertex="1">
+          <mxGeometry height="16" width="50" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-task_p21" value="Idempotency-Key" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-task">
-          <mxGeometry x="64" y="88" width="101" height="16" as="geometry" />
+        <mxCell id="sys-task_p21" parent="sys-task" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="Idempotency-Key" vertex="1">
+          <mxGeometry height="16" width="101" x="64" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-wf" value="Workforce Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="520" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-wf" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Workforce Service" vertex="1">
+          <mxGeometry height="110" width="210" x="520" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-wf_b" value="employees · teams · schedules&lt;br&gt;immutable blueprint versions&lt;br&gt;DB: workforce_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-wf">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-wf_b" parent="sys-wf" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="employees · teams · schedules&lt;br&gt;immutable blueprint versions&lt;br&gt;DB: workforce_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-wf_p22" value="versioned" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-wf">
-          <mxGeometry x="8" y="88" width="67" height="16" as="geometry" />
+        <mxCell id="sys-wf_p22" parent="sys-wf" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="versioned" vertex="1">
+          <mxGeometry height="16" width="67" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-rt" value="Agent Runtime  ·  harness" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="810" y="50" width="250" height="110" as="geometry" />
+        <mxCell id="sys-rt" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Agent Runtime  ·  harness" vertex="1">
+          <mxGeometry height="110" width="250" x="810" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-rt_b" value="Temporal workers (stateless)&lt;br&gt;queues: runs · llm · tools · sandbox&lt;br&gt;DB: run_db (run ledger)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-rt">
-          <mxGeometry x="8" y="31" width="234" height="54" as="geometry" />
+        <mxCell id="sys-rt_b" parent="sys-rt" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Temporal workers (stateless)&lt;br&gt;queues: runs · llm · tools · sandbox&lt;br&gt;DB: run_db (run ledger)" vertex="1">
+          <mxGeometry height="54" width="234" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-rt_p23" value="stateless" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-rt">
-          <mxGeometry x="8" y="88" width="67" height="16" as="geometry" />
+        <mxCell id="sys-rt_p23" parent="sys-rt" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="stateless" vertex="1">
+          <mxGeometry height="16" width="67" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-rt_p24" value="KEDA" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-rt">
-          <mxGeometry x="81" y="88" width="38" height="16" as="geometry" />
+        <mxCell id="sys-rt_p24" parent="sys-rt" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="KEDA" vertex="1">
+          <mxGeometry height="16" width="38" x="81" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-rt_p25" value="bulkheads" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-rt">
-          <mxGeometry x="125" y="88" width="67" height="16" as="geometry" />
+        <mxCell id="sys-rt_p25" parent="sys-rt" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="bulkheads" vertex="1">
+          <mxGeometry height="16" width="67" x="125" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-mgw" value="Model Gateway" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="1120" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-mgw" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Model Gateway" vertex="1">
+          <mxGeometry height="110" width="210" x="1120" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-mgw_b" value="LiteLLM proxy · routing&lt;br&gt;fallback · budgets · caching&lt;br&gt;DB: gateway_db · Valkey" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mgw">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-mgw_b" parent="sys-mgw" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="LiteLLM proxy · routing&lt;br&gt;fallback · budgets · caching&lt;br&gt;DB: gateway_db · Valkey" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-mgw_p26" value="fallback" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mgw">
-          <mxGeometry x="8" y="88" width="61" height="16" as="geometry" />
+        <mxCell id="sys-mgw_p26" parent="sys-mgw" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="fallback" vertex="1">
+          <mxGeometry height="16" width="61" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-mgw_p27" value="budget stop" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mgw">
-          <mxGeometry x="75" y="88" width="78" height="16" as="geometry" />
+        <mxCell id="sys-mgw_p27" parent="sys-mgw" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="budget stop" vertex="1">
+          <mxGeometry height="16" width="78" x="75" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-intg" value="Integration &amp;amp; Tools" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="1380" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-intg" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Integration &amp;amp; Tools" vertex="1">
+          <mxGeometry height="110" width="210" x="1380" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-intg_b" value="MCP connectors · authz&lt;br&gt;credential injection&lt;br&gt;DB: integration_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-intg">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-intg_b" parent="sys-intg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="MCP connectors · authz&lt;br&gt;credential injection&lt;br&gt;DB: integration_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-intg_p28" value="intent ledger" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-intg">
-          <mxGeometry x="8" y="88" width="90" height="16" as="geometry" />
+        <mxCell id="sys-intg_p28" parent="sys-intg" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="intent ledger" vertex="1">
+          <mxGeometry height="16" width="90" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-intg_p29" value="breaker" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-intg">
-          <mxGeometry x="104" y="88" width="55" height="16" as="geometry" />
+        <mxCell id="sys-intg_p29" parent="sys-intg" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="breaker" vertex="1">
+          <mxGeometry height="16" width="55" x="104" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-sbx" value="Sandbox Runner" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="1650" y="50" width="210" height="110" as="geometry" />
+        <mxCell id="sys-sbx" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Sandbox Runner" vertex="1">
+          <mxGeometry height="110" width="210" x="1650" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-sbx_b" value="agent code execution&lt;br&gt;CPU / mem / time limits&lt;br&gt;stateless" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-sbx">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-sbx_b" parent="sys-sbx" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="agent code execution&lt;br&gt;CPU / mem / time limits&lt;br&gt;stateless" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-sbx_p30" value="gVisor" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-sbx">
-          <mxGeometry x="8" y="88" width="50" height="16" as="geometry" />
+        <mxCell id="sys-sbx_p30" parent="sys-sbx" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="gVisor" vertex="1">
+          <mxGeometry height="16" width="50" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-sbx_p31" value="no network" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-sbx">
-          <mxGeometry x="64" y="88" width="73" height="16" as="geometry" />
+        <mxCell id="sys-sbx_p31" parent="sys-sbx" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="no network" vertex="1">
+          <mxGeometry height="16" width="73" x="64" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-aud" value="Audit Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="20" y="285" width="210" height="110" as="geometry" />
+        <mxCell id="sys-aud" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Audit Service" vertex="1">
+          <mxGeometry height="110" width="210" x="20" y="285" as="geometry" />
         </mxCell>
-        <mxCell id="sys-aud_b" value="consumes *.&amp;gt; events&lt;br&gt;who · what · why · approved by&lt;br&gt;DB: audit_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-aud">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-aud_b" parent="sys-aud" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="consumes *.&amp;gt; events&lt;br&gt;who · what · why · approved by&lt;br&gt;DB: audit_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-aud_p32" value="append-only" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-aud">
-          <mxGeometry x="8" y="88" width="78" height="16" as="geometry" />
+        <mxCell id="sys-aud_p32" parent="sys-aud" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="append-only" vertex="1">
+          <mxGeometry height="16" width="78" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-aud_p33" value="hash chain" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-aud">
-          <mxGeometry x="92" y="88" width="73" height="16" as="geometry" />
+        <mxCell id="sys-aud_p33" parent="sys-aud" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="hash chain" vertex="1">
+          <mxGeometry height="16" width="73" x="92" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-use" value="Usage Metering" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="520" y="285" width="210" height="110" as="geometry" />
+        <mxCell id="sys-use" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Usage Metering" vertex="1">
+          <mxGeometry height="110" width="210" x="520" y="285" as="geometry" />
         </mxCell>
-        <mxCell id="sys-use_b" value="tokens · tool calls · sandbox s&lt;br&gt;quota enforcement&lt;br&gt;DB: usage_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-use">
-          <mxGeometry x="8" y="31" width="194" height="54" as="geometry" />
+        <mxCell id="sys-use_b" parent="sys-use" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="tokens · tool calls · sandbox s&lt;br&gt;quota enforcement&lt;br&gt;DB: usage_db" vertex="1">
+          <mxGeometry height="54" width="194" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-use_p34" value="inbox dedupe" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-use">
-          <mxGeometry x="8" y="88" width="84" height="16" as="geometry" />
+        <mxCell id="sys-use_p34" parent="sys-use" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontColor=#1D4ED8;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="inbox dedupe" vertex="1">
+          <mxGeometry height="16" width="84" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kn" value="Brain Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-ldom">
-          <mxGeometry x="1120" y="285" width="230" height="110" as="geometry" />
+        <mxCell id="sys-kn" parent="sys-ldom" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Brain Service" vertex="1">
+          <mxGeometry height="110" width="230" x="1120" y="285" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kn_b" value="per-employee memory · skills&lt;br&gt;learning · tenant knowledge&lt;br&gt;DB: brain_db (pages 10 – 12)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kn">
-          <mxGeometry x="8" y="31" width="214" height="54" as="geometry" />
+        <mxCell id="sys-kn_b" parent="sys-kn" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="per-employee memory · skills&lt;br&gt;learning · tenant knowledge&lt;br&gt;DB: brain_db (pages 10 – 12)" vertex="1">
+          <mxGeometry height="54" width="214" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kn_p35" value="pgvector + graph" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kn">
-          <mxGeometry x="8" y="88" width="107" height="16" as="geometry" />
+        <mxCell id="sys-kn_p35" parent="sys-kn" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="pgvector + graph" vertex="1">
+          <mxGeometry height="16" width="107" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-kn_p36" value="versioned" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-kn">
-          <mxGeometry x="121" y="88" width="67" height="16" as="geometry" />
+        <mxCell id="sys-kn_p36" parent="sys-kn" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="versioned" vertex="1">
+          <mxGeometry height="16" width="67" x="121" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-lplat" value="PLATFORM SERVICES  ·  3 AZ  ·  ≥ 3 replicas each" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#047857;swimlaneFillColor=#ECFDF5;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-cell">
-          <mxGeometry x="20" y="494" width="1920" height="200" as="geometry" />
+        <mxCell id="sys-lplat" parent="sys-cell" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#047857;swimlaneFillColor=#ECFDF5;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="PLATFORM SERVICES  ·  3 AZ  ·  ≥ 3 replicas each" vertex="1">
+          <mxGeometry height="200" width="1920" x="20" y="494" as="geometry" />
         </mxCell>
-        <mxCell id="sys-nats" value="NATS JetStream" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="20" y="45" width="450" height="110" as="geometry" />
+        <mxCell id="sys-nats" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="NATS JetStream" vertex="1">
+          <mxGeometry height="110" width="450" x="20" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-nats_b" value="domain event streams · every service publishes via transactional outbox&lt;br&gt;pull consumers · explicit ack · max_deliver → DLQ" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-nats">
-          <mxGeometry x="8" y="31" width="434" height="54" as="geometry" />
+        <mxCell id="sys-nats_b" parent="sys-nats" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="domain event streams · every service publishes via transactional outbox&lt;br&gt;pull consumers · explicit ack · max_deliver → DLQ" vertex="1">
+          <mxGeometry height="54" width="434" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-nats_p37" value="R=3" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-nats">
-          <mxGeometry x="8" y="88" width="33" height="16" as="geometry" />
+        <mxCell id="sys-nats_p37" parent="sys-nats" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="R=3" vertex="1">
+          <mxGeometry height="16" width="33" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-nats_p38" value="Nats-Msg-Id dedupe" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-nats">
-          <mxGeometry x="47" y="88" width="118" height="16" as="geometry" />
+        <mxCell id="sys-nats_p38" parent="sys-nats" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="Nats-Msg-Id dedupe" vertex="1">
+          <mxGeometry height="16" width="118" x="47" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-nats_p39" value="DLQ" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-nats">
-          <mxGeometry x="171" y="88" width="33" height="16" as="geometry" />
+        <mxCell id="sys-nats_p39" parent="sys-nats" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="DLQ" vertex="1">
+          <mxGeometry height="16" width="33" x="171" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-valkey" value="Valkey" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="520" y="45" width="190" height="110" as="geometry" />
+        <mxCell id="sys-valkey" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Valkey" vertex="1">
+          <mxGeometry height="110" width="190" x="520" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-valkey_b" value="rate limits · short caches&lt;br&gt;loss = slower, never wrong" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-valkey">
-          <mxGeometry x="8" y="31" width="174" height="54" as="geometry" />
+        <mxCell id="sys-valkey_b" parent="sys-valkey" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="rate limits · short caches&lt;br&gt;loss = slower, never wrong" vertex="1">
+          <mxGeometry height="54" width="174" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-valkey_p40" value="ephemeral" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-valkey">
-          <mxGeometry x="8" y="88" width="67" height="16" as="geometry" />
+        <mxCell id="sys-valkey_p40" parent="sys-valkey" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="ephemeral" vertex="1">
+          <mxGeometry height="16" width="67" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-temporal" value="Temporal" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="810" y="45" width="250" height="110" as="geometry" />
+        <mxCell id="sys-temporal" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Temporal" vertex="1">
+          <mxGeometry height="110" width="250" x="810" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-temporal_b" value="frontend · history · matching&lt;br&gt;timers · signals · retries" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-temporal">
-          <mxGeometry x="8" y="31" width="234" height="54" as="geometry" />
+        <mxCell id="sys-temporal_b" parent="sys-temporal" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="frontend · history · matching&lt;br&gt;timers · signals · retries" vertex="1">
+          <mxGeometry height="54" width="234" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-temporal_p41" value="durable" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-temporal">
-          <mxGeometry x="8" y="88" width="55" height="16" as="geometry" />
+        <mxCell id="sys-temporal_p41" parent="sys-temporal" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="durable" vertex="1">
+          <mxGeometry height="16" width="55" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-temporal_p42" value="512 shards" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-temporal">
-          <mxGeometry x="69" y="88" width="73" height="16" as="geometry" />
+        <mxCell id="sys-temporal_p42" parent="sys-temporal" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="512 shards" vertex="1">
+          <mxGeometry height="16" width="73" x="69" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-s3" value="SeaweedFS" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="1110" y="45" width="150" height="110" as="geometry" />
+        <mxCell id="sys-s3" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="SeaweedFS" vertex="1">
+          <mxGeometry height="110" width="150" x="1110" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-s3_b" value="S3 API · docs&lt;br&gt;payloads · artifacts" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-s3">
-          <mxGeometry x="8" y="31" width="134" height="54" as="geometry" />
+        <mxCell id="sys-s3_b" parent="sys-s3" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="S3 API · docs&lt;br&gt;payloads · artifacts" vertex="1">
+          <mxGeometry height="54" width="134" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-s3_p43" value="repl 010" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-s3">
-          <mxGeometry x="8" y="88" width="61" height="16" as="geometry" />
+        <mxCell id="sys-s3_p43" parent="sys-s3" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="repl 010" vertex="1">
+          <mxGeometry height="16" width="61" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-fga" value="OpenFGA" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="1300" y="45" width="150" height="110" as="geometry" />
+        <mxCell id="sys-fga" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="OpenFGA" vertex="1">
+          <mxGeometry height="110" width="150" x="1300" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-fga_b" value="ReBAC checks&lt;br&gt;store: openfga_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-fga">
-          <mxGeometry x="8" y="31" width="134" height="54" as="geometry" />
+        <mxCell id="sys-fga_b" parent="sys-fga" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="ReBAC checks&lt;br&gt;store: openfga_db" vertex="1">
+          <mxGeometry height="54" width="134" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-fga_p44" value="×3" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-fga">
-          <mxGeometry x="8" y="88" width="27" height="16" as="geometry" />
+        <mxCell id="sys-fga_p44" parent="sys-fga" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="×3" vertex="1">
+          <mxGeometry height="16" width="27" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bao" value="OpenBao" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="1480" y="45" width="150" height="110" as="geometry" />
+        <mxCell id="sys-bao" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="OpenBao" vertex="1">
+          <mxGeometry height="110" width="150" x="1480" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bao_b" value="tenant credentials&lt;br&gt;transit keys" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-bao">
-          <mxGeometry x="8" y="31" width="134" height="54" as="geometry" />
+        <mxCell id="sys-bao_b" parent="sys-bao" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="tenant credentials&lt;br&gt;transit keys" vertex="1">
+          <mxGeometry height="54" width="134" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bao_p45" value="Raft ×3" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-bao">
-          <mxGeometry x="8" y="88" width="55" height="16" as="geometry" />
+        <mxCell id="sys-bao_p45" parent="sys-bao" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="Raft ×3" vertex="1">
+          <mxGeometry height="16" width="55" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-egress" value="Egress Proxy" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lplat">
-          <mxGeometry x="1660" y="45" width="200" height="110" as="geometry" />
+        <mxCell id="sys-egress" parent="sys-lplat" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Egress Proxy" vertex="1">
+          <mxGeometry height="110" width="200" x="1660" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-egress_b" value="per-connector&lt;br&gt;domain allowlist" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-egress">
-          <mxGeometry x="8" y="31" width="184" height="54" as="geometry" />
+        <mxCell id="sys-egress_b" parent="sys-egress" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="per-connector&lt;br&gt;domain allowlist" vertex="1">
+          <mxGeometry height="54" width="184" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-egress_p46" value="deny by default" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-egress">
-          <mxGeometry x="8" y="88" width="101" height="16" as="geometry" />
+        <mxCell id="sys-egress_p46" parent="sys-egress" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFDF5;strokeColor=#047857;fontColor=#047857;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="deny by default" vertex="1">
+          <mxGeometry height="16" width="101" x="8" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="sys-ldata" value="DATA  ·  PostgreSQL 18 on CloudNativePG  ·  3 instances per cluster  ·  sync quorum  ·  PgBouncer  ·  Barman PITR" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#B45309;swimlaneFillColor=#FFFBEB;strokeColor=#B45309;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-cell">
-          <mxGeometry x="20" y="924" width="1920" height="240" as="geometry" />
+        <mxCell id="sys-ldata" parent="sys-cell" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#B45309;swimlaneFillColor=#FFFBEB;strokeColor=#B45309;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="DATA  ·  PostgreSQL 18 on CloudNativePG  ·  3 instances per cluster  ·  sync quorum  ·  PgBouncer  ·  Barman PITR" vertex="1">
+          <mxGeometry height="240" width="1920" x="20" y="924" as="geometry" />
         </mxCell>
-        <mxCell id="sys-pgapp" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-app&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;OLTP · latency-sensitive&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;task_db · workforce_db · channel_db · integration_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;gateway_db · openfga_db · workspace_db · identity_db&lt;/span&gt;" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-ldata">
-          <mxGeometry x="20" y="45" width="520" height="170" as="geometry" />
+        <mxCell id="sys-pgapp" parent="sys-ldata" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-app&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;OLTP · latency-sensitive&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;task_db · workforce_db · channel_db · integration_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;gateway_db · openfga_db · workspace_db · identity_db&lt;/span&gt;" vertex="1">
+          <mxGeometry height="170" width="520" x="20" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-pgled" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-ledger&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;append-heavy · partitioned&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;run_db · audit_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;usage_db · meeting_db&lt;/span&gt;" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-ldata">
-          <mxGeometry x="580" y="45" width="200" height="170" as="geometry" />
+        <mxCell id="sys-pgled" parent="sys-ldata" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-ledger&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;append-heavy · partitioned&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;run_db · audit_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;usage_db · meeting_db&lt;/span&gt;" vertex="1">
+          <mxGeometry height="170" width="200" x="580" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-pgtmp" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-temporal&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;owned by Temporal&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;temporal · temporal_visibility&lt;/span&gt;" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-ldata">
-          <mxGeometry x="820" y="45" width="230" height="170" as="geometry" />
+        <mxCell id="sys-pgtmp" parent="sys-ldata" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-temporal&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;owned by Temporal&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;temporal · temporal_visibility&lt;/span&gt;" vertex="1">
+          <mxGeometry height="170" width="230" x="820" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-pgkn" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-brain&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;the employee brains&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;brain_db · eval_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;pgvector HNSW + FTS + graph&lt;/span&gt;" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-ldata">
-          <mxGeometry x="1090" y="45" width="270" height="170" as="geometry" />
+        <mxCell id="sys-pgkn" parent="sys-ldata" style="shape=cylinder3;html=1;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#FEF3C7;strokeColor=#B45309;strokeWidth=1.6;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;pg-brain&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;the employee brains&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;brain_db · eval_db&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;pgvector HNSW + FTS + graph&lt;/span&gt;" vertex="1">
+          <mxGeometry height="170" width="270" x="1090" y="45" as="geometry" />
         </mxCell>
-        <mxCell id="sys-bk" value="&lt;b style=&quot;font-size:12px&quot;&gt;Every cluster&lt;/b&gt;&lt;br&gt;• 3 instances across 3 AZs · sync quorum (RPO 0)&lt;br&gt;• automatic failover &amp;lt; 30 s (CNPG operator)&lt;br&gt;• PgBouncer rw / ro poolers, transaction mode&lt;br&gt;• WAL archive + base backups → other region · PITR 35 d&lt;br&gt;• RLS: FORCE + SET LOCAL app.tenant_id&lt;br&gt;• one role per service · no cross-database access" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#FFFBEB;strokeColor=#D6B656;fontColor=#1E293B;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=8;shadow=1;fontFamily=Helvetica;" vertex="1" parent="sys-ldata">
-          <mxGeometry x="1400" y="40" width="500" height="180" as="geometry" />
+        <mxCell id="sys-bk" parent="sys-ldata" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#FFFBEB;strokeColor=#D6B656;fontColor=#1E293B;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=8;shadow=1;fontFamily=Helvetica;" value="&lt;b style=&quot;font-size:12px&quot;&gt;Every cluster&lt;/b&gt;&lt;br&gt;• 3 instances across 3 AZs · sync quorum (RPO 0)&lt;br&gt;• automatic failover &amp;lt; 30 s (CNPG operator)&lt;br&gt;• PgBouncer rw / ro poolers, transaction mode&lt;br&gt;• WAL archive + base backups → other region · PITR 35 d&lt;br&gt;• RLS: FORCE + SET LOCAL app.tenant_id&lt;br&gt;• one role per service · no cross-database access" vertex="1">
+          <mxGeometry height="180" width="500" x="1400" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e47" value="/hooks/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.05;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-envoy" target="sys-cgw">
+        <mxCell id="sys-lrt" parent="sys-cell" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#0E7490;swimlaneFillColor=#ECFEFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="REAL-EMPLOYEE CAPABILITIES  ·  meetings · live voice · own laptop · own accounts   (detail: pages 5 – 6)" vertex="1">
+          <mxGeometry height="190" width="1920" x="20" y="714" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-mtg" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Meeting Service" vertex="1">
+          <mxGeometry height="110" width="270" x="20" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-mtg_b" parent="sys-mtg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="joins Zoom · Teams · Google Meet&lt;br&gt;bot per meeting · transcript · notes&lt;br&gt;DB: meeting_db" vertex="1">
+          <mxGeometry height="54" width="254" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-mtg_p65" parent="sys-mtg" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="Temporal-supervised" vertex="1">
+          <mxGeometry height="16" width="124" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-mtg_p66" parent="sys-mtg" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="disclosed" vertex="1">
+          <mxGeometry height="16" width="67" x="138" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-voice" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Realtime Voice" vertex="1">
+          <mxGeometry height="110" width="270" x="330" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-voice_b" parent="sys-voice" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="Pipecat: VAD → STT → LLM → TTS&lt;br&gt;answers when addressed · barge-in&lt;br&gt;≈ 1.2 s voice-to-voice" vertex="1">
+          <mxGeometry height="54" width="254" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-voice_p67" parent="sys-voice" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="streaming" vertex="1">
+          <mxGeometry height="16" width="67" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-voice_p68" parent="sys-voice" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="fallback: chat" vertex="1">
+          <mxGeometry height="16" width="95" x="81" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-wsm" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Workspace Manager" vertex="1">
+          <mxGeometry height="110" width="270" x="640" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-wsm_b" parent="sys-wsm" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="own laptop per employee (microVM)&lt;br&gt;desktop · browser · IDE · shell&lt;br&gt;DB: workspace_db" vertex="1">
+          <mxGeometry height="54" width="254" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-wsm_p69" parent="sys-wsm" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="Kata VM" vertex="1">
+          <mxGeometry height="16" width="55" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-wsm_p70" parent="sys-wsm" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="snapshots" vertex="1">
+          <mxGeometry height="16" width="67" x="69" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-idn" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#9A3412;swimlaneFillColor=#FFFFFF;strokeColor=#9A3412;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Identity &amp;amp; Accounts" vertex="1">
+          <mxGeometry height="110" width="270" x="960" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-idn_b" parent="sys-idn" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="email · calendar · chat · git accounts&lt;br&gt;SCIM / admin APIs · lifecycle&lt;br&gt;DB: identity_db" vertex="1">
+          <mxGeometry height="54" width="254" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-idn_p71" parent="sys-idn" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="auto de-provision" vertex="1">
+          <mxGeometry height="16" width="112" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-gpu" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="GPU Inference Pool" vertex="1">
+          <mxGeometry height="110" width="270" x="1320" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-gpu_b" parent="sys-gpu" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="faster-whisper STT · Kokoro TTS&lt;br&gt;pyannote diarization · vLLM" vertex="1">
+          <mxGeometry height="54" width="254" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-gpu_p72" parent="sys-gpu" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="autoscaled" vertex="1">
+          <mxGeometry height="16" width="73" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-cu" parent="sys-lrt" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Evaluation Service" vertex="1">
+          <mxGeometry height="110" width="230" x="1630" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-cu_b" parent="sys-cu" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="golden tasks · shadow runs&lt;br&gt;gates every brain promotion&lt;br&gt;DB: eval_db" vertex="1">
+          <mxGeometry height="54" width="214" x="8" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-cu_p73" parent="sys-cu" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" value="release gate" vertex="1">
+          <mxGeometry height="16" width="84" x="8" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-e47" edge="1" parent="1" source="sys-envoy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.05;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-cgw" value="/hooks/*">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="708" y="410" />
@@ -352,7 +417,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e48" value="/v1/tasks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.15;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-envoy" target="sys-task">
+        <mxCell id="sys-e48" edge="1" parent="1" source="sys-envoy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.15;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-task" value="/v1/tasks">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="764" y="420" />
@@ -360,7 +425,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e49" value="/v1/employees" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-envoy" target="sys-wf">
+        <mxCell id="sys-e49" edge="1" parent="1" source="sys-envoy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-wf" value="/v1/employees">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="848" y="430" />
@@ -368,10 +433,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e50" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-cgw" target="sys-task">
+        <mxCell id="sys-e50" edge="1" parent="1" source="sys-cgw" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" target="sys-task" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e51" value="start (id = task_id) · signal" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-task" target="sys-temporal">
+        <mxCell id="sys-e51" edge="1" parent="1" source="sys-task" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" target="sys-temporal" value="start (id = task_id) · signal">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="540" y="622" />
@@ -380,16 +445,16 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e52" value="poll queues" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;exitX=0.65;exitY=1;exitDx=0;exitDy=0;entryX=0.65;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-rt" target="sys-temporal">
+        <mxCell id="sys-e52" edge="1" parent="1" source="sys-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;exitX=0.65;exitY=1;exitDx=0;exitDy=0;entryX=0.65;entryY=0;entryDx=0;entryDy=0;" target="sys-temporal" value="poll queues">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e53" value="pinned version" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0;exitY=0.45;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-rt" target="sys-wf">
+        <mxCell id="sys-e53" edge="1" parent="1" source="sys-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0;exitY=0.45;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" target="sys-wf" value="pinned version">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e54" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-rt" target="sys-mgw">
+        <mxCell id="sys-e54" edge="1" parent="1" source="sys-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" target="sys-mgw" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e55" value="tool calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.8;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-rt" target="sys-intg">
+        <mxCell id="sys-e55" edge="1" parent="1" source="sys-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.8;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-intg" value="tool calls">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1050" y="522" />
@@ -397,23 +462,23 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e56" value="recall / remember" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-rt" target="sys-kn">
+        <mxCell id="sys-e56" edge="1" parent="1" source="sys-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sys-kn" value="recall / remember">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1075" y="824" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e57" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-intg" target="sys-sbx">
+        <mxCell id="sys-e57" edge="1" parent="1" source="sys-intg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sys-sbx" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e58" value="check" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.883;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-intg" target="sys-fga">
+        <mxCell id="sys-e58" edge="1" parent="1" source="sys-intg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.883;entryY=0;entryDx=0;entryDy=0;" target="sys-fga" value="check">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e59" value="creds" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.55;exitY=1;exitDx=0;exitDy=0;entryX=0.103;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-intg" target="sys-bao">
+        <mxCell id="sys-e59" edge="1" parent="1" source="sys-intg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=0.55;exitY=1;exitDx=0;exitDy=0;entryX=0.103;entryY=0;entryDx=0;entryDy=0;" target="sys-bao" value="creds">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e60" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-intg" target="sys-egress">
+        <mxCell id="sys-e60" edge="1" parent="1" source="sys-intg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" target="sys-egress" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1609" y="924" />
@@ -421,10 +486,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e61" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.475;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-sbx" target="sys-egress">
+        <mxCell id="sys-e61" edge="1" parent="1" source="sys-sbx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.475;entryY=0;entryDx=0;entryDy=0;" target="sys-egress" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e62" value="egress" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-egress" target="sys-meet">
+        <mxCell id="sys-e62" edge="1" parent="1" source="sys-egress" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="sys-meet" value="egress">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1952" y="1034" />
@@ -432,7 +497,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e63" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-egress" target="sys-saas">
+        <mxCell id="sys-e63" edge="1" parent="1" source="sys-egress" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="sys-saas" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1952" y="1034" />
@@ -441,153 +506,87 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e64" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-mgw" target="sys-llm">
+        <mxCell id="sys-e64" edge="1" parent="1" source="sys-mgw" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sys-llm" value="HTTPS">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1265" y="202" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lrt" value="REAL-EMPLOYEE CAPABILITIES  ·  meetings · live voice · own laptop · own accounts   (detail: pages 5 – 6)" style="swimlane;html=1;whiteSpace=wrap;startSize=30;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#0E7490;swimlaneFillColor=#ECFEFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-cell">
-          <mxGeometry x="20" y="714" width="1920" height="190" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-mtg" value="Meeting Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="20" y="45" width="270" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-mtg_b" value="joins Zoom · Teams · Google Meet&lt;br&gt;bot per meeting · transcript · notes&lt;br&gt;DB: meeting_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mtg">
-          <mxGeometry x="8" y="31" width="254" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-mtg_p65" value="Temporal-supervised" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mtg">
-          <mxGeometry x="8" y="88" width="124" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-mtg_p66" value="disclosed" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-mtg">
-          <mxGeometry x="138" y="88" width="67" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-voice" value="Realtime Voice" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="330" y="45" width="270" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-voice_b" value="Pipecat: VAD → STT → LLM → TTS&lt;br&gt;answers when addressed · barge-in&lt;br&gt;≈ 1.2 s voice-to-voice" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-voice">
-          <mxGeometry x="8" y="31" width="254" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-voice_p67" value="streaming" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-voice">
-          <mxGeometry x="8" y="88" width="67" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-voice_p68" value="fallback: chat" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-voice">
-          <mxGeometry x="81" y="88" width="95" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-wsm" value="Workspace Manager" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="640" y="45" width="270" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-wsm_b" value="own laptop per employee (microVM)&lt;br&gt;desktop · browser · IDE · shell&lt;br&gt;DB: workspace_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-wsm">
-          <mxGeometry x="8" y="31" width="254" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-wsm_p69" value="Kata VM" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-wsm">
-          <mxGeometry x="8" y="88" width="55" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-wsm_p70" value="snapshots" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-wsm">
-          <mxGeometry x="69" y="88" width="67" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-idn" value="Identity &amp;amp; Accounts" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="960" y="45" width="270" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-idn_b" value="email · calendar · chat · git accounts&lt;br&gt;SCIM / admin APIs · lifecycle&lt;br&gt;DB: identity_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-idn">
-          <mxGeometry x="8" y="31" width="254" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-idn_p71" value="auto de-provision" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-idn">
-          <mxGeometry x="8" y="88" width="112" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-gpu" value="GPU Inference Pool" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="1320" y="45" width="270" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-gpu_b" value="faster-whisper STT · Kokoro TTS&lt;br&gt;pyannote diarization · vLLM" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-gpu">
-          <mxGeometry x="8" y="31" width="254" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-gpu_p72" value="autoscaled" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-gpu">
-          <mxGeometry x="8" y="88" width="73" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-cu" value="Evaluation Service" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-lrt">
-          <mxGeometry x="1630" y="45" width="230" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-cu_b" value="golden tasks · shadow runs&lt;br&gt;gates every brain promotion&lt;br&gt;DB: eval_db" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-cu">
-          <mxGeometry x="8" y="31" width="214" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-cu_p73" value="release gate" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#ECFEFF;strokeColor=#0E7490;fontColor=#0E7490;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-cu">
-          <mxGeometry x="8" y="88" width="84" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-e74" value="audio" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-mtg" target="sys-voice">
+        <mxCell id="sys-e74" edge="1" parent="1" source="sys-mtg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;exitX=1;exitY=0.45;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;" target="sys-voice" value="audio">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e75" value="raw files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.373;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-kn" target="sys-s3">
+        <mxCell id="sys-e75" edge="1" parent="1" source="sys-kn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.373;entryY=0;entryDx=0;entryDy=0;" target="sys-s3" value="raw files">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e76" value="SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-kn" target="sys-pgkn">
+        <mxCell id="sys-e76" edge="1" parent="1" source="sys-kn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="sys-pgkn" value="SQL">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e77" value="SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-temporal" target="sys-pgtmp">
+        <mxCell id="sys-e77" edge="1" parent="1" source="sys-temporal" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-pgtmp" value="SQL">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e78" value="outbox relay" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.789;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-task" target="sys-nats">
+        <mxCell id="sys-e78" edge="1" parent="1" source="sys-task" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.789;entryY=0;entryDx=0;entryDy=0;" target="sys-nats" value="outbox relay">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e79" value="*.&amp;gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.2;exitY=0;exitDx=0;exitDy=0;entryX=0.43;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-nats" target="sys-aud">
+        <mxCell id="sys-e79" edge="1" parent="1" source="sys-nats" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.2;exitY=0;exitDx=0;exitDy=0;entryX=0.43;entryY=1;entryDx=0;entryDy=0;" target="sys-aud" value="*.&amp;gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e80" value="usage.&amp;gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.97;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-nats" target="sys-use">
+        <mxCell id="sys-e80" edge="1" parent="1" source="sys-nats" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;exitX=0.97;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sys-use" value="usage.&amp;gt;">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="496" y="824" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-obs" value="OBSERVABILITY  ·  shared" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#BE123C;swimlaneFillColor=#FFF1F2;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="2010" y="440" width="390" height="560" as="geometry" />
+        <mxCell id="sys-obs" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#BE123C;swimlaneFillColor=#FFF1F2;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="OBSERVABILITY  ·  shared" vertex="1">
+          <mxGeometry height="560" width="390" x="2010" y="440" as="geometry" />
         </mxCell>
-        <mxCell id="sys-otel" value="OpenTelemetry Collector" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="20" y="50" width="350" height="90" as="geometry" />
+        <mxCell id="sys-otel" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="OpenTelemetry Collector" vertex="1">
+          <mxGeometry height="90" width="350" x="20" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="sys-otel_b" value="OTLP from every service&lt;br&gt;traceparent via gRPC · events · Temporal headers" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-otel">
-          <mxGeometry x="8" y="31" width="334" height="54" as="geometry" />
+        <mxCell id="sys-otel_b" parent="sys-otel" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="OTLP from every service&lt;br&gt;traceparent via gRPC · events · Temporal headers" vertex="1">
+          <mxGeometry height="54" width="334" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-prom" value="Prometheus" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="20" y="170" width="170" height="76" as="geometry" />
+        <mxCell id="sys-prom" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Prometheus" vertex="1">
+          <mxGeometry height="76" width="170" x="20" y="170" as="geometry" />
         </mxCell>
-        <mxCell id="sys-prom_b" value="metrics · SLO burn alerts" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-prom">
-          <mxGeometry x="8" y="31" width="154" height="40" as="geometry" />
+        <mxCell id="sys-prom_b" parent="sys-prom" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="metrics · SLO burn alerts" vertex="1">
+          <mxGeometry height="40" width="154" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-loki" value="Loki" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="200" y="170" width="170" height="76" as="geometry" />
+        <mxCell id="sys-loki" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Loki" vertex="1">
+          <mxGeometry height="76" width="170" x="200" y="170" as="geometry" />
         </mxCell>
-        <mxCell id="sys-loki_b" value="logs" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-loki">
-          <mxGeometry x="8" y="31" width="154" height="40" as="geometry" />
+        <mxCell id="sys-loki_b" parent="sys-loki" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="logs" vertex="1">
+          <mxGeometry height="40" width="154" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-tempo" value="Tempo" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="20" y="270" width="170" height="76" as="geometry" />
+        <mxCell id="sys-tempo" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Tempo" vertex="1">
+          <mxGeometry height="76" width="170" x="20" y="270" as="geometry" />
         </mxCell>
-        <mxCell id="sys-tempo_b" value="traces" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-tempo">
-          <mxGeometry x="8" y="31" width="154" height="40" as="geometry" />
+        <mxCell id="sys-tempo_b" parent="sys-tempo" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="traces" vertex="1">
+          <mxGeometry height="40" width="154" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-lf" value="Langfuse" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="200" y="270" width="170" height="76" as="geometry" />
+        <mxCell id="sys-lf" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Langfuse" vertex="1">
+          <mxGeometry height="76" width="170" x="200" y="270" as="geometry" />
         </mxCell>
-        <mxCell id="sys-lf_b" value="LLM traces · evals" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-lf">
-          <mxGeometry x="8" y="31" width="154" height="40" as="geometry" />
+        <mxCell id="sys-lf_b" parent="sys-lf" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="LLM traces · evals" vertex="1">
+          <mxGeometry height="40" width="154" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-graf" value="Grafana" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="sys-obs">
-          <mxGeometry x="20" y="370" width="350" height="76" as="geometry" />
+        <mxCell id="sys-graf" parent="sys-obs" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#BE123C;swimlaneFillColor=#FFFFFF;strokeColor=#BE123C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="Grafana" vertex="1">
+          <mxGeometry height="76" width="350" x="20" y="370" as="geometry" />
         </mxCell>
-        <mxCell id="sys-graf_b" value="dashboards · alerts → runbooks" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="sys-graf">
-          <mxGeometry x="8" y="31" width="334" height="40" as="geometry" />
+        <mxCell id="sys-graf_b" parent="sys-graf" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" value="dashboards · alerts → runbooks" vertex="1">
+          <mxGeometry height="40" width="334" x="8" y="31" as="geometry" />
         </mxCell>
-        <mxCell id="sys-obsn" value="&lt;b&gt;Domain signals&lt;/b&gt;: open runs · runs waiting for a human · outbox lag · DLQ depth · cost per tenant per hour" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-obs">
-          <mxGeometry x="20" y="460" width="350" height="80" as="geometry" />
+        <mxCell id="sys-obsn" parent="sys-obs" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="&lt;b&gt;Domain signals&lt;/b&gt;: open runs · runs waiting for a human · outbox lag · DLQ depth · cost per tenant per hour" vertex="1">
+          <mxGeometry height="80" width="350" x="20" y="460" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e81" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-otel" target="sys-prom">
+        <mxCell id="sys-e81" edge="1" parent="1" source="sys-otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-prom" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e82" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-otel" target="sys-loki">
+        <mxCell id="sys-e82" edge="1" parent="1" source="sys-otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="sys-loki" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="sys-e83" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-otel" target="sys-tempo">
+        <mxCell id="sys-e83" edge="1" parent="1" source="sys-otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sys-tempo" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="2020" y="535" />
@@ -595,7 +594,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-e84" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sys-otel" target="sys-lf">
+        <mxCell id="sys-e84" edge="1" parent="1" source="sys-otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="sys-lf" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="2392" y="535" />
@@ -603,92 +602,98 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-leg" value="LEGEND" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#475569;swimlaneFillColor=#F8FAFC;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="2010" y="1020" width="390" height="395" as="geometry" />
+        <mxCell id="sys-leg" parent="1" style="swimlane;html=1;whiteSpace=wrap;startSize=32;rounded=1;absoluteArcSize=1;arcSize=16;fillColor=#475569;swimlaneFillColor=#F8FAFC;strokeColor=#475569;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=13;align=left;spacingLeft=14;spacingRight=14;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" value="LEGEND" vertex="1">
+          <mxGeometry height="425" width="390" x="2010" y="1020" as="geometry" />
         </mxCell>
-        <mxCell id="sys-l85" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" edge="1" parent="1">
+        <mxCell id="sys-lgt0" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="sync gRPC / REST (deadline-bound)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="43" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgt1" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="async event (CloudEvents · JetStream)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="73" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgt2" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="durable workflow (Temporal)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="103" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgt3" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="data access (SQL / S3)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="133" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgt4" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="outbound to external systems" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="163" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgt5" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="config / cache / telemetry" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="193" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs0" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#1D4ED8;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="242" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx0" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="module of core-python (one process, port 7001)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs1" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#047857;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="271" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx1" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="platform component" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="269" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs2" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#1E3A8A;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx2" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="workflow engine / runtime" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="298" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs3" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#6D28D9;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="329" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx3" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="global control plane" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="327" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs4" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#64748B;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="358" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx4" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="external system" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="356" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgs5" parent="sys-leg" style="rounded=1;arcSize=30;fillColor=#9A3412;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="20" width="70" x="20" y="387" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-lgx5" parent="sys-leg" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" value="module of core-rust (one binary, port 7002)" vertex="1">
+          <mxGeometry height="24" width="270" x="105" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="sys-l85" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#334155;strokeWidth=1.6;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1075" as="sourcePoint" />
             <mxPoint x="2100" y="1075" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lgt0" value="sync gRPC / REST (deadline-bound)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="43" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-l86" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;" edge="1" parent="1">
+        <mxCell id="sys-l86" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#7C3AED;strokeWidth=1.8;dashed=1;dashPattern=6 4;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1105" as="sourcePoint" />
             <mxPoint x="2100" y="1105" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lgt1" value="async event (CloudEvents · JetStream)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="73" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-l87" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;" edge="1" parent="1">
+        <mxCell id="sys-l87" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1135" as="sourcePoint" />
             <mxPoint x="2100" y="1135" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lgt2" value="durable workflow (Temporal)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="103" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-l88" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;" edge="1" parent="1">
+        <mxCell id="sys-l88" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#B45309;strokeWidth=1.8;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1165" as="sourcePoint" />
             <mxPoint x="2100" y="1165" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lgt3" value="data access (SQL / S3)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="133" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-l89" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;" edge="1" parent="1">
+        <mxCell id="sys-l89" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#EA580C;strokeWidth=1.8;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1195" as="sourcePoint" />
             <mxPoint x="2100" y="1195" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="sys-lgt4" value="outbound to external systems" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="163" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-l90" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;" edge="1" parent="1">
+        <mxCell id="sys-l90" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#94A3B8;strokeWidth=1.3;dashed=1;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2030" y="1225" as="sourcePoint" />
             <mxPoint x="2100" y="1225" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="sys-lgt5" value="config / cache / telemetry" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="193" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgs0" value="" style="rounded=1;arcSize=30;fillColor=#1D4ED8;strokeColor=none;" vertex="1" parent="sys-leg">
-          <mxGeometry x="20" y="242" width="70" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgx0" value="domain service" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="240" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgs1" value="" style="rounded=1;arcSize=30;fillColor=#047857;strokeColor=none;" vertex="1" parent="sys-leg">
-          <mxGeometry x="20" y="271" width="70" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgx1" value="platform component" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="269" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgs2" value="" style="rounded=1;arcSize=30;fillColor=#1E3A8A;strokeColor=none;" vertex="1" parent="sys-leg">
-          <mxGeometry x="20" y="300" width="70" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgx2" value="workflow engine / runtime" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="298" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgs3" value="" style="rounded=1;arcSize=30;fillColor=#6D28D9;strokeColor=none;" vertex="1" parent="sys-leg">
-          <mxGeometry x="20" y="329" width="70" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgx3" value="global control plane" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="327" width="270" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgs4" value="" style="rounded=1;arcSize=30;fillColor=#64748B;strokeColor=none;" vertex="1" parent="sys-leg">
-          <mxGeometry x="20" y="358" width="70" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="sys-lgx4" value="external system" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=#0F172A;align=left;" vertex="1" parent="sys-leg">
-          <mxGeometry x="105" y="356" width="270" height="24" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
@@ -1365,7 +1370,7 @@
         <mxCell id="harn-i4" value="Tool manifest" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="harn-st0">
           <mxGeometry x="15" y="460" width="365" height="105" as="geometry" />
         </mxCell>
-        <mxCell id="harn-i4_b" value="only tools in the pinned version's grants&lt;br&gt;&amp;gt; 30 tools → retrieve the relevant subset&lt;br&gt;JSON Schemas + risk tier per tool" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="harn-i4">
+        <mxCell id="harn-i4_b" value="only tools in the pinned version&#39;s grants&lt;br&gt;&amp;gt; 30 tools → retrieve the relevant subset&lt;br&gt;JSON Schemas + risk tier per tool" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="harn-i4">
           <mxGeometry x="8" y="31" width="349" height="69" as="geometry" />
         </mxCell>
         <mxCell id="harn-i5" value="Token budgeter &amp;amp; compaction" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#0E7490;swimlaneFillColor=#FFFFFF;strokeColor=#0E7490;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="harn-st0">
@@ -1722,7 +1727,7 @@
         <mxCell id="tool-f1" value="on failure / retry" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B91C1C;swimlaneFillColor=#FFFFFF;strokeColor=#B91C1C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="288" y="300" width="245" height="92" as="geometry" />
         </mxCell>
-        <mxCell id="tool-f1_b" value="'not permitted' observation&lt;br&gt;audit event · never retried" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="tool-f1">
+        <mxCell id="tool-f1_b" value="&#39;not permitted&#39; observation&lt;br&gt;audit event · never retried" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="tool-f1">
           <mxGeometry x="8" y="31" width="229" height="56" as="geometry" />
         </mxCell>
         <mxCell id="tool-e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#DC2626;strokeWidth=1.8;dashed=1;dashPattern=5 3;" edge="1" parent="1" source="tool-k1" target="tool-f1">
@@ -1806,7 +1811,7 @@
         <mxCell id="tool-f5" value="on failure / retry" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B91C1C;swimlaneFillColor=#FFFFFF;strokeColor=#B91C1C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1360" y="300" width="245" height="92" as="geometry" />
         </mxCell>
-        <mxCell id="tool-f5_b" value="'tool unavailable' observation&lt;br&gt;model may re-plan another path" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="tool-f5">
+        <mxCell id="tool-f5_b" value="&#39;tool unavailable&#39; observation&lt;br&gt;model may re-plan another path" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="tool-f5">
           <mxGeometry x="8" y="31" width="229" height="56" as="geometry" />
         </mxCell>
         <mxCell id="tool-e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#DC2626;strokeWidth=1.8;dashed=1;dashPattern=5 3;" edge="1" parent="1" source="tool-k5" target="tool-f5">
@@ -2026,7 +2031,7 @@
         <mxCell id="tool-cb1" value="&lt;b style=&quot;font-size:12px&quot;&gt;CLOSED&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;calls flow · errors counted&lt;/span&gt;" style="rounded=1;arcSize=50;html=1;whiteSpace=wrap;fillColor=#F0FDF4;strokeColor=#15803D;strokeWidth=2;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="tool-cb">
           <mxGeometry x="30" y="80" width="220" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="tool-cb2" value="&lt;b style=&quot;font-size:12px&quot;&gt;OPEN&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;fast-fail · 'tool unavailable'&lt;/span&gt;" style="rounded=1;arcSize=50;html=1;whiteSpace=wrap;fillColor=#FEF2F2;strokeColor=#B91C1C;strokeWidth=2;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="tool-cb">
+        <mxCell id="tool-cb2" value="&lt;b style=&quot;font-size:12px&quot;&gt;OPEN&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;fast-fail · &#39;tool unavailable&#39;&lt;/span&gt;" style="rounded=1;arcSize=50;html=1;whiteSpace=wrap;fillColor=#FEF2F2;strokeColor=#B91C1C;strokeWidth=2;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="tool-cb">
           <mxGeometry x="370" y="80" width="220" height="70" as="geometry" />
         </mxCell>
         <mxCell id="tool-cb3" value="&lt;b style=&quot;font-size:12px&quot;&gt;HALF-OPEN&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px&quot;&gt;1 probe call allowed&lt;/span&gt;" style="rounded=1;arcSize=50;html=1;whiteSpace=wrap;fillColor=#FEFCE8;strokeColor=#A16207;strokeWidth=2;fontColor=#1E293B;shadow=1;fontFamily=Helvetica;" vertex="1" parent="tool-cb">
@@ -2224,7 +2229,7 @@
         <mxCell id="meet-resp" value="Response engine" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="meet-pipe">
           <mxGeometry x="1210" y="260" width="410" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="meet-resp_b" value="fast model via Model Gateway (streaming)&lt;br&gt;context: rolling summary + last 2 min verbatim&lt;br&gt;+ agenda + employee knowledge (RAG)&lt;br&gt;long work → “I'll follow up” → creates a task" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="meet-resp">
+        <mxCell id="meet-resp_b" value="fast model via Model Gateway (streaming)&lt;br&gt;context: rolling summary + last 2 min verbatim&lt;br&gt;+ agenda + employee knowledge (RAG)&lt;br&gt;long work → “I&#39;ll follow up” → creates a task" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="meet-resp">
           <mxGeometry x="8" y="31" width="394" height="94" as="geometry" />
         </mxCell>
         <mxCell id="meet-resp_p15" value="first token &amp;lt; 400 ms" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#EEF2FF;strokeColor=#1E3A8A;fontColor=#1E3A8A;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="meet-resp">
@@ -2323,7 +2328,7 @@
         <mxCell id="meet-mi3" value="Actions" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#15803D;swimlaneFillColor=#FFFFFF;strokeColor=#15803D;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="meet-intel">
           <mxGeometry x="20" y="295" width="650" height="115" as="geometry" />
         </mxCell>
-        <mxCell id="meet-mi3_b" value="own action items → tasks for itself (CreateTask)&lt;br&gt;others' items → follow-up email / chat to the owner&lt;br&gt;notes → attendees · CRM / Jira updates through tools (R1 / R2 policy)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="meet-mi3">
+        <mxCell id="meet-mi3_b" value="own action items → tasks for itself (CreateTask)&lt;br&gt;others&#39; items → follow-up email / chat to the owner&lt;br&gt;notes → attendees · CRM / Jira updates through tools (R1 / R2 policy)" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="meet-mi3">
           <mxGeometry x="8" y="31" width="634" height="79" as="geometry" />
         </mxCell>
         <mxCell id="meet-mi4" value="Meeting memory" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#15803D;swimlaneFillColor=#FFFFFF;strokeColor=#15803D;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="meet-intel">
@@ -2947,7 +2952,7 @@
         <mxCell id="data-e14" value="poison" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#DC2626;strokeWidth=1.8;dashed=1;dashPattern=5 3;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="data-o4" target="data-o5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="data-rls" value="-- every tenant table&#10;ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;&#10;ALTER TABLE tasks FORCE  ROW LEVEL SECURITY;&#10;CREATE POLICY tenant_isolation ON tasks&#10;  USING (tenant_id =&#10;    current_setting('app.tenant_id')::uuid)&#10;  WITH CHECK (tenant_id =&#10;    current_setting('app.tenant_id')::uuid);&#10;&#10;-- app role: NO superuser, NO BYPASSRLS&#10;-- unset tenant → error, never a leak" style="rounded=1;absoluteArcSize=1;arcSize=12;html=0;whiteSpace=wrap;fillColor=#0F172A;strokeColor=#0F172A;fontColor=#E2E8F0;fontFamily=Courier New;fontSize=11;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;shadow=1;" vertex="1" parent="1">
+        <mxCell id="data-rls" value="-- every tenant table&#xa;ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;&#xa;ALTER TABLE tasks FORCE  ROW LEVEL SECURITY;&#xa;CREATE POLICY tenant_isolation ON tasks&#xa;  USING (tenant_id =&#xa;    current_setting(&#39;app.tenant_id&#39;)::uuid)&#xa;  WITH CHECK (tenant_id =&#xa;    current_setting(&#39;app.tenant_id&#39;)::uuid);&#xa;&#xa;-- app role: NO superuser, NO BYPASSRLS&#xa;-- unset tenant → error, never a leak" style="rounded=1;absoluteArcSize=1;arcSize=12;html=0;whiteSpace=wrap;fillColor=#0F172A;strokeColor=#0F172A;fontColor=#E2E8F0;fontFamily=Courier New;fontSize=11;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="1740" y="690" width="460" height="220" as="geometry" />
         </mxCell>
       </root>
@@ -3048,7 +3053,7 @@
         <mxCell id="rel-fm2" value="Tool / SaaS down" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B91C1C;swimlaneFillColor=#FFFFFF;strokeColor=#B91C1C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="rel-fm">
           <mxGeometry x="764" y="50" width="355" height="205" as="geometry" />
         </mxCell>
-        <mxCell id="rel-fm2_b" value="&lt;b&gt;Impact&lt;/b&gt; · that tool only&lt;br&gt;&lt;br&gt;&lt;b&gt;Contained by&lt;/b&gt; · per-connector circuit breaker&lt;br&gt;&lt;br&gt;&lt;b&gt;Recovery&lt;/b&gt; · 'unavailable' observation · model re-plans" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="rel-fm2">
+        <mxCell id="rel-fm2_b" value="&lt;b&gt;Impact&lt;/b&gt; · that tool only&lt;br&gt;&lt;br&gt;&lt;b&gt;Contained by&lt;/b&gt; · per-connector circuit breaker&lt;br&gt;&lt;br&gt;&lt;b&gt;Recovery&lt;/b&gt; · &#39;unavailable&#39; observation · model re-plans" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="rel-fm2">
           <mxGeometry x="8" y="31" width="339" height="149" as="geometry" />
         </mxCell>
         <mxCell id="rel-fm2_p9" value="auto" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FEF2F2;strokeColor=#B91C1C;fontColor=#B91C1C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="rel-fm2">
@@ -3309,13 +3314,13 @@
         <mxCell id="dep-ns1" value="ns: app" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1D4ED8;swimlaneFillColor=#FFFFFF;strokeColor=#1D4ED8;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="dep-c1">
           <mxGeometry x="20" y="111" width="440" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="dep-ns1_b" value="Task · Workforce · Channel · Integration · Model GW · Knowledge · …" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-ns1">
+        <mxCell id="dep-ns1_b" value="core-python · core-rust (every capability as a module, ADR-0017) · web-app" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-ns1">
           <mxGeometry x="8" y="31" width="424" height="24" as="geometry" />
         </mxCell>
         <mxCell id="dep-ns2" value="ns: runtime" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#1E3A8A;swimlaneFillColor=#FFFFFF;strokeColor=#1E3A8A;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="dep-c1">
           <mxGeometry x="20" y="177" width="440" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="dep-ns2_b" value="Agent Runtime workers per task queue · KEDA on Temporal backlog" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-ns2">
+        <mxCell id="dep-ns2_b" value="inside core-python today · split per task queue (KEDA on Temporal backlog) when it must scale alone" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-ns2">
           <mxGeometry x="8" y="31" width="424" height="24" as="geometry" />
         </mxCell>
         <mxCell id="dep-ns3" value="ns: sandbox" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B91C1C;swimlaneFillColor=#FFFFFF;strokeColor=#B91C1C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="dep-c1">
@@ -3423,7 +3428,7 @@
         <mxCell id="dep-st0" value="Git" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#6D28D9;swimlaneFillColor=#FFFFFF;strokeColor=#6D28D9;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="dep-pipe">
           <mxGeometry x="30" y="46" width="300" height="74" as="geometry" />
         </mxCell>
-        <mxCell id="dep-st0_b" value="/microservices · /contracts · /platform · /cells" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-st0">
+        <mxCell id="dep-st0_b" value="/microservices/core-python · core-rust · web-app · /platform · /cells" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=10;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="dep-st0">
           <mxGeometry x="8" y="31" width="284" height="38" as="geometry" />
         </mxCell>
         <mxCell id="dep-st1" value="CI" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#047857;swimlaneFillColor=#FFFFFF;strokeColor=#047857;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="dep-pipe">
@@ -3599,7 +3604,7 @@
         <mxCell id="brain-ms3" value="Preferences &amp;amp; rules" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B45309;swimlaneFillColor=#FFFFFF;strokeColor=#B45309;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="brain-ltm">
           <mxGeometry x="759" y="40" width="236" height="275" as="geometry" />
         </mxCell>
-        <mxCell id="brain-ms3_b" value="manager corrections → rules&lt;br&gt;people's preferences&lt;br&gt;always recalled when in scope&lt;br&gt;approved before active" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="brain-ms3">
+        <mxCell id="brain-ms3_b" value="manager corrections → rules&lt;br&gt;people&#39;s preferences&lt;br&gt;always recalled when in scope&lt;br&gt;approved before active" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="brain-ms3">
           <mxGeometry x="8" y="31" width="220" height="219" as="geometry" />
         </mxCell>
         <mxCell id="brain-ms3_p14" value="“what do they want?”" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FFFBEB;strokeColor=#B45309;fontColor=#B45309;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="brain-ms3">
@@ -3894,13 +3899,13 @@
         <mxCell id="bdm-api_b" value="&lt;b&gt;Recall&lt;/b&gt;(employee, query, step_type, entities, as_of, token_budget) → MemoryBlock{items, citations}&lt;br&gt;&lt;b&gt;Remember&lt;/b&gt;(source_event) → accepted  ·  async, idempotent on source id&lt;br&gt;&lt;b&gt;Feedback&lt;/b&gt;(run_id, kind, payload, author)&lt;br&gt;&lt;b&gt;Forget&lt;/b&gt;(subject_entity | memory_id, reason) → erasure workflow id&lt;br&gt;&lt;b&gt;GetBrain&lt;/b&gt;(employee, as_of) → version + stats&lt;br&gt;&lt;b&gt;ProposeChange&lt;/b&gt; / &lt;b&gt;ApproveChange&lt;/b&gt; / &lt;b&gt;Rollback&lt;/b&gt;(version)&lt;br&gt;&lt;b&gt;Inspect&lt;/b&gt;(employee, filter) → memories  ·  Brain Inspector UI: humans see and correct what it knows" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="bdm-api">
           <mxGeometry x="8" y="31" width="814" height="194" as="geometry" />
         </mxCell>
-        <mxCell id="bdm-rank" value="score = RRF(vector, fulltext, graph, episodic, skill)&#10;      × (0.5 + 0.5 · importance)&#10;      × confidence × trust_w&#10;      × exp(−Δt / τ_kind)&#10;&#10;τ_kind : episodic 30 d · reflection 90 d · semantic ∞ (validity-bounded)&#10;trust_w: human-verified 1.0 · system 0.9 · observed 0.7 · external 0.4&#10;pinned : identity core + in-scope policy rules (always included)" style="rounded=1;absoluteArcSize=1;arcSize=12;html=0;whiteSpace=wrap;fillColor=#0F172A;strokeColor=#0F172A;fontColor=#E2E8F0;fontFamily=Courier New;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;shadow=1;" vertex="1" parent="1">
+        <mxCell id="bdm-rank" value="score = RRF(vector, fulltext, graph, episodic, skill)&#xa;      × (0.5 + 0.5 · importance)&#xa;      × confidence × trust_w&#xa;      × exp(−Δt / τ_kind)&#xa;&#xa;τ_kind : episodic 30 d · reflection 90 d · semantic ∞ (validity-bounded)&#xa;trust_w: human-verified 1.0 · system 0.9 · observed 0.7 · external 0.4&#xa;pinned : identity core + in-scope policy rules (always included)" style="rounded=1;absoluteArcSize=1;arcSize=12;html=0;whiteSpace=wrap;fillColor=#0F172A;strokeColor=#0F172A;fontColor=#E2E8F0;fontFamily=Courier New;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="1550" y="350" width="830" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="bdm-dph" value="&lt;b style=&quot;font-size:14px&quot;&gt;Deployables: same codebase, separate failure domains&lt;/b&gt;" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#0F172A;align=left;" vertex="1" parent="1">
+        <mxCell id="bdm-dph" value="&lt;b style=&quot;font-size:14px&quot;&gt;Parts: one core-python process today (ADR-0017); separate deployables when the brain must scale alone&lt;/b&gt;" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#0F172A;align=left;" vertex="1" parent="1">
           <mxGeometry x="1550" y="565" width="830" height="28" as="geometry" />
         </mxCell>
-        <mxCell id="bdm-dep_0_0" value="Deployable" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#0E7490;strokeColor=#0E7490;fontColor=#FFFFFF;fontStyle=1;fontSize=10;align=left;spacingLeft=8;fontFamily=Helvetica;" vertex="1" parent="1">
+        <mxCell id="bdm-dep_0_0" value="Part" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#0E7490;strokeColor=#0E7490;fontColor=#FFFFFF;fontStyle=1;fontSize=10;align=left;spacingLeft=8;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1550" y="598" width="170" height="30" as="geometry" />
         </mxCell>
         <mxCell id="bdm-dep_0_1" value="Runs" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#0E7490;strokeColor=#0E7490;fontColor=#FFFFFF;fontStyle=1;fontSize=10;align=left;spacingLeft=8;fontFamily=Helvetica;" vertex="1" parent="1">
@@ -3960,7 +3965,7 @@
         <mxCell id="bdm-dep_4_3" value="daily" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#ECFEFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="2170" y="736" width="210" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="bdm-dep_5_0" value="eval-service" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontStyle=1;fontFamily=Helvetica;" vertex="1" parent="1">
+        <mxCell id="bdm-dep_5_0" value="evaluation" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontStyle=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1550" y="772" width="170" height="36" as="geometry" />
         </mxCell>
         <mxCell id="bdm-dep_5_1" value="offline evals · shadow comparisons" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="1">
@@ -4069,7 +4074,7 @@
         <mxCell id="evo-sgt_1_0" value="Correction" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontStyle=1;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
           <mxGeometry x="20" y="78" width="190" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="evo-sgt_1_1" value="manager edit / “don't do X”" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
+        <mxCell id="evo-sgt_1_1" value="manager edit / “don&#39;t do X”" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
           <mxGeometry x="210" y="78" width="290" height="36" as="geometry" />
         </mxCell>
         <mxCell id="evo-sgt_1_2" value="highest" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
@@ -4117,7 +4122,7 @@
         <mxCell id="evo-sgt_5_0" value="Draft edited" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontStyle=1;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
           <mxGeometry x="20" y="222" width="190" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="evo-sgt_5_1" value="diff of the human's edit" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
+        <mxCell id="evo-sgt_5_1" value="diff of the human&#39;s edit" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
           <mxGeometry x="210" y="222" width="290" height="36" as="geometry" />
         </mxCell>
         <mxCell id="evo-sgt_5_2" value="medium" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#1E293B;fontSize=10;align=left;spacingLeft=8;spacingRight=4;fontFamily=Helvetica;" vertex="1" parent="evo-sig">
@@ -4177,7 +4182,7 @@
         <mxCell id="evo-pr2" value="3 · Offline eval" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#B91C1C;swimlaneFillColor=#FFFFFF;strokeColor=#B91C1C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="evo-prom">
           <mxGeometry x="686" y="50" width="315" height="230" as="geometry" />
         </mxCell>
-        <mxCell id="evo-pr2_b" value="golden tasks for the role&lt;br&gt;+ this employee's regression set&lt;br&gt;+ safety suite (injection · policy)&lt;br&gt;must not regress any metric" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="evo-pr2">
+        <mxCell id="evo-pr2_b" value="golden tasks for the role&lt;br&gt;+ this employee&#39;s regression set&lt;br&gt;+ safety suite (injection · policy)&lt;br&gt;must not regress any metric" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="evo-pr2">
           <mxGeometry x="8" y="31" width="299" height="174" as="geometry" />
         </mxCell>
         <mxCell id="evo-pr2_p8" value="gate" style="rounded=1;arcSize=50;html=1;whiteSpace=nowrap;fillColor=#FEF2F2;strokeColor=#B91C1C;fontColor=#B91C1C;fontSize=9;fontStyle=1;spacing=0;fontFamily=Helvetica;" vertex="1" parent="evo-pr2">
@@ -4207,7 +4212,7 @@
         <mxCell id="evo-pr5" value="6 · Canary" style="swimlane;html=1;whiteSpace=wrap;startSize=26;rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#C2410C;swimlaneFillColor=#FFFFFF;strokeColor=#C2410C;strokeWidth=1.5;fontColor=#FFFFFF;fontStyle=1;fontSize=12;shadow=1;collapsible=0;container=1;swimlaneLine=0;fontFamily=Helvetica;" vertex="1" parent="evo-prom">
           <mxGeometry x="1685" y="50" width="315" height="230" as="geometry" />
         </mxCell>
-        <mxCell id="evo-pr5_b" value="10 % of this employee's tasks&lt;br&gt;auto-rollback on quality, cost&lt;br&gt;or any incident" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="evo-pr5">
+        <mxCell id="evo-pr5_b" value="10 % of this employee&#39;s tasks&lt;br&gt;auto-rollback on quality, cost&lt;br&gt;or any incident" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=11;fontColor=#1E293B;spacing=0;fontFamily=Helvetica;" vertex="1" parent="evo-pr5">
           <mxGeometry x="8" y="31" width="299" height="194" as="geometry" />
         </mxCell>
         <mxCell id="evo-e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=14;html=1;fontSize=10;fontColor=#334155;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endSize=7;jettySize=auto;orthogonalLoop=1;fontFamily=Helvetica;strokeColor=#2563EB;strokeWidth=2.6;" edge="1" parent="1" source="evo-pr4" target="evo-pr5">
