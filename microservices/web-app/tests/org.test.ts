@@ -306,3 +306,28 @@ describe("sub-tasks", () => {
         expect(t.calls[0]!.request).toMatchObject({ parentTaskId: STANDUP });
     });
 });
+
+describe("hire approvals show what is approved", () => {
+    it("carries the model, the instructions, the spend limit and the place", () => {
+        const r = org.hireRequest({
+            requestId: "r-1",
+            status: "HIRE_REQUEST_STATUS_PENDING",
+            hire: {
+                employeeId: "intern",
+                name: "Ivy",
+                model: "claude-sonnet",
+                instructions: "Call every lead twice.",
+                maxCostUsd: "2.00",
+                isCoCeo: false,
+                departmentHead: true,
+            },
+        });
+        expect(r).toMatchObject({
+            model: "claude-sonnet",
+            instructions: "Call every lead twice.",
+            max_cost_usd: "2.00",
+            is_co_ceo: false,
+            department_head: true,
+        });
+    });
+});

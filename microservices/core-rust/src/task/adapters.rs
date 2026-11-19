@@ -115,6 +115,20 @@ async fn fetch(conn: &mut PgConnection, task_id: Uuid, lock: bool) -> Result<Tas
     }
 }
 
+/// The task a reused idempotency key already made, or a conflict if the key was used for a
+/// different task.
+fn same_task(task: TaskRow, new: &NewTask) -> Result<TaskRow, TaskError> {
+    if task.employee_id != new.employee_id
+        || task.input != new.input
+        || task.parent_task_id != new.parent_task_id
+    {
+        return Err(TaskError::Conflict(
+            "idempotency key already used for a different task".into(),
+        ));
+    }
+    Ok(task)
+}
+
 impl Tasks {
     pub fn new(db: Database, cell_id: &str) -> Self {
         Self {
@@ -146,6 +160,15 @@ impl Tasks {
     /// same task; reusing a key for a different task is a conflict.
     pub async fn create(&self, tenant: Uuid, new: NewTask) -> Result<TaskRow, TaskError> {
         let mut tx = self.db.tenant_tx(tenant).await?;
+        // A retry finds the task it made before any cap is checked: the 20th sub-task asked
+        // for again is that sub-task, not a 21st.
+        let seen = sqlx::query("SELECT * FROM tasks WHERE idempotency_key = $1")
+            .bind(&new.idempotency_key)
+            .fetch_optional(&mut *tx)
+            .await?;
+        if let Some(r) = seen {
+            return same_task(TaskRow::from_row(&r)?, &new);
+        }
         let task_id = Uuid::now_v7();
         let (root, depth, delegated_by) = match new.parent_task_id {
             None => (task_id, 0, String::new()),
@@ -201,20 +224,40 @@ impl Tasks {
                     .bind(&new.idempotency_key)
                     .fetch_one(&mut *tx)
                     .await?;
-                let task = TaskRow::from_row(&r)?;
-                if task.employee_id != new.employee_id
-                    || task.input != new.input
-                    || task.parent_task_id != new.parent_task_id
-                {
-                    return Err(TaskError::Conflict(
-                        "idempotency key already used for a different task".into(),
-                    ));
-                }
-                task
+                same_task(TaskRow::from_row(&r)?, &new)?
             }
         };
         tx.commit().await?;
         Ok(task)
+    }
+
+    /// Stop everything below a task that ended without finishing its work (failed or
+    /// cancelled): queued tasks end at once, running ones are asked to stop. Tasks created
+    /// after the cancel was asked for are caught here, when the parent's run reports its end.
+    async fn stop_below(
+        &self,
+        conn: &mut PgConnection,
+        task_id: Uuid,
+        reason: &str,
+        by: &str,
+    ) -> Result<(), TaskError> {
+        let below = sqlx::query(
+            "WITH RECURSIVE below AS (
+                 SELECT task_id FROM tasks WHERE parent_task_id = $1
+                 UNION ALL
+                 SELECT t.task_id FROM tasks t JOIN below b ON t.parent_task_id = b.task_id)
+             SELECT * FROM tasks WHERE task_id IN (SELECT task_id FROM below)
+               AND status NOT IN ('completed', 'failed', 'cancelled')
+             ORDER BY depth, created_at FOR UPDATE",
+        )
+        .bind(task_id)
+        .fetch_all(&mut *conn)
+        .await?;
+        for r in &below {
+            self.cancel_one(conn, TaskRow::from_row(r)?, reason, by)
+                .await?;
+        }
+        Ok(())
     }
 
     pub async fn get(&self, tenant: Uuid, task_id: Uuid) -> Result<TaskRow, TaskError> {
@@ -265,22 +308,7 @@ impl Tasks {
         }
         task = self.cancel_one(&mut tx, task, reason, by).await?;
         // Everything handed down from it stops too.
-        let below = sqlx::query(
-            "WITH RECURSIVE below AS (
-                 SELECT task_id FROM tasks WHERE parent_task_id = $1
-                 UNION ALL
-                 SELECT t.task_id FROM tasks t JOIN below b ON t.parent_task_id = b.task_id)
-             SELECT * FROM tasks WHERE task_id IN (SELECT task_id FROM below)
-               AND status NOT IN ('completed', 'failed', 'cancelled')
-             ORDER BY depth, created_at FOR UPDATE",
-        )
-        .bind(task_id)
-        .fetch_all(&mut *tx)
-        .await?;
-        for r in &below {
-            self.cancel_one(&mut tx, TaskRow::from_row(r)?, reason, by)
-                .await?;
-        }
+        self.stop_below(&mut tx, task_id, reason, by).await?;
         tx.commit().await?;
         Ok(task)
     }
@@ -442,6 +470,11 @@ impl Tasks {
             .filter(|_| update.status.is_finished());
         self.set_status(conn, &task, update.status, &update.stop_reason, seq, output)
             .await?;
+        if matches!(update.status, Status::Failed | Status::Cancelled) {
+            let reason = format!("the task above it ended: {}", update.stop_reason);
+            self.stop_below(conn, task_id, &reason, SOURCE_SERVICE)
+                .await?;
+        }
         Ok(())
     }
 }

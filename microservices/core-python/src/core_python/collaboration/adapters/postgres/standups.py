@@ -187,6 +187,22 @@ class Standups:
                 conn, tenant, standup_id, author, "employee", "message", text, key
             )
 
+    async def keep_summary(
+        self, tenant: str, standup_id: str, summary: dict[str, Any]
+    ) -> dict[str, Any]:
+        """The standup's summary: this one if it has none yet, else the one it already has. A
+        retried finish then assigns exactly the next steps the first attempt chose."""
+        async with self.db.tenant_tx(tenant) as conn:
+            cur = await conn.execute(
+                "UPDATE standups SET summary = coalesce(summary, %s) WHERE standup_id = %s"
+                " RETURNING summary",
+                (Jsonb(summary), standup_id),
+            )
+            row = await cur.fetchone()
+            if row is None:
+                raise NotFound(f"no standup {standup_id}")
+            return row["summary"]
+
     async def finish(
         self, tenant: str, standup_id: str, summary: dict[str, Any], text: str, led_by: str
     ) -> None:

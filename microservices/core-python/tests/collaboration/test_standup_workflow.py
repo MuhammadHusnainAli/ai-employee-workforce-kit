@@ -330,3 +330,71 @@ async def test_events_start_a_standup_once_and_steer_it(collab_db: Database) -> 
         assert (await r.store.get(tenant, sid))["status"] == "done"
         runs = [w async for w in r.client.list_workflows(f"WorkflowId = 'standup-{sid}'")]
         assert len(runs) == 1
+
+
+async def test_a_retried_summary_keeps_the_first_one_and_its_tasks(collab_db: Database) -> None:
+    from core_python.collaboration.domain.standup import Member
+    from core_python.collaboration.standup.types import FinishInput, StandupInput
+
+    conversations = Conversations(collab_db, SOURCE)
+    store = Standups(collab_db, SOURCE, conversations)
+    tenant = str(uuid.uuid4())
+    row = await store.start(
+        tenant,
+        uuid.uuid4().hex,
+        department_id="",
+        discussion_s=0,
+        assign_next_steps=True,
+        started_by="maria",
+    )
+    sid = str(row["standup_id"])
+    summaries = iter(
+        [
+            {
+                "where_we_are": "first",
+                "where_we_go": "a",
+                "next_steps": [
+                    {"owner": "sales-head", "action": "Quote Acme"},
+                    {"owner": "marketing", "action": "Ship the deck"},
+                ],
+                "risks": [],
+            },
+            {
+                "where_we_are": "second",
+                "where_we_go": "b",
+                "next_steps": [{"owner": "sales-head", "action": "Something else"}],
+                "risks": [],
+            },
+        ]
+    )
+    provider = FakeProvider([lambda req: json.dumps(next(summaries))], loop=True)
+    created: dict[str, str] = {}
+    failed_once = False
+
+    def create_task(r: tasks.CreateTaskRequest) -> tasks.CreateTaskResponse:
+        nonlocal failed_once
+        k = r.idempotency_key.value
+        if k.endswith(":step:1") and not failed_once:
+            failed_once = True
+            raise RuntimeError("task module unavailable")
+        if k in created and created[k] != r.input:
+            raise RuntimeError("same key, different task: the task module refuses this")
+        created[k] = r.input
+        return tasks.CreateTaskResponse(task=tasks.Task(task_id=f"t-{r.employee_id}"))
+
+    acts = StandupActivities(store, Fake(), Fake({"CreateTask": create_task}), provider)
+    ceo = Member(employee_id="co-ceo", name="C", model="m")
+    members = [Member(employee_id=e, name=e, model="m") for e in ("sales-head", "marketing")]
+    finish = FinishInput(
+        inp=StandupInput(tenant_id=tenant, standup_id=sid, discussion_s=0, assign_next_steps=True),
+        ceo=ceo,
+        members=members,
+        reports=[],
+    )
+    with pytest.raises(RuntimeError):
+        await acts.finish(finish)
+    summary = await acts.finish(finish)  # the activity retried
+    assert summary.where_we_are == "first"
+    assert len(provider.requests) == 1, "the retry asked the model nothing"
+    assert sorted(created) == [f"standup:{sid}:step:0", f"standup:{sid}:step:1"]
+    assert (await store.get(tenant, sid))["summary"]["where_we_are"] == "first"

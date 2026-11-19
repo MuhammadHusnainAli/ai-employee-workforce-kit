@@ -150,3 +150,32 @@ async def test_a_run_that_hands_nothing_down_is_unchanged(client: Client) -> Non
     assert out.state.output == "Nothing to do."
     results = [b for m in out.state.messages for b in m.content if isinstance(b, ToolResultBlock)]
     assert "no handed-down tasks" in str(results[0].content)
+
+
+async def test_a_hand_off_a_person_approved_is_still_waited_for(client: Client) -> None:
+    from agent_harness.types import Message
+
+    from core_python.agent_runtime.workflows.types import ApprovalAnswer
+
+    def careful() -> EmployeeSpec:
+        spec = manager()
+        spec.tiers["delegate_task"] = "R2"  # a person must approve each hand-off
+        return spec
+
+    both = Message(role="assistant", content=[DELEGATE, WAIT])
+    provider = fake(both, "Done.", "Done again.")
+    async with running_workers(client, World(), provider, employee=careful) as queue:
+        handle = await start(client, queue)
+        await wait_for(handle, lambda s: s.status == "waiting_human")
+        await handle.signal(EmployeeRun.approve, ApprovalAnswer(approved=True, by="maria"))
+        await asyncio.sleep(1.0)  # the report comes later: the run must be waiting for it
+        state = await handle.query(EmployeeRun.state)
+        assert state is not None and state.status != "completed", "finished without the report"
+        await handle.signal(EmployeeRun.child_finished, report())
+        out = await handle.result()
+    seen = [str(r.messages) for r in provider.requests]
+    assert any("3 demos booked" in s for s in seen), [
+        [(m.role, m.text[:80], [str(b)[:120] for b in m.content]) for m in r.messages]
+        for r in provider.requests
+    ]
+    assert out.state.status == "completed"

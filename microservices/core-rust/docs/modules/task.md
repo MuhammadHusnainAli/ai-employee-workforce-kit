@@ -17,7 +17,13 @@ The work inbox. Creates tasks, tracks state, handles approvals and human replies
 - delegation: a task can be handed down from another (`parent_task_id`, `root_task_id`, `depth`). A goal is
   depth 0; sub-tasks go at most 3 levels deep and a task has at most 20. A finished sub-task emits
   `task.child_finished` to its parent (with its output, cut to 4,000 characters), which agent-runtime turns into
-  the parent run's `child_finished` signal. Cancelling a task cancels every unfinished task below it.
+  the parent run's `child_finished` signal. A retry with the same idempotency key returns the sub-task it
+  made, even at the cap.
+- when work below a task stops: cancelling a task cancels every unfinished task below it at once (queued ones
+  end, running ones are asked to stop). When a task's run ends as failed or cancelled, everything still open
+  below it is stopped the same way; that also catches a sub-task created while the cancel was on its way, and
+  nothing new can be handed down under a finished task. A task that completes leaves its open sub-tasks
+  running: the work was handed out, it shows in the tree, and the parent simply no longer waits for it.
 - idempotency keys: `CreateTask` is unique per (tenant, key); approvals and replies derive their
   event id from (task, key), so a retry emits nothing new.
 

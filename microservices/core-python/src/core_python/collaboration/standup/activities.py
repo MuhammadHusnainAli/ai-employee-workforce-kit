@@ -205,13 +205,22 @@ class StandupActivities:
     @activity.defn(name="standup_finish")
     async def finish(self, f: FinishInput) -> Summary:
         inp = f.inp
-        said = await self.store.discussion(inp.tenant_id, inp.standup_id)
-        talk = [(m["author"], m["text"]) for m in said]
-        system, user = summary_prompt(f.ceo, f.reports, talk, scope=_scope(inp))
-        text = await self._ask(f.ceo, "standup-summary", system, user, 800)
-        summary = parse_summary(
-            text, owners={m.employee_id for m in f.members} | {f.ceo.employee_id}
-        )
+        stored = (await self.store.get(inp.tenant_id, inp.standup_id))["summary"]
+        if stored:  # a retry: the summary is chosen, no second model call
+            summary = Summary.model_validate(stored)
+        else:
+            said = await self.store.discussion(inp.tenant_id, inp.standup_id)
+            talk = [(m["author"], m["text"]) for m in said]
+            system, user = summary_prompt(f.ceo, f.reports, talk, scope=_scope(inp))
+            text = await self._ask(f.ceo, "standup-summary", system, user, 800)
+            summary = parse_summary(
+                text, owners={m.employee_id for m in f.members} | {f.ceo.employee_id}
+            )
+            # A retry keeps the first attempt's summary, so each step keeps its task key and input.
+            kept = await self.store.keep_summary(
+                inp.tenant_id, inp.standup_id, summary.model_dump(mode="json")
+            )
+            summary = Summary.model_validate(kept)
         if inp.assign_next_steps:
             for i, step in enumerate(summary.next_steps):
                 if step.owner == PERSON:

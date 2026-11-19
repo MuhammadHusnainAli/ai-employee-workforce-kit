@@ -230,6 +230,11 @@ class EmployeeRun:
     def _open_children(self) -> int:
         return max(self._delegated - len(self._children), 0)
 
+    @property
+    def _unreported(self) -> bool:
+        """Reports that arrived but the model has not seen yet."""
+        return any(cid not in self._reported for cid in self._children)
+
     async def _await_reports(self) -> str:
         """Wait until everything handed down has reported (or the wait times out), then the
         reports not yet given to the model, wrapped as data: they are other employees' words."""
@@ -324,6 +329,8 @@ class EmployeeRun:
                 ),
                 list[ActionResult],
             )
+            # Approved hand-offs count like any other, and an approved wait waits.
+            results = await self._with_reports(results)
             new = obs.record_approved(running, info.limits, calls, results, ts=_now())
             return new, Facts("approved", answer.model_dump(), results=results)
 
@@ -379,8 +386,7 @@ class EmployeeRun:
             results = await self._with_reports(results)
         elif (
             isinstance(decision, Final)
-            and self._open_children
-            and self._delegated > self._timed_out_at
+            and (self._unreported or (self._open_children and self._delegated > self._timed_out_at))
             and workflow.patched("org-delegation-v1")
         ):
             report = await self._await_reports()

@@ -849,3 +849,85 @@ async fn cancelling_a_goal_cancels_every_open_task_below_it() {
         "a queued task ends at once"
     );
 }
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn a_retried_sub_task_at_the_cap_returns_the_one_it_made() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let mut last = None;
+    for _ in 0..20 {
+        let k = unique();
+        let mut req = create_req(T1, &k, "Part of the plan");
+        req.parent_task_id = goal.task_id.clone();
+        let made = api
+            .create_task(Request::new(req))
+            .await
+            .unwrap()
+            .into_inner()
+            .task
+            .unwrap();
+        last = Some((k, made.task_id));
+    }
+    let (k, id) = last.unwrap();
+    let mut again = create_req(T1, &k, "Part of the plan");
+    again.parent_task_id = goal.task_id.clone();
+    let retried = api
+        .create_task(Request::new(again))
+        .await
+        .expect("a retry is not a 21st child");
+    assert_eq!(retried.into_inner().task.unwrap().task_id, id);
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn a_parent_that_fails_stops_the_work_below_it() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let child = create_child(&api, T1, &goal.task_id, "a").await.unwrap();
+    let grandchild = create_child(&api, T1, &child.task_id, "b").await.unwrap();
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": goal.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": child.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(
+            T1,
+            "run.failed",
+            json!({"run_id": goal.task_id, "seq": 3, "stop_reason": "budget"}),
+        ),
+    )
+    .await;
+
+    let asked = |events: Vec<(String, Value)>| {
+        events
+            .iter()
+            .filter(|(t, _)| t == "task.cancel_requested")
+            .count()
+    };
+    assert_eq!(
+        asked(events_for(&api.0.db, &child.task_id).await),
+        1,
+        "running child stopped"
+    );
+    let (status, _) = status_of(&api, T1, &grandchild.task_id).await;
+    assert_eq!(
+        status,
+        pb::TaskStatus::Cancelled as i32,
+        "queued grandchild ends at once"
+    );
+    assert_eq!(
+        create_child(&api, T1, &goal.task_id, "c")
+            .await
+            .unwrap_err(),
+        Code::FailedPrecondition,
+        "nothing new under a failed task"
+    );
+}

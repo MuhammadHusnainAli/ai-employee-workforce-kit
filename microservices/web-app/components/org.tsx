@@ -32,6 +32,11 @@ interface HireRequest {
     department_id: string | null;
     manager_id: string | null;
     role: string;
+    instructions: string;
+    model: string;
+    max_cost_usd: string | null;
+    is_co_ceo: boolean;
+    department_head: boolean;
     reason: string;
     requested_by: string;
     created_at: string | null;
@@ -370,6 +375,22 @@ function HireRequests({ org, onDone }: { org: Org; onDone: () => void }) {
                             </p>
                             <p>{r.role}</p>
                             {r.reason && <p className="prose">Why: {r.reason}</p>}
+                            <dl className="facts">
+                                <dt>Model</dt>
+                                <dd>{r.model}</dd>
+                                <dt>Most spend per task</dt>
+                                <dd>
+                                    {r.max_cost_usd ? `$${r.max_cost_usd}` : "the default ($1.00)"}
+                                </dd>
+                                {(r.is_co_ceo || r.department_head) && (
+                                    <>
+                                        <dt>Position</dt>
+                                        <dd>{r.is_co_ceo ? "Co-CEO" : "Head of the department"}</dd>
+                                    </>
+                                )}
+                                <dt>Instructions it will follow</dt>
+                                <dd className="prose">{r.instructions || "None"}</dd>
+                            </dl>
                         </div>
                         <div className="row-actions">
                             <button type="button" onClick={() => decide(r.id, true)}>
