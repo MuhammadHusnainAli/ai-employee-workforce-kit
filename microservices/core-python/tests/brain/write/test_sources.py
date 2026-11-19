@@ -1,0 +1,48 @@
+"""Which run events the brain learns from."""
+
+import uuid
+from datetime import UTC, datetime
+from typing import Any
+
+from core_python.brain.domain.write.sources import from_run_event
+
+TENANT = uuid.UUID("0193a7c4-0000-7000-8000-000000000001")
+NOW = datetime.now(UTC)
+
+
+def ev(event_type: str, **data: Any):
+    base = {"run_id": "r1", "employee_id": "sam", "task": "Do it.", "output": "Done."}
+    return from_run_event(event_type, uuid.uuid4(), TENANT, NOW, base | data)
+
+
+def test_completed_run_is_a_success() -> None:
+    s = ev("run.completed", stop_reason="final")
+    assert s is not None
+    assert (s.outcome, s.task, s.output, s.run_id) == ("success", "Do it.", "Done.", "r1")
+
+
+def test_failed_runs_are_failures_or_escalations() -> None:
+    error = ev("run.failed", stop_reason="error")
+    budget = ev("run.failed", stop_reason="budget")
+    assert error is not None and error.outcome == "failure"
+    assert budget is not None and budget.outcome == "escalated"
+
+
+def test_nothing_to_learn() -> None:
+    assert ev("run.failed", stop_reason="cancelled") is None, "a person stopped it"
+    assert ev("run.step_completed") is None
+    assert ev("run.started") is None
+    assert ev("run.completed", task="") is None, "older events without the task"
+    assert ev("run.completed", employee_id="") is None
+    assert ev("run.completed", mode="eval") is None, "evaluation runs are not experiences"
+    assert ev("run.completed", mode="shadow") is None
+    assert ev("run.completed", mode="live") is not None
+
+
+def test_the_tools_a_run_used_are_kept_in_order() -> None:
+    s = ev("run.completed", tools=["word_count", "", "char_count", "word_count"])
+    assert s is not None and s.tools == ["word_count", "char_count", "word_count"]
+    many = ev("run.completed", tools=[f"t{i}" for i in range(80)])
+    assert many is not None and len(many.tools) == 50
+    plain = ev("run.completed")
+    assert plain is not None and plain.tools == []

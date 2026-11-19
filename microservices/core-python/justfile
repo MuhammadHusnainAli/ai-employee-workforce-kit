@@ -1,0 +1,75 @@
+# Commands for this service. Run from this folder. Install just with: uv tool install rust-just
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+name := "core-python"
+buf := "npx -y @bufbuild/buf@1.47.2"
+
+default:
+    @just --list
+
+# Install dependencies
+sync:
+    uv sync
+
+# Run the service locally against the stack (just up at the repo root): gRPC and every worker
+run:
+    uv run {{name}}
+
+# Lint and type-check
+lint:
+    uv run ruff check .
+    uv run ruff format --check .
+    uv run pyright
+
+# Format
+fmt:
+    uv run ruff format .
+    uv run ruff check --fix .
+
+# Unit tests (no docker needed)
+test:
+    uv run pytest -m "not integration"
+
+# Integration tests (needs the stack: just up at the repo root)
+test-integration:
+    uv run pytest -m integration
+
+# Regenerate Python code from contracts/
+gen:
+    uv run python tools/gen_contracts.py
+
+# Fail if committed generated code is out of date
+gen-check: gen
+    git diff --exit-code -- src/wfk
+
+# Lint protobuf contracts
+contracts-lint:
+    cd contracts; {{buf}} lint
+
+# Licence policy (ADR-0007)
+licenses:
+    uv run python tools/check_licenses.py
+
+# Apply every module's pending migrations to its own database (creates missing databases)
+migrate:
+    uv run {{name}} migrate
+
+# Revert the latest migration of one module: just migrate-down brain
+migrate-down module:
+    uv run wfk-migrate down --dsn {{ if module == "workforce" { "postgresql://wfk:wfk@127.0.0.1:7017/workforce_db" } else if module == "agent_runtime" { "postgresql://wfk:wfk@127.0.0.1:7017/run_db" } else if module == "brain" { "postgresql://wfk:wfk@127.0.0.1:7017/brain_db" } else { "postgresql://wfk:wfk@127.0.0.1:7017/eval_db" } }} --dir migrations/{{module}}
+
+# Build the image (context is this folder)
+image:
+    docker build -t {{name}} .
+
+# Everything CI checks
+ci: lint test test-integration contracts-lint gen-check licenses
+
+# A durable demo run, e.g.: just demo-run "Some text." --kill-worker-after-step 0
+demo-run text *args:
+    uv run {{name}} demo-run "{{text}}" {{args}}
+
+# Brain recall latency gate (p95 < 300 ms on 10k seeded memories); prints p50 / p95 / p99
+bench:
+    uv run pytest tests/brain/perf -m integration -s -q
