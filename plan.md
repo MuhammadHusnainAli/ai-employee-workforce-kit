@@ -484,6 +484,36 @@ migrations, contracts and events; only the deployable changes. Branch: `build/tw
 | R.5 | The ten unbuilt services become module specs in the service of their language | No service folder without code is left | `Fold unbuilt service specs into module docs` |
 | R.6 | Docs: architecture, port map, CLAUDE.md, templates | No doc points at a removed service folder | `Update docs for two backend services` |
 
+### Restructure outcome
+
+- `core-python` (port 7001) runs everything in one process: the gRPC server (WorkforceService, RunService,
+  BrainService), the live and evaluation Temporal workers, brain ingest and consolidation, evaluations, and every
+  outbox relay and inbox. Background parts are supervised and restarted on failure. `core-python migrate` applies
+  each module's migrations to its own database.
+- `core-rust` (port 7002) is one binary: TaskService, ChannelService, SandboxService, the channel webhooks and
+  HTTP health on one listener, and every relay. Each module has its own sqlx migrator.
+- Verified: core-python 211 unit tests (the four services' 298 minus three duplicate copies of the 31 shared
+  platform, contract and licence tests, plus 6 composition tests) and 174 integration tests (173 carried over plus
+  1 composition test; 6 skipped by design: real model key, history recording); core-rust 89 tests including
+  integration (the three crates' tests minus two duplicate copies of the 22 shared ones, plus 4 composition
+  tests; every module test carried over); ruff, pyright, clippy, rustfmt, buf lint and the
+  Python licence check clean; `just up-all` healthy; `just e2e` passes all three flows; web app tests pass.
+- Existing local databases carried over unchanged: both migrate steps applied 0 migrations against data written by
+  the old services (same files, same checksums).
+- Proto package names (`wfk.brain_service.v1` and the rest) and event sources (`//cell-local/brain-service`) keep
+  the former service names, so callers and stored events see no change.
+- History in the phase sections below still names the old service folders; that is the record of what was built
+  where at the time.
+
+Notes for later:
+
+- Modules still call each other over gRPC on their own service's port (agent runtime to brain and workforce,
+  channel to task). An in-process call is possible later; the network hop is local and keeps the contracts honest.
+- `core-rust` runs as root locally because the sandbox module needs the Docker socket. Production uses gVisor pods
+  (no socket, no root), and the sandbox is the first candidate to split out if that matters before then.
+- `cargo-deny` still does not build on this Windows machine; the Rust dependency set is the union of the three
+  crates' already-checked sets plus nothing new.
+
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills

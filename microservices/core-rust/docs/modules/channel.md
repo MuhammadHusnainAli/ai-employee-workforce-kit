@@ -51,7 +51,7 @@ The loops find work through id-only queues (`forward_queue`, `delivery_queue`) a
 | Out | `CHANNELS` | `channel.binding_created` · `channel.message_received` · `channel.message_delivered` · `channel.delivery_failed` |
 
 ## Depends on
-- Task Service (`CreateTask`, `WFK_TASK_SERVICE_ADDR`, default `http://127.0.0.1:7004`)
+- the task module (`CreateTask`, `WFK_TASK_SERVICE_ADDR`, default core-rust's own port)
 - NATS JetStream (outbox relay, `RUNS` consumer)
 - Google's Chat JWKS (`WFK_GOOGLE_CHAT_JWKS_URL`) for Google Chat bindings
 
@@ -61,21 +61,20 @@ HPA on RPS, ≥ 3 replicas.
 ## Failure behaviour
 Provider message ID has a unique index: duplicate webhooks are no-ops. Outbound sends are idempotent activities.
 
-## Folder layout
+## Folder layout (inside core-rust)
 ```
-channel-gateway/
-  src/domain.rs     provider protocols: signatures, payloads, replies (no I/O)
-  src/adapters.rs   channel_db, Google's token check
-  src/flows.rs      message to task, run events to replies, sending with retries
-  src/api.rs        webhooks and ChannelService
-  src/platform/     copied platform code
-  migrations/       0001 outbox/inbox, 0002 bindings, hook_routes, inbound_messages, deliveries,
-                    0003 work queues
-  tests/            hooks.rs: every provider's check, dedupe, tenancy; flows.rs: forwarding, answers,
-                    retries, against a fake task-service and a fake provider
+core-rust/
+  src/channel/domain.rs    provider protocols: signatures, payloads, replies (no I/O)
+  src/channel/adapters.rs  channel_db, Google's token check
+  src/channel/flows.rs     message to task, run events to replies, sending with retries
+  src/channel/api.rs       webhooks and ChannelService
+  migrations/channel/      0001 outbox/inbox, 0002 bindings, hook_routes, inbound_messages, deliveries,
+                           0003 work queues
+  tests/                   hooks.rs: every provider's check, dedupe, tenancy; flows.rs: forwarding, answers,
+                           retries, against a fake task-service and a fake provider
 ```
 
-## Rules (all microservices)
+## Rules (every module)
 - Owns exactly one database and one role; never reads another service's tables.
 - Every state change writes its event to the `outbox` table in the same transaction.
 - Every consumer dedupes through the `inbox` table.

@@ -72,6 +72,9 @@ These rules are not negotiable. Every design choice below follows from one of th
    interface (S3, OIDC, OpenTelemetry, SQL, MCP), so it can be replaced.
 8. **Services are cut by business capability, not by entity.** There are 16 cell services, not 60. Every service
    boundary adds a network hop, a failure mode and an operational cost, so each one has to justify itself.
+   These boundaries are built as **modules of two deployables, one per language** (`core-python` and
+   `core-rust`, [ADR-0017](adr/0017-two-backend-services.md)): each module keeps its own database, contracts and
+   events, so it can be split out into its own service when it needs to scale or fail on its own.
 
 ## 2. Architecture at a glance
 
@@ -133,9 +136,11 @@ for events.
 
 ```
 /architecture            ← this folder
-/microservices/<name>    one self-contained project per microservice: own manifest, lockfile, platform code,
-                         contracts (it owns its own API), migrations and Dockerfile (ADR-0015)
-/microservices/templates the Python and Rust service templates and the generator
+/microservices/core-python  the Python backend: one self-contained project (ADR-0015) with one module per
+                            capability (workforce, agent runtime, brain, evaluation, ...) (ADR-0017)
+/microservices/core-rust    the Rust backend: task, channel, sandbox, ... as modules of one binary
+/microservices/web-app      the web app and public REST API
+/microservices/templates    service templates and the generator, for splitting a module out later
 /platform                Helm/Kustomize for Temporal, NATS, CNPG clusters, Keycloak, OpenFGA, OpenBao…
 /cells/<cell-id>         per-cell Argo CD Application values (the cell's config is just data)
 /connectors/<tool>       MCP servers for integrations (gmail, slack, hubspot, …)

@@ -1,5 +1,10 @@
 # Service Catalog
 
+> Each service below is built as a **module** of one of two deployables, `core-python` or `core-rust`
+> ([ADR-0017](adr/0017-two-backend-services.md)); the module specs are in `microservices/core-*/docs/modules/`.
+> Everything this catalogue says about ownership, databases, contracts and events holds for modules. Where it
+> speaks of deployments and scaling, the unit today is the service holding the module.
+
 Services are grouped by where they run. **Global** services exist once. **Cell** services are deployed once per cell
 (see [deployment.md](deployment.md)). Each service owns exactly one database. A service never connects to another
 service's database: database roles and `pg_hba` rules enforce this, not just convention.

@@ -32,6 +32,10 @@ an ETL project.
 
 One Kubernetes cluster per cell per region, spread across **3 availability zones**.
 
+The backend ships as two deployables, `core-python` and `core-rust` ([ADR-0017](adr/0017-two-backend-services.md)).
+The namespaces below show where each capability's workload goes once it is split out to scale or fail on its own;
+until then it runs inside the deployable of its language.
+
 | Namespace | Contents | Node pool |
 |---|---|---|
 | `edge` | Envoy Gateway data plane (cell-local ingress) | general |

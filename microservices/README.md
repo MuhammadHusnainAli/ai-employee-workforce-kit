@@ -1,61 +1,74 @@
 # Microservices
 
-One folder per microservice. Each folder is an independent deployable with its own database, migrations and tests.
-The architecture behind these services is in [../architecture](../architecture/README.md).
+The backend is two services, one per language ([ADR-0017](../architecture/adr/0017-two-backend-services.md)), plus
+the web app. Each capability from the architecture is a **module** inside the service of its language, with its
+own database, migrations, contracts and tests. The architecture behind them is in
+[../architecture](../architecture/README.md).
 
-| Service | Scope | Language | Database | Purpose |
+| Service | Language | Port | Modules |
+|---|---|---|---|
+| [core-python](core-python/README.md) | Python (+ Rust `brain-core` via PyO3) | 7001 | workforce, agent runtime, brain, evaluation; planned: model gateway, meeting, realtime voice, tenant directory, billing |
+| [core-rust](core-rust/README.md) | Rust | 7002 | task, channel, sandbox; planned: integration, audit, usage metering, identity, workspace |
+| [web-app](web-app/README.md) | TypeScript (Next.js) | 7000 | the frontend for tenants and the public REST API |
+
+## Modules
+
+| Module | Service | Scope | Database | Purpose |
 |---|---|---|---|---|
-| [Tenant & Cell Directory](tenant-directory/README.md) | global | Python | `directory_db` on `pg-global` | Source of truth for tenants, plans, feature flags and the tenant → cell routing table |
-| [Billing](billing/README.md) | global | Python | `billing_db` on `pg-global` | Subscriptions, invoices and credit balances, fed by hourly usage rollups from every cell |
-| [Channel Gateway](channel-gateway/README.md) | cell | Rust | `channel_db` on `pg-app` | Inbound and outbound conversation channels: email, Slack, Microsoft Teams, Google Chat and webhooks |
-| [Task Service](task-service/README.md) | cell | Rust | `task_db` on `pg-app` | The work inbox |
-| [Workforce Service](workforce-service/README.md) | cell | Python | `workforce_db` on `pg-app` | Defines AI employees: role, instructions, model policy, tool grants, knowledge bindings and guardrails, as immutable versions |
-| [Agent Runtime (harness)](agent-runtime/README.md) | cell | Python | `run_db` on `pg-ledger` | Temporal workers that execute the `EmployeeRun` workflow and the agent harness: context → model → validate → act → observe |
-| [Model Gateway](model-gateway/README.md) | cell | Python (LiteLLM proxy + plugins) | `gateway_db` on `pg-app`; rate limits and cache in Valkey | The only path to any LLM: provider abstraction, fallback chains, budgets, token accounting, safe caching |
-| [Integration & Tool Service](integration-service/README.md) | cell | Rust | `integration_db` on `pg-app` | Everything an employee can do in the outside world: the 9-stage tool call pipeline over MCP connectors |
-| [Sandbox Runner](sandbox-runner/README.md) | cell | Rust | none (stateless; inputs/outputs are S3 refs) | Runs untrusted or generated code in short-lived gVisor pods with strict limits |
-| [Brain Service](brain-service/README.md) | cell | Python (+ Rust `brain-core` via PyO3) | `brain_db` on `pg-brain` | Each employee's own brain: identity core, episodic memory, semantic graph, skills, preferences and rules, reflections, plus tenant knowledge |
-| [Audit Service](audit-service/README.md) | cell | Rust | `audit_db` on `pg-ledger` (role has INSERT + SELECT only) | Immutable record of everything humans and employees did |
-| [Usage Metering](usage-metering/README.md) | cell | Rust | `usage_db` on `pg-ledger` | Counts LLM tokens, tool calls, sandbox seconds and storage per tenant and employee; enforces quotas |
-| [Meeting Service](meeting-service/README.md) | cell | Python | `meeting_db` on `pg-ledger` | Joins Zoom, Microsoft Teams and Google Meet as the employee; keeps transcripts; produces notes, decisions and action items |
-| [Realtime Voice](realtime-voice/README.md) | cell | Python (Pipecat) | none (stateless) | Live listening and speaking in meetings: VAD → STT → diarization → addressing / turn-taking → response engine → speak policy → TTS |
-| [Workspace Manager](workspace-manager/README.md) | cell | Rust | `workspace_db` on `pg-app` | Each employee's own laptop: a persistent Kata microVM with desktop, IDE, toolchains and a home volume, plus the in-VM workspace agent |
-| [Identity & Accounts](identity-accounts/README.md) | cell | Rust | `identity_db` on `pg-app` (secrets only in OpenBao) | The employee's digital identity: email, calendar, chat, meeting, git and business-app accounts, provisioned and removed automatically |
-| [Evaluation Service](evaluation-service/README.md) | cell | Python | `eval_db` on `pg-brain` | Release gate for employee behaviour: golden tasks per role, per-employee regression sets, safety suites and shadow comparisons |
-| [Web App / Public API](web-app/README.md) | cell (served at the edge) | TypeScript (Next.js) | none | Frontend for tenants and the public REST API (generated from the protobuf contracts) |
+| [Workforce](core-python/docs/modules/workforce.md) | core-python | cell | `workforce_db` | Defines AI employees: role, instructions, model policy, tool grants, knowledge bindings and guardrails, as immutable versions |
+| [Agent Runtime](core-python/docs/modules/agent_runtime.md) | core-python | cell | `run_db` | Temporal workers that execute the `EmployeeRun` workflow and the agent harness: context, model, validate, act, observe |
+| [Brain](core-python/docs/modules/brain.md) | core-python | cell | `brain_db` | Each employee's own brain: identity core, episodic memory, semantic graph, skills, preferences and rules, reflections, plus tenant knowledge |
+| [Evaluation](core-python/docs/modules/evaluation.md) | core-python | cell | `eval_db` | Release gate for employee behaviour: golden tasks per role, per-employee regression sets, safety suites |
+| [Task](core-rust/docs/modules/task.md) | core-rust | cell | `task_db` | The work inbox |
+| [Channel](core-rust/docs/modules/channel.md) | core-rust | cell | `channel_db` | Inbound and outbound conversation channels: email, Slack, Microsoft Teams, Google Chat and webhooks |
+| [Sandbox](core-rust/docs/modules/sandbox.md) | core-rust | cell | `sandbox_db` | Runs untrusted or generated code with strict limits: hardened containers locally, gVisor pods in production |
+| [Model Gateway](core-python/docs/modules/model_gateway.md) (planned) | core-python | cell | `gateway_db` | The only path to any LLM: provider abstraction, fallback chains, budgets, token accounting, safe caching |
+| [Meeting](core-python/docs/modules/meeting.md) (planned) | core-python | cell | `meeting_db` | Joins Zoom, Microsoft Teams and Google Meet as the employee; transcripts, notes, decisions and action items |
+| [Realtime Voice](core-python/docs/modules/realtime_voice.md) (planned) | core-python | cell | none | Live listening and speaking in meetings (Pipecat) |
+| [Tenant & Cell Directory](core-python/docs/modules/tenant_directory.md) (planned) | core-python | global | `directory_db` | Tenants, plans, feature flags and the tenant to cell routing table |
+| [Billing](core-python/docs/modules/billing.md) (planned) | core-python | global | `billing_db` | Subscriptions, invoices and credit balances, fed by hourly usage rollups from every cell |
+| [Integration & Tools](core-rust/docs/modules/integration.md) (planned) | core-rust | cell | `integration_db` | Everything an employee can do in the outside world: the 9-stage tool call pipeline over MCP connectors |
+| [Audit](core-rust/docs/modules/audit.md) (planned) | core-rust | cell | `audit_db` | Immutable record of everything humans and employees did |
+| [Usage Metering](core-rust/docs/modules/usage_metering.md) (planned) | core-rust | cell | `usage_db` | Counts LLM tokens, tool calls, sandbox seconds and storage per tenant and employee; enforces quotas |
+| [Identity & Accounts](core-rust/docs/modules/identity.md) (planned) | core-rust | cell | `identity_db` | The employee's email, calendar, chat, meeting, git and business-app accounts, provisioned and removed automatically |
+| [Workspace](core-rust/docs/modules/workspace.md) (planned) | core-rust | cell | `workspace_db` | Each employee's own laptop: a persistent Kata microVM with desktop, IDE, toolchains and a home volume |
 
 Off-the-shelf platform components (Keycloak, Temporal, NATS JetStream, OpenFGA, OpenBao, Valkey, SeaweedFS,
-LiteLLM base image, CloudNativePG) are not microservices we build; they are deployed from `/platform`.
+LiteLLM base image, CloudNativePG) are not services we build; they are deployed from `/platform`.
 
-## Standard layout
+## Service layout
 
-Every service is a self-contained project ([ADR-0015](../architecture/adr/0015-self-contained-microservices.md)).
-It never points outside its own folder. Create one with `just new-service <python|rust> <name>` at the repo root;
-see [templates/](templates/README.md).
+Each service is a self-contained project ([ADR-0015](../architecture/adr/0015-self-contained-microservices.md)). It
+never points outside its own folder.
 
 ```
-<service>/
-  README.md        the service spec: purpose, API, events, database, scaling, failure behaviour
+core-<lang>/
+  README.md        the service: modules, process, settings, commands
   pyproject.toml   + uv.lock (Python)    or    Cargo.toml + Cargo.lock + rust-toolchain.toml (Rust)
   justfile         lint, test, migrate, gen, image, ci: run from this folder
   Dockerfile       build context is this folder
-  contracts/       proto/wfk/common/v1 (copied common types) + proto/wfk/<service>/v1 (its own API)
-  migrations/      versioned SQL, expand then contract
-  src/
-    <service>/     api/ (transport), domain/ (logic, no I/O), adapters/ (Postgres, NATS, Temporal, others)
-    wfk_platform/  this service's copy of the platform code (Rust: src/platform/)
-  tests/           unit, integration and contract tests
+  contracts/       proto/wfk/common/v1 + proto/wfk/<package>/v1 per module (its own API)
+  migrations/      <module>/: versioned SQL per module database, expand then contract
+  src/             one package (Python) or module (Rust) per module: api/, domain/, adapters/;
+                   plus the platform code (wfk_platform/ or platform/), one copy per service
+  tests/           unit, integration and contract tests, per module
+  docs/modules/    one spec per module: purpose, API, events, database, scaling, failure behaviour
 ```
 
-Services with special needs extend this (for example `workflows/` and `harness/` in agent-runtime, `connectors/`
-in integration-service, `evals/` in brain-service).
+## Adding a capability
 
-## Rules every service follows
+Build it as a module in the service of its language: a package under `src/`, its migrations under
+`migrations/<module>/` (starting with the platform outbox and inbox schema), its API under
+`contracts/proto/wfk/<package>/v1/`, and its spec in `docs/modules/`. Wire it into the service's composition
+(`core_python/main.py` and `app.py`, or `core-rust/src/lib.rs`). `just new-service` and [templates/](templates/README.md)
+are only for splitting a module out into its own service later.
 
-1. **One database, one role.** No service reads another service's tables.
+## Rules every module follows
+
+1. **One database.** No module reads another module's tables, even in the same process.
 2. **Transactional outbox** for every event, **inbox** dedupe for every consumer.
 3. **Deadlines** on every call, **idempotency keys** on every mutating call.
-4. **Contracts first:** each service owns its protobuf API in its own `contracts/` (CI runs `buf lint`), events as
+4. **Contracts first:** each module owns its protobuf API in its service's `contracts/` (`buf lint`), events as
    CloudEvents + AsyncAPI.
-5. **Health and telemetry:** `/healthz`, `/readyz`, OTLP traces, metrics and logs with `trace_id`.
+5. **Health and telemetry:** gRPC health or `/healthz`, `/readyz`, OTLP traces, metrics and logs with `trace_id`.
 6. **Tenant isolation:** `SET LOCAL app.tenant_id` in every transaction; RLS enforced in the database.

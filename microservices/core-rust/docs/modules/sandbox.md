@@ -46,18 +46,18 @@ Pod per execution on a tainted node pool; KEDA on queue backlog.
 ## Failure behaviour
 Hard CPU/memory/time limits, no network by default, read-only root FS.
 
-## Folder layout
+## Folder layout (inside core-rust)
 ```
-sandbox-runner/
-  src/domain.rs     image allowlist, limits, the launcher, the gVisor pod spec (no I/O)
-  src/adapters.rs   the Docker runner, the executions store
-  src/api.rs        SandboxService
-  images/           the allowlisted images
-  migrations/       0001 outbox/inbox, 0002 executions
-  tests/sandbox.rs  real runs: no network, read-only root, non-root, no capabilities, time, memory, pids
+core-rust/
+  src/sandbox/domain.rs    image allowlist, limits, the launcher, the gVisor pod spec (no I/O)
+  src/sandbox/adapters.rs  the Docker runner, the executions store
+  src/sandbox/api.rs       SandboxService
+  images/                  the allowlisted images
+  migrations/sandbox/      0001 outbox/inbox, 0002 executions
+  tests/sandbox.rs         real runs: no network, read-only root, non-root, no capabilities, time, memory, pids
 ```
 
-## Rules (all microservices)
+## Rules (every module)
 - Owns exactly one database and one role; never reads another service's tables.
 - Every state change writes its event to the `outbox` table in the same transaction.
 - Every consumer dedupes through the `inbox` table.

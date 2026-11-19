@@ -1,8 +1,10 @@
 # Service templates
 
+> New capabilities are built as modules of `core-python` or `core-rust`, not as new services ([ADR-0017](../../architecture/adr/0017-two-backend-services.md)). Use these templates only to split a module out into its own service when it must scale or fail on its own.
+
 ```
-just new-service python <name>   # at the repo root, e.g. just new-service python workforce-service
-just new-service rust <name>     # e.g. just new-service rust task-service
+just new-service python <name>   # at the repo root, e.g. just new-service python meeting-service
+just new-service rust <name>     # e.g. just new-service rust audit-service
 ```
 
 `new_service.py` copies a template into `microservices/<name>/` and renames `service-template` /

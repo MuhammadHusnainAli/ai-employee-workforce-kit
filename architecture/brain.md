@@ -169,7 +169,8 @@ R3 always needs a human. An incident or an eval drop moves the employee down a l
 ## 8. Building the Brain Service
 
 **One bounded context, one database (`brain_db` on its own CloudNativePG cluster `pg-brain`), four deployables
-from one codebase:**
+from one codebase.** Today the brain is a module of `core-python` ([ADR-0017](adr/0017-two-backend-services.md)), and
+all four run in its one process; the split below is the target when the brain needs to scale on its own:
 
 | Deployable | Runs | Scales on | SLO |
 |---|---|---|---|

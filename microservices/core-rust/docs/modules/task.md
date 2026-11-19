@@ -39,18 +39,17 @@ HPA on RPS, ≥ 3 replicas. p99 `CreateTask` < 300 ms.
 ## Failure behaviour
 Task + outbox in one transaction. If NATS or agent-runtime is down, `task.created` waits in the outbox; no task is lost.
 
-## Folder layout
+## Folder layout (inside core-rust)
 ```
-task-service/
-  src/api.rs        gRPC TaskService
-  src/domain.rs     statuses and how run events move them (no I/O)
-  src/adapters.rs   task_db: tasks, outbox events, run-event projection
-  src/platform/     copied platform code (db, outbox, messaging, health, settings)
-  migrations/       0001 outbox/inbox, 0002 tasks
-  tests/            unit + integration (tasks.rs covers the API and projection)
+core-rust/
+  src/task/api.rs       gRPC TaskService
+  src/task/domain.rs    statuses and how run events move them (no I/O)
+  src/task/adapters.rs  task_db: tasks, outbox events, run-event projection
+  migrations/task/      0001 outbox/inbox, 0002 tasks
+  tests/                unit + integration (tasks.rs covers the API and projection)
 ```
 
-## Rules (all microservices)
+## Rules (every module)
 - Owns exactly one database and one role; never reads another service's tables.
 - Every state change writes its event to the `outbox` table in the same transaction.
 - Every consumer dedupes through the `inbox` table.

@@ -1,12 +1,13 @@
 # Contracts
 
-This service's own copy of its contracts. Code is generated from here (`just gen`); nothing generated is
-hand-written.
+This service's contracts. Code is generated from here (`just gen`); nothing generated is
+hand-written. Each module owns its API under the package name of the service it used to be
+(workforce_service, agent_runtime, brain_service), so the wire contract did not change when the services became modules (ADR-0017).
 
 ```
-proto/wfk/common/v1/          common types shared by every service (tenant context, errors, paging).
-                              Copied into each service, never edited here: change it in the template.
-proto/wfk/<this_service>/v1/  this service's own API. This service owns it; others copy it to call us.
+proto/wfk/common/v1/          common types (tenant context, errors, paging). Infrastructure only.
+proto/wfk/<module>/v1/        each module's own API. The module owns it; callers outside this service
+                              copy it to call us.
 events/                       CloudEvents envelope and example events
 ```
 

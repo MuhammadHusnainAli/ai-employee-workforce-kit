@@ -43,7 +43,7 @@ Later: `Forget`, `GetBrain`, `Rollback`.
 | In | `RUNS` (consumer `brain-ingest-runs`) | `run.completed` · `run.failed` (later `meeting.notes_ready`, `feedback.given`, `channel.message_received`) |
 | Out | `BRAIN` | `brain.memory_committed` · `brain.memory_corrected` · `brain.memory_deleted` · `brain.memory_reviewed` · `brain.feedback_given` · `brain.change_proposed` · `brain.rule_activated` · `brain.change_rejected` · `brain.rule_revoked` |
 
-## Write path (`brain-service ingest`, the `brain-ingest` deployable)
+## Write path (brain ingest, part `brain-ingest` of core-python)
 1. A finished run (`run.completed` / `run.failed`, carrying the task and output) starts `BrainIngest` on the
    Temporal queue `brain-ingest`; the workflow id comes from the event id, so a redelivery starts nothing new.
 2. **Extract** (`WFK_EXTRACTOR`): `baseline` stores the episode only; `gateway` adds facts, preferences and
@@ -69,38 +69,35 @@ Four deployables: brain-api (HPA), brain-ingest, brain-consolidate, brain-learn 
 ## Failure behaviour
 Recall degrades to cached identity + rules and never blocks a run; writes are idempotent; consolidation is resumable.
 
-## Folder layout
-A self-contained Python project ([ADR-0015](../../../../architecture/adr/0015-self-contained-microservices.md)), with
+## Folder layout (inside core-python)
+A module of `core-python` ([ADR-0017](../../../../architecture/adr/0017-two-backend-services.md)), with
 its Rust hot path (`brain-core`, PyO3) built inside it. The modules follow
 [brain.md section 8](../../../../architecture/brain.md#8-building-the-brain-service); later phases add
 `consolidate/` and `learn/`.
 
 ```
-brain-service/
-  pyproject.toml  uv.lock  justfile  Dockerfile
-  brain-core/                Rust: recall ranking and the governance filter, exposed to Python with PyO3
-  contracts/                 common types + this service's API (wfk.brain_service.v1)
-  migrations/                brain_db
-  evals/                     golden sets per role, regression and safety suites (data)
-  src/brain_service/
-    api/                     gRPC: Recall (later Remember, Feedback, Forget, Inspect, ...)
-    domain/memory/           memories, episodes, identity core, brain versions (no I/O)
-    domain/recall/           planner, retrievers, fusion, packer
-    domain/write/            sources, extraction schema, governance, resolver (no I/O)
-    domain/graph/            entities and relations, name normal form (no I/O)
-    domain/feedback.py       what each kind of feedback becomes (no I/O)
-    remember.py              govern, embed in one batch, commit
-    ingest.py                brain-ingest: Temporal worker, RUNS consumer, BRAIN relay
-    adapters/postgres/       repositories, pgvector, full-text and graph queries, the write commit,
-                             the Inspector, feedback, proposals and rules
-    adapters/modelgw/        embeddings and the extractor through the Model Gateway
-    adapters/temporal/       the BrainIngest workflow and its activities
-    adapters/cache/          Valkey identity-core cache
-  src/wfk_platform/          this service's copy of the platform code
-  tests/
+core-python/
+  brain-core/           Rust: recall ranking and the governance filter, exposed to Python with PyO3
+  contracts/            common types + this service's API (wfk.brain_service.v1)
+  migrations/brain/     brain_db
+  src/core_python/brain/
+    api/                gRPC: Recall (later Remember, Feedback, Forget, Inspect, ...)
+    domain/memory/      memories, episodes, identity core, brain versions (no I/O)
+    domain/recall/      planner, retrievers, fusion, packer
+    domain/write/       sources, extraction schema, governance, resolver (no I/O)
+    domain/graph/       entities and relations, name normal form (no I/O)
+    domain/feedback.py  what each kind of feedback becomes (no I/O)
+    remember.py         govern, embed in one batch, commit
+    ingest.py           brain-ingest: Temporal worker, RUNS consumer, BRAIN relay
+    adapters/postgres/  repositories, pgvector, full-text and graph queries, the write commit,
+                        the Inspector, feedback, proposals and rules
+    adapters/modelgw/   embeddings and the extractor through the Model Gateway
+    adapters/temporal/  the BrainIngest workflow and its activities
+    adapters/cache/     Valkey identity-core cache
+  tests/brain/
 ```
 
-## Rules (all microservices)
+## Rules (every module)
 - Owns exactly one database and one role; never reads another service's tables.
 - Every state change writes its event to the `outbox` table in the same transaction.
 - Every consumer dedupes through the `inbox` table.
