@@ -33,6 +33,11 @@ export function task(t: Msg) {
         created_by: t.createdBy,
         created_at: iso(t.createdAt),
         updated_at: iso(t.updatedAt),
+        parent_task_id: (t.parentTaskId as string) || null,
+        root_task_id: (t.rootTaskId as string) || null,
+        depth: Number(t.depth ?? 0),
+        output: (t.output as string) ?? "",
+        delegated_by: (t.delegatedBy as string) || null,
     };
 }
 
@@ -110,11 +115,15 @@ export async function listTasks(b: Backends, c: Caller, q: URLSearchParams) {
     }
     const limit = Number(q.get("limit") ?? 50);
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) throw bad("limit must be 1 to 200");
+    const parent = q.get("parent") ?? "";
+    const root = q.get("root") ?? "";
     const r = await b.tasks.call<Msg>("ListTasks", {
         tenant: tenant(c),
         employeeId: q.get("employee_id") ?? "",
         status: status ? `TASK_STATUS_${status.toUpperCase()}` : "TASK_STATUS_UNSPECIFIED",
         limit,
+        parentTaskId: parent ? taskId(parent) : "",
+        rootTaskId: root ? taskId(root) : "",
     });
     return { tasks: ((r.tasks as Msg[]) ?? []).map(task) };
 }

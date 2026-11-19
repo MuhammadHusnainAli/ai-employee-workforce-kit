@@ -13,6 +13,7 @@ from wfk_platform import ServiceSettings
 
 from core_python.agent_runtime.settings import Settings as RuntimeSettings
 from core_python.brain.settings import Settings as BrainSettings
+from core_python.collaboration.settings import Settings as CollabSettings
 from core_python.evaluation.settings import Settings as EvalSettings
 from core_python.workforce.settings import Settings as WorkforceSettings
 
@@ -32,6 +33,7 @@ class Settings(ServiceSettings):
     runtime_database_url: str = f"{PG}/run_db"
     brain_database_url: str = f"{PG}/brain_db"
     eval_database_url: str = f"{PG}/eval_db"
+    collab_database_url: str = f"{PG}/collab_db"
     # Where `core-python migrate` finds migrations/<module>/.
     migrations_dir: str = "migrations"
 
@@ -39,6 +41,8 @@ class Settings(ServiceSettings):
     workers: bool = True
     # The agent's model through the Model Gateway: scripted, local-mock, claude-haiku.
     worker_model: str = "local-mock"
+    # The task module of core-rust: delegation creates sub-tasks there, standups read it.
+    task_address: str = "127.0.0.1:7002"
 
     @property
     def self_address(self) -> str:
@@ -56,6 +60,8 @@ def runtime(s: Settings) -> RuntimeSettings:
         port=s.port,
         brain_address=s.self_address,
         workforce_address=s.self_address,
+        task_address=s.task_address,
+        collab_address=s.self_address,
     )
 
 
@@ -65,3 +71,12 @@ def brain(s: Settings) -> BrainSettings:
 
 def evaluation(s: Settings) -> EvalSettings:
     return EvalSettings(database_url=s.eval_database_url, port=s.port, brain_address=s.self_address)
+
+
+def collaboration(s: Settings) -> CollabSettings:
+    return CollabSettings(
+        database_url=s.collab_database_url,
+        port=s.port,
+        workforce_address=s.self_address,
+        task_address=s.task_address,
+    )

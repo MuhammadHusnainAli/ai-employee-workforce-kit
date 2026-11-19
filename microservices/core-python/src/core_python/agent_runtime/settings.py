@@ -33,3 +33,7 @@ class Settings(ServiceSettings):
     # Employees and their published versions (workforce-service). Empty: only the employees
     # defined in code (the demo summariser).
     workforce_address: str = "127.0.0.1:7001"
+    # The task module (core-rust) and the collaboration module: the org tools (delegation,
+    # messages, calls) reach them. Empty: employees get no org tools.
+    task_address: str = "127.0.0.1:7002"
+    collab_address: str = "127.0.0.1:7001"

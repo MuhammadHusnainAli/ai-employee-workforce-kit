@@ -248,10 +248,12 @@ services:
       WFK_RUNTIME_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/run_db
       WFK_BRAIN_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/brain_db
       WFK_EVAL_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/eval_db
+      WFK_COLLAB_DATABASE_URL: postgresql://wfk:wfk@postgres:5432/collab_db
 
-  # The Python backend in one process: WorkforceService, RunService and BrainService on 7001,
-  # the agent's Temporal workers (live, and evaluation queues apart), brain ingest and nightly
-  # consolidation, evaluations, and every outbox relay and inbox.
+  # The Python backend in one process: WorkforceService, RunService, BrainService and
+  # CollaborationService on 7001, the agent's Temporal workers (live, and evaluation queues
+  # apart), the Standup worker, brain ingest and nightly consolidation, evaluations, and every
+  # outbox relay and inbox. Org tools reach the task module in core-rust (WFK_TASK_ADDRESS).
   # The model is local-mock through the gateway; set WFK_WORKER_MODEL=claude-haiku for a real
   # one. WFK_BRAIN_EXTRACTOR=gateway adds facts, preferences and lessons from a real model
   # (WFK_BRAIN_EXTRACTION_MODEL, needs ANTHROPIC_API_KEY).
@@ -267,6 +269,7 @@ services:
       WFK_WORKER_MODEL: ${WFK_WORKER_MODEL:-local-mock}
       WFK_EXTRACTOR: ${WFK_BRAIN_EXTRACTOR:-baseline}
       WFK_EXTRACTION_MODEL: ${WFK_BRAIN_EXTRACTION_MODEL:-claude-haiku}
+      WFK_TASK_ADDRESS: core-rust:7002
     ports:
       - "127.0.0.1:${WFK_CORE_PYTHON_PORT:-7001}:7001"
     healthcheck:
@@ -322,6 +325,7 @@ services:
       WFK_RUN_SERVICE_ADDR: core-python:7001
       WFK_BRAIN_SERVICE_ADDR: core-python:7001
       WFK_WORKFORCE_SERVICE_ADDR: core-python:7001
+      WFK_COLLAB_SERVICE_ADDR: core-python:7001
       WFK_NATS_URL: nats://nats:4222
       WFK_AUTH_MODE: dev
       WFK_API_TOKEN: ${WFK_API_TOKEN:-}

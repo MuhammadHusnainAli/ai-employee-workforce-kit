@@ -69,18 +69,29 @@ async def run_workers(
         if settings.brain_address
         else None
     )
+    from core_python.agent_runtime.adapters.org_clients import OrgClients
     from core_python.agent_runtime.employees import (
         ChainDirectory,
         EmployeeDirectory,
         WorkforceDirectory,
     )
-    from core_python.agent_runtime.tool_catalog import CATALOG
+    from core_python.agent_runtime.tool_catalog import build_catalog
 
+    # Org tools need the chart, the task inbox and conversations. Evaluation and shadow runs
+    # get them too but practise only: the tools refuse to change anything outside a live run.
+    org = (
+        OrgClients.connect(
+            settings.workforce_address, settings.task_address, settings.collab_address
+        )
+        if settings.workforce_address and settings.task_address and settings.collab_address
+        else None
+    )
+    catalog = build_catalog(org)
     # Published employees first; the employees defined in code (the demo) after.
     employees: EmployeeDirectory = directory(model)
     if settings.workforce_address:
         employees = ChainDirectory(
-            WorkforceDirectory(settings.workforce_address, CATALOG), employees
+            WorkforceDirectory(settings.workforce_address, catalog), employees
         )
     activities = HarnessActivities(
         employees=employees, provider=provider_for(model, settings), brain=brain

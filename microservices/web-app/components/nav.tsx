@@ -1,5 +1,5 @@
 "use client";
-// The three places, with a live count of tasks waiting for a person.
+// The places, with a live count of tasks waiting for a person.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,9 +21,12 @@ export function NavLinks() {
     });
 
     const links = [
+        { href: "/org", label: "Organisation" },
         { href: "/employees", label: "Employees" },
         { href: "/tasks", label: "Tasks" },
         { href: "/approvals", label: "Waiting for you", count: waiting },
+        { href: "/conversations", label: "Conversations" },
+        { href: "/standups", label: "Standups" },
         { href: "/brain", label: "Brain" },
     ];
     return (

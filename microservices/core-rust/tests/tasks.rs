@@ -92,6 +92,7 @@ fn create_req(t: Uuid, k: &str, input: &str) -> pb::CreateTaskRequest {
         title: String::new(),
         input: input.into(),
         priority: 3,
+        parent_task_id: String::new(),
     }
 }
 
@@ -534,15 +535,22 @@ async fn served_task_is_published_and_follows_its_run() {
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     };
+    // Other tests in this binary create tasks in the same database at the same time, so the
+    // last task.created on the stream may be theirs. The relay stamps published_at only once
+    // JetStream has acknowledged the event, so that is the proof it reached the stream.
+    let _ = &tasks_stream;
+    let db = db().await;
     let mut published = false;
-    for _ in 0..50 {
-        let found = tasks_stream
-            .get_last_raw_message_by_subject("task.created")
-            .await
-            .ok()
-            .and_then(|m| CloudEvent::from_json(&m.payload).ok())
-            .is_some_and(|e| e.subject.as_deref() == Some(task.task_id.as_str()));
-        if found {
+    for _ in 0..100 {
+        let stamped: Option<bool> = sqlx::query_scalar(
+            "SELECT published_at IS NOT NULL FROM outbox
+             WHERE subject = $1 AND type = 'task.created'",
+        )
+        .bind(&task.task_id)
+        .fetch_optional(&db.pool)
+        .await
+        .unwrap();
+        if stamped == Some(true) {
             published = true;
             break;
         }
@@ -583,4 +591,343 @@ async fn served_task_is_published_and_follows_its_run() {
         .expect("shuts down")
         .unwrap()
         .unwrap();
+}
+
+// ---- delegation ------------------------------------------------------------------------------
+
+async fn create_child(
+    api: &TaskApi,
+    t: Uuid,
+    parent: &str,
+    employee: &str,
+) -> Result<pb::Task, Code> {
+    let mut req = create_req(t, &unique(), &format!("Part of {parent}"));
+    req.parent_task_id = parent.into();
+    req.employee_id = employee.into();
+    api.create_task(Request::new(req))
+        .await
+        .map(|r| r.into_inner().task.unwrap())
+        .map_err(|e| e.code())
+}
+
+async fn list(api: &TaskApi, t: Uuid, parent: &str, root: &str) -> Vec<pb::Task> {
+    api.list_tasks(Request::new(pb::ListTasksRequest {
+        tenant: tenant(t),
+        parent_task_id: parent.into(),
+        root_task_id: root.into(),
+        ..Default::default()
+    }))
+    .await
+    .unwrap()
+    .into_inner()
+    .tasks
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn sub_tasks_link_to_their_parent_and_goal() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    assert_eq!(
+        (goal.depth, goal.root_task_id.as_str()),
+        (0, goal.task_id.as_str())
+    );
+    let child = create_child(&api, T1, &goal.task_id, "sales-head")
+        .await
+        .unwrap();
+    assert_eq!(child.parent_task_id, goal.task_id);
+    assert_eq!(child.root_task_id, goal.task_id);
+    assert_eq!((child.depth, child.delegated_by.as_str()), (1, "alice"));
+    let grandchild = create_child(&api, T1, &child.task_id, "sales-junior")
+        .await
+        .unwrap();
+    assert_eq!(
+        (grandchild.depth, grandchild.root_task_id.as_str()),
+        (2, goal.task_id.as_str())
+    );
+
+    let events = events_for(&api.0.db, &child.task_id).await;
+    assert_eq!(events[0].0, "task.created");
+    assert_eq!(events[0].1["parent_task_id"], json!(goal.task_id));
+
+    let direct = list(&api, T1, &goal.task_id, "").await;
+    assert_eq!(
+        direct.iter().map(|t| &t.task_id).collect::<Vec<_>>(),
+        vec![&child.task_id]
+    );
+    let tree = list(&api, T1, "", &goal.task_id).await;
+    assert_eq!(tree.len(), 3, "the goal and both levels below it");
+    // Another tenant cannot hang work under this goal.
+    assert_eq!(
+        create_child(&api, T2, &goal.task_id, "x")
+            .await
+            .unwrap_err(),
+        Code::NotFound
+    );
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn sub_tasks_are_capped_in_depth_and_number() {
+    let api = api().await;
+    let mut parent = create(&api, T1).await;
+    for _ in 0..3 {
+        parent = create_child(&api, T1, &parent.task_id, "e").await.unwrap();
+    }
+    assert_eq!(parent.depth, 3);
+    assert_eq!(
+        create_child(&api, T1, &parent.task_id, "e")
+            .await
+            .unwrap_err(),
+        Code::FailedPrecondition,
+        "a fourth level"
+    );
+
+    let wide = create(&api, T1).await;
+    for _ in 0..20 {
+        create_child(&api, T1, &wide.task_id, "e").await.unwrap();
+    }
+    assert_eq!(
+        create_child(&api, T1, &wide.task_id, "e")
+            .await
+            .unwrap_err(),
+        Code::FailedPrecondition,
+        "a 21st sub-task"
+    );
+    assert_eq!(
+        create_child(&api, T1, "not-a-uuid", "e").await.unwrap_err(),
+        Code::InvalidArgument
+    );
+
+    let done = create(&api, T1).await;
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": done.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(
+            T1,
+            "run.completed",
+            json!({"run_id": done.task_id, "seq": 2, "stop_reason": "final", "output": "ok"}),
+        ),
+    )
+    .await;
+    assert_eq!(
+        create_child(&api, T1, &done.task_id, "e")
+            .await
+            .unwrap_err(),
+        Code::FailedPrecondition,
+        "under a finished task"
+    );
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn a_finished_sub_task_tells_its_parent_once_with_its_output() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let good = create_child(&api, T1, &goal.task_id, "sales-head")
+        .await
+        .unwrap();
+    let bad = create_child(&api, T1, &goal.task_id, "marketing")
+        .await
+        .unwrap();
+    let long = "x".repeat(5_000);
+    for (child, kind, reason, output) in [
+        (&good, "run.completed", "final", long.as_str()),
+        (&bad, "run.failed", "error", ""),
+    ] {
+        apply(
+            &api.0.db,
+            &run_event(T1, "run.started", json!({"run_id": child.task_id})),
+        )
+        .await;
+        let done = run_event(
+            T1,
+            kind,
+            json!({"run_id": child.task_id, "seq": 3, "stop_reason": reason, "output": output}),
+        );
+        apply(&api.0.db, &done).await;
+        apply(&api.0.db, &done).await; // redelivered: changes nothing
+    }
+    let told: Vec<Value> = events_for(&api.0.db, &goal.task_id)
+        .await
+        .into_iter()
+        .filter(|(t, _)| t == "task.child_finished")
+        .map(|(_, d)| d)
+        .collect();
+    assert_eq!(told.len(), 2, "one per sub-task, even when redelivered");
+    assert_eq!(told[0]["task_id"], json!(goal.task_id));
+    assert_eq!(told[0]["child_task_id"], json!(good.task_id));
+    assert_eq!(told[0]["employee_id"], json!("sales-head"));
+    assert_eq!(told[0]["status"], json!("completed"));
+    assert_eq!(told[0]["output"].as_str().unwrap().chars().count(), 4_001);
+    assert_eq!(told[1]["status"], json!("failed"));
+    assert_eq!(told[1]["stop_reason"], json!("error"));
+
+    let stored = api
+        .get_task(Request::new(pb::GetTaskRequest {
+            tenant: tenant(T1),
+            task_id: good.task_id.clone(),
+        }))
+        .await
+        .unwrap()
+        .into_inner()
+        .task
+        .unwrap();
+    assert_eq!(
+        stored.output.len(),
+        5_000,
+        "the task keeps the whole answer"
+    );
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn cancelling_a_goal_cancels_every_open_task_below_it() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let child = create_child(&api, T1, &goal.task_id, "a").await.unwrap();
+    let grandchild = create_child(&api, T1, &child.task_id, "b").await.unwrap();
+    let finished = create_child(&api, T1, &goal.task_id, "c").await.unwrap();
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": child.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": finished.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(
+            T1,
+            "run.completed",
+            json!({"run_id": finished.task_id, "seq": 1, "stop_reason": "final"}),
+        ),
+    )
+    .await;
+
+    api.cancel_task(Request::new(pb::CancelTaskRequest {
+        tenant: tenant(T1),
+        task_id: goal.task_id.clone(),
+        reason: "change of plan".into(),
+    }))
+    .await
+    .unwrap();
+
+    let cancel_asked = |events: Vec<(String, Value)>| {
+        events
+            .iter()
+            .filter(|(t, _)| t == "task.cancel_requested")
+            .count()
+    };
+    assert_eq!(cancel_asked(events_for(&api.0.db, &goal.task_id).await), 1);
+    assert_eq!(
+        cancel_asked(events_for(&api.0.db, &child.task_id).await),
+        1,
+        "running child"
+    );
+    assert_eq!(
+        cancel_asked(events_for(&api.0.db, &grandchild.task_id).await),
+        1,
+        "queued grandchild"
+    );
+    assert_eq!(
+        cancel_asked(events_for(&api.0.db, &finished.task_id).await),
+        0,
+        "already done"
+    );
+    let (status, _) = status_of(&api, T1, &grandchild.task_id).await;
+    assert_eq!(
+        status,
+        pb::TaskStatus::Cancelled as i32,
+        "a queued task ends at once"
+    );
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn a_retried_sub_task_at_the_cap_returns_the_one_it_made() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let mut last = None;
+    for _ in 0..20 {
+        let k = unique();
+        let mut req = create_req(T1, &k, "Part of the plan");
+        req.parent_task_id = goal.task_id.clone();
+        let made = api
+            .create_task(Request::new(req))
+            .await
+            .unwrap()
+            .into_inner()
+            .task
+            .unwrap();
+        last = Some((k, made.task_id));
+    }
+    let (k, id) = last.unwrap();
+    let mut again = create_req(T1, &k, "Part of the plan");
+    again.parent_task_id = goal.task_id.clone();
+    let retried = api
+        .create_task(Request::new(again))
+        .await
+        .expect("a retry is not a 21st child");
+    assert_eq!(retried.into_inner().task.unwrap().task_id, id);
+}
+
+#[tokio::test]
+#[ignore = "needs the local stack: just up"]
+async fn a_parent_that_fails_stops_the_work_below_it() {
+    let api = api().await;
+    let goal = create(&api, T1).await;
+    let child = create_child(&api, T1, &goal.task_id, "a").await.unwrap();
+    let grandchild = create_child(&api, T1, &child.task_id, "b").await.unwrap();
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": goal.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(T1, "run.started", json!({"run_id": child.task_id})),
+    )
+    .await;
+    apply(
+        &api.0.db,
+        &run_event(
+            T1,
+            "run.failed",
+            json!({"run_id": goal.task_id, "seq": 3, "stop_reason": "budget"}),
+        ),
+    )
+    .await;
+
+    let asked = |events: Vec<(String, Value)>| {
+        events
+            .iter()
+            .filter(|(t, _)| t == "task.cancel_requested")
+            .count()
+    };
+    assert_eq!(
+        asked(events_for(&api.0.db, &child.task_id).await),
+        1,
+        "running child stopped"
+    );
+    let (status, _) = status_of(&api, T1, &grandchild.task_id).await;
+    assert_eq!(
+        status,
+        pb::TaskStatus::Cancelled as i32,
+        "queued grandchild ends at once"
+    );
+    assert_eq!(
+        create_child(&api, T1, &goal.task_id, "c")
+            .await
+            .unwrap_err(),
+        Code::FailedPrecondition,
+        "nothing new under a failed task"
+    );
 }

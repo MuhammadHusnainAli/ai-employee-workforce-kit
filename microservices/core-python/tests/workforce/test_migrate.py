@@ -34,12 +34,16 @@ def tables(dsn: str) -> set[str]:
     return {r[0] for r in rows}
 
 
+def versions() -> list[int]:
+    return [int(p.name[:4]) for p in sorted(TEMPLATE.glob("*.up.sql"))]
+
+
 def test_workforce_db_applies_and_reverts(fresh_db: str) -> None:
     runner = Runner(fresh_db, TEMPLATE)
-    assert runner.up() == [1, 2]
-    assert {"outbox", "inbox", "employees", "employee_versions"} <= tables(fresh_db)
+    assert runner.up() == versions()
+    assert {"outbox", "inbox", "employees", "employee_versions", "departments"} <= tables(fresh_db)
     assert runner.up() == []
-    assert runner.down(steps=2) == [2, 1]
+    assert runner.down(steps=len(versions())) == versions()[::-1]
     assert tables(fresh_db) == {"schema_migrations"}
 
 
@@ -76,5 +80,5 @@ def test_cli_creates_database_and_reports(
     assert main(["up", "--dsn", DSN, "--dir", str(TEMPLATE), "--create-db"]) == 0
     assert main(["status", "--dsn", DSN, "--dir", str(TEMPLATE)]) == 0
     out = capsys.readouterr().out
-    assert "applied 2 migration(s)" in out
+    assert f"applied {len(versions())} migration(s)" in out
     assert "applied  0001 platform_outbox_inbox" in out

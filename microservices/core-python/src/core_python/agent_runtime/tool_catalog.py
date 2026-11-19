@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 
 from agent_harness.tools import Tool
 
+from core_python.agent_runtime.adapters.org_clients import OrgClients
+
 
 def word_count(text: str) -> int:
     """Count the words in a text.
@@ -41,3 +43,12 @@ CATALOG: dict[str, Callable[[], Tool]] = {
     "char_count": lambda: Tool(char_count),
     "current_time": lambda: Tool(current_time),
 }
+
+
+def build_catalog(org: OrgClients | None) -> dict[str, Callable[[], Tool]]:
+    """The in-process tools, plus the org tools when the other modules can be reached."""
+    if org is None:
+        return dict(CATALOG)
+    from core_python.agent_runtime.org_tools import org_tools
+
+    return CATALOG | org_tools(org)

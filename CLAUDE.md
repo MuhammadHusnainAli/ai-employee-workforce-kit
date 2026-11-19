@@ -47,7 +47,7 @@ architecture/                 design docs, ADRs, draw.io diagram
 deployments/docker-compose.yml   local stack: Postgres 18 + pgvector, Temporal, NATS, Valkey, SeaweedFS,
                                  LiteLLM, Grafana. All local ports are in 7000-7030 (deployments/README.md)
 microservices/
-  core-python/                the Python backend: workforce, agent_runtime, brain, evaluation modules (port 7001)
+  core-python/                the Python backend: workforce, agent_runtime, brain, evaluation, collaboration (port 7001)
   core-rust/                  the Rust backend: task, channel, sandbox modules (port 7002)
   web-app/                    the web app and public REST API (port 7000)
 plan.md                       phased plan and status

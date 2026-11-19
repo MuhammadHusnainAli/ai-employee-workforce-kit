@@ -1,5 +1,6 @@
-"""Wiring: one gRPC server on one port with health, WorkforceService, RunService and
-BrainService. Clients keep the same services and messages; only the address is shared."""
+"""Wiring: one gRPC server on one port with health, WorkforceService, RunService,
+BrainService and CollaborationService. Clients keep the same services and messages; only the
+address is shared."""
 
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from core_python.agent_runtime import app as runtime_app
 from core_python.brain import app as brain_app
 from core_python.brain.app import embedder, pinned_cache
 from core_python.brain.recall import Recall
+from core_python.collaboration import app as collab_app
 from core_python.workforce import app as workforce_app
 
 
@@ -26,6 +28,7 @@ class Databases:
     runtime: Database
     brain: Database
     eval: Database
+    collab: Database
 
     @classmethod
     def from_settings(cls, s: config.Settings) -> Databases:
@@ -35,6 +38,7 @@ class Databases:
             runtime=Database(s.runtime_database_url, tenant_role=role),
             brain=Database(s.brain_database_url, tenant_role=role),
             eval=Database(s.eval_database_url, tenant_role=role),
+            collab=Database(s.collab_database_url, tenant_role=role),
         )
 
     def all(self) -> dict[str, Database]:
@@ -43,6 +47,7 @@ class Databases:
             "runtime": self.runtime,
             "brain": self.brain,
             "eval": self.eval,
+            "collab": self.collab,
         }
 
     async def open(self, *, wait: bool = True) -> None:
@@ -73,6 +78,7 @@ def create_server(
     brain_settings = config.brain(s)
     recall = Recall(dbs.brain, embedder(brain_settings), pinned_cache(brain_settings))
     brain_app.add_services(server, brain_settings, recall)
+    collab_app.add_services(server, config.collaboration(s), dbs.collab)
 
     bound = server.add_insecure_port(f"{s.host}:{s.port if port is None else port}")
     return server, health, bound

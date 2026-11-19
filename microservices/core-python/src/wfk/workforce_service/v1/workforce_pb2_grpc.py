@@ -76,6 +76,51 @@ class WorkforceServiceStub:
                 request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeRequest.SerializeToString,
                 response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeResponse.FromString,
                 _registered_method=True)
+        self.CreateDepartment = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/CreateDepartment',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentResponse.FromString,
+                _registered_method=True)
+        self.ListDepartments = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/ListDepartments',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsResponse.FromString,
+                _registered_method=True)
+        self.PlaceEmployee = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/PlaceEmployee',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeResponse.FromString,
+                _registered_method=True)
+        self.GetOrgChart = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/GetOrgChart',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.FromString,
+                _registered_method=True)
+        self.CanDelegate = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/CanDelegate',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.FromString,
+                _registered_method=True)
+        self.HireEmployee = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/HireEmployee',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeResponse.FromString,
+                _registered_method=True)
+        self.RequestHire = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/RequestHire',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireResponse.FromString,
+                _registered_method=True)
+        self.ListHireRequests = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/ListHireRequests',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsResponse.FromString,
+                _registered_method=True)
+        self.DecideHireRequest = channel.unary_unary(
+                '/wfk.workforce_service.v1.WorkforceService/DecideHireRequest',
+                request_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestRequest.SerializeToString,
+                response_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestResponse.FromString,
+                _registered_method=True)
 
 
 class WorkforceServiceServicer:
@@ -136,6 +181,73 @@ class WorkforceServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CreateDepartment(self, request, context):
+        """The org chart. The person who owns the workspace is the CEO and is not an employee; one
+        employee may be the co-CEO, who reports to the person.
+        Repeating the same create is a no-op; another name for the same id is ALREADY_EXISTS.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListDepartments(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PlaceEmployee(self, request, context):
+        """Set title, department and manager. INVALID_ARGUMENT when the line would loop, the manager
+        is missing or paused, or a second co-CEO is named.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetOrgChart(self, request, context):
+        """Every employee with its place, and every department.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CanDelegate(self, request, context):
+        """May one employee hand work to another? The co-CEO to any active employee but itself;
+        anyone else to the active employees below them.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def HireEmployee(self, request, context):
+        """Hiring. A hire costs money, so only a person (actor kind HUMAN) hires or decides a request;
+        anyone else gets PERMISSION_DENIED. A new hire starts with the default org tools.
+        Create, publish version 1 and place, in one transaction. Idempotent on idempotency_key.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RequestHire(self, request, context):
+        """An employee asks for a hire. Nothing is created until a person approves it.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListHireRequests(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DecideHireRequest(self, request, context):
+        """Approve (hires, exactly as HireEmployee) or reject. FAILED_PRECONDITION once decided.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_WorkforceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -178,6 +290,51 @@ def add_WorkforceServiceServicer_to_server(servicer, server):
                     servicer.ResumeEmployee,
                     request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeRequest.FromString,
                     response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeResponse.SerializeToString,
+            ),
+            'CreateDepartment': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateDepartment,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentResponse.SerializeToString,
+            ),
+            'ListDepartments': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListDepartments,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsResponse.SerializeToString,
+            ),
+            'PlaceEmployee': grpc.unary_unary_rpc_method_handler(
+                    servicer.PlaceEmployee,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeResponse.SerializeToString,
+            ),
+            'GetOrgChart': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetOrgChart,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.SerializeToString,
+            ),
+            'CanDelegate': grpc.unary_unary_rpc_method_handler(
+                    servicer.CanDelegate,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.SerializeToString,
+            ),
+            'HireEmployee': grpc.unary_unary_rpc_method_handler(
+                    servicer.HireEmployee,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeResponse.SerializeToString,
+            ),
+            'RequestHire': grpc.unary_unary_rpc_method_handler(
+                    servicer.RequestHire,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireResponse.SerializeToString,
+            ),
+            'ListHireRequests': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListHireRequests,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsResponse.SerializeToString,
+            ),
+            'DecideHireRequest': grpc.unary_unary_rpc_method_handler(
+                    servicer.DecideHireRequest,
+                    request_deserializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestRequest.FromString,
+                    response_serializer=wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -398,6 +555,249 @@ class WorkforceService:
             '/wfk.workforce_service.v1.WorkforceService/ResumeEmployee',
             wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeRequest.SerializeToString,
             wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ResumeEmployeeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateDepartment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/CreateDepartment',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CreateDepartmentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListDepartments(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/ListDepartments',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListDepartmentsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PlaceEmployee(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/PlaceEmployee',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.PlaceEmployeeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetOrgChart(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/GetOrgChart',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.GetOrgChartResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CanDelegate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/CanDelegate',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.CanDelegateResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HireEmployee(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/HireEmployee',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.HireEmployeeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RequestHire(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/RequestHire',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.RequestHireResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListHireRequests(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/ListHireRequests',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.ListHireRequestsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DecideHireRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/wfk.workforce_service.v1.WorkforceService/DecideHireRequest',
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestRequest.SerializeToString,
+            wfk_dot_workforce__service_dot_v1_dot_workforce__pb2.DecideHireRequestResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -1,5 +1,6 @@
 """task.* events start and steer EmployeeRun (just up). The handler is called as the inbox does."""
 
+import asyncio
 import uuid
 from typing import Any
 
@@ -113,3 +114,31 @@ async def test_signals_for_runs_that_never_started_are_dropped(
         task_event("task.state_changed", missing, to="running"),
     ):
         await handle(commands, run_db, event)  # no error, nothing to do
+
+
+async def test_a_finished_sub_task_reaches_the_waiting_parent(
+    client: Client, run_db: Database
+) -> None:
+    from .test_delegation import DELEGATE, WAIT, last_tool_text, manager
+
+    provider = fake(DELEGATE, WAIT, lambda req: "Summary: " + last_tool_text(req))
+    async with running_workers(client, World(), provider, employee=manager) as queue:
+        commands = TaskCommands(client, queue)
+        parent = str(uuid.uuid4())
+        await handle(commands, run_db, created(parent))
+        done = task_event(
+            "task.child_finished",
+            parent,
+            child_task_id="t-1",
+            employee_id="junior",
+            title="Book demos",
+            status="completed",
+            stop_reason="final",
+            output="3 demos booked",
+        )
+        await handle(commands, run_db, done)
+        await handle(commands, run_db, done)  # redelivered: reported once
+        run = client.get_workflow_handle(parent, result_type=RunOutcome)
+        outcome = await asyncio.wait_for(run.result(), 60)
+    assert outcome.state.output is not None
+    assert outcome.state.output.count("3 demos booked") == 1

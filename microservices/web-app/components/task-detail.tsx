@@ -137,6 +137,36 @@ function Answer({ task, onDone }: { task: Task; onDone: () => void }) {
     );
 }
 
+/** The work this task handed down, each its own task with its own run. */
+function SubTasks({ id, version }: { id: string; version: number }) {
+    const [subs, setSubs] = useState<Task[]>([]);
+    useEffect(() => {
+        api<{ tasks: Task[] }>(`/tasks?parent=${id}&limit=200`)
+            .then((r) => setSubs([...r.tasks].reverse()))
+            .catch(() => setSubs([]));
+    }, [id, version]);
+    if (!subs.length) return null;
+    return (
+        <section className="section" aria-labelledby="subtasks-title">
+            <h2 id="subtasks-title">Handed down</h2>
+            <ul className="rows">
+                {subs.map((t) => (
+                    <li key={t.id}>
+                        <Link href={`/tasks/${t.id}`} className="task-row">
+                            <span className="task-title">{t.title}</span>
+                            <Status value={t.status} />
+                            <span className="meta">
+                                To {t.employee_id}
+                                {t.output ? `: ${t.output.slice(0, 160)}` : ""}
+                            </span>
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
+}
+
 export function TaskDetail({
     id,
     initial,
@@ -211,6 +241,19 @@ export function TaskDetail({
                         For {task.employee_id}, assigned by {task.created_by}{" "}
                         {when(task.created_at)}
                     </p>
+                    {task.parent_task_id && (
+                        <p className="meta">
+                            Handed down by {task.delegated_by ?? "its manager"} from{" "}
+                            <Link href={`/tasks/${task.parent_task_id}`}>a bigger task</Link>
+                            {task.root_task_id && task.root_task_id !== task.parent_task_id && (
+                                <>
+                                    , part of{" "}
+                                    <Link href={`/tasks/${task.root_task_id}`}>the goal</Link>
+                                </>
+                            )}
+                            .
+                        </p>
+                    )}
                 </div>
                 <Status value={task.status} />
             </header>
@@ -230,6 +273,7 @@ export function TaskDetail({
                         <h2 id="steps-title">What it did</h2>
                         <StepRail steps={steps} fresh={fresh} />
                     </section>
+                    <SubTasks id={id} version={steps.length} />
                 </div>
                 <aside>
                     <section className="section" aria-labelledby="asked-title">

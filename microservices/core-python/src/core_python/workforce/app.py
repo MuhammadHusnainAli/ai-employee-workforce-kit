@@ -9,6 +9,8 @@ from wfk_platform import GrpcHealth, HealthRegistry, add_health
 from wfk_platform.db import Database
 
 from core_python.workforce.adapters.postgres.employees import Employees
+from core_python.workforce.adapters.postgres.hiring import Hiring
+from core_python.workforce.adapters.postgres.org import Org
 from core_python.workforce.api.workforce import WorkforceServicer
 from core_python.workforce.settings import Settings
 
@@ -37,5 +39,5 @@ def add_services(server: grpc.aio.Server, settings: Settings, db: Database) -> N
     """WorkforceService, on a server that may also carry other modules' services."""
     source = f"//{settings.cell_id}/{settings.service_name}"
     workforce_pb2_grpc.add_WorkforceServiceServicer_to_server(
-        WorkforceServicer(Employees(db, source)), server
+        WorkforceServicer(Employees(db, source), Org(db, source), Hiring(db, source)), server
     )

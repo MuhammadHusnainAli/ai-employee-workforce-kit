@@ -7,7 +7,7 @@ own database, migrations, contracts and tests. The architecture behind them is i
 
 | Service | Language | Port | Modules |
 |---|---|---|---|
-| [core-python](core-python/README.md) | Python (+ Rust `brain-core` via PyO3) | 7001 | workforce, agent runtime, brain, evaluation; planned: model gateway, meeting, realtime voice, tenant directory, billing |
+| [core-python](core-python/README.md) | Python (+ Rust `brain-core` via PyO3) | 7001 | workforce, agent runtime, brain, evaluation, collaboration; planned: model gateway, meeting, realtime voice, tenant directory, billing |
 | [core-rust](core-rust/README.md) | Rust | 7002 | task, channel, sandbox; planned: integration, audit, usage metering, identity, workspace |
 | [web-app](web-app/README.md) | TypeScript (Next.js) | 7000 | the frontend for tenants and the public REST API |
 

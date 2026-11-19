@@ -12,19 +12,23 @@ Defines AI employees: role, instructions, model policy, tool grants, knowledge b
 ## Owns
 - employees
 - employee_versions (immutable blueprints)
-- teams and reporting lines
+- departments, titles, reporting lines and the one co-CEO (who reports to the person)
+- hire_requests (an employee asks; only a person approves)
 - schedules (→ Temporal Schedules)
 
 ## API
 - employee CRUD · `PublishVersion` · `SetActiveVersion` (rollback)
 - `GetVersion(id)` (used by runs, cached)
 - `PauseEmployee` / `ResumeEmployee`
+- org chart: `CreateDepartment` · `ListDepartments` · `PlaceEmployee` · `GetOrgChart` · `CanDelegate`
+- hiring (a person only, actor kind HUMAN): `HireEmployee` · `DecideHireRequest`; anyone: `RequestHire` ·
+  `ListHireRequests`. A hire is one transaction: employee, version 1 with the default org tools, place.
 
 ## Events
 | Direction | Subjects |
 |---|---|
 | In | `brain.version_promoted` |
-| Out | `employee.created` · `employee.version_published` · `employee.paused` |
+| Out | `employee.created` · `employee.version_published` · `employee.paused` · `employee.department_created` · `employee.placed` · `employee.hire_requested` · `employee.hire_decided` |
 
 ## Depends on
 - Evaluation Service (gate before publishing)

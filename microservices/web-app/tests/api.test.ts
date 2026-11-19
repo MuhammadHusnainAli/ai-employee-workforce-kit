@@ -44,7 +44,14 @@ const taskMsg = {
 };
 
 function backends(over: Partial<Record<keyof Backends, Service>> = {}): Backends {
-    return { tasks: fake(), runs: fake(), brain: fake(), workforce: fake(), ...over };
+    return {
+        tasks: fake(),
+        runs: fake(),
+        brain: fake(),
+        workforce: fake(),
+        collaboration: fake(),
+        ...over,
+    };
 }
 
 afterEach(() => vi.unstubAllEnvs());

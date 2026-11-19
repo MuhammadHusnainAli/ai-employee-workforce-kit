@@ -35,7 +35,7 @@ async fn task_migrations_apply_isolate_tenants_and_revert() {
     migrate::ensure_database(&url).await.unwrap();
     let pool = sqlx::PgPool::connect(&url).await.unwrap();
 
-    assert_eq!(migrate::up(&TASK_MIGRATOR, &pool).await.unwrap(), 2);
+    assert_eq!(migrate::up(&TASK_MIGRATOR, &pool).await.unwrap(), 3);
     assert_eq!(
         migrate::up(&TASK_MIGRATOR, &pool).await.unwrap(),
         0,

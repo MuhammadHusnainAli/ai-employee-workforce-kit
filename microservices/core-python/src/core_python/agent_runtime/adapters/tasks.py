@@ -6,7 +6,8 @@ transaction fails, so every action here is safe to repeat:
 
 - task.created starts the run with REJECT_DUPLICATE: a second start, even after the run has
   finished, is "already started" and ignored. A task never runs twice.
-- signals set a value (approve, human_reply, cancel), so a repeated signal changes nothing.
+- signals set a value (approve, human_reply, cancel), so a repeated signal changes nothing;
+  child_finished is keyed by the sub-task, so a repeated one is reported once.
 - a signal for a run that has finished or never started is dropped: there is nobody to tell.
 """
 
@@ -23,6 +24,7 @@ from temporalio.service import RPCError, RPCStatusCode
 from wfk_platform.db import Conn
 from wfk_platform.outbox import CloudEvent
 
+from core_python.agent_runtime.harness.reports import ChildReport
 from core_python.agent_runtime.workflows.employee_run import EmployeeRun
 from core_python.agent_runtime.workflows.types import ApprovalAnswer, RunInput
 
@@ -58,6 +60,17 @@ class TaskCommands:
                 await self.signal(task_id, EmployeeRun.approve, answer)
             case "task.reply_given":
                 await self.signal(task_id, EmployeeRun.human_reply, str(data.get("text", "")))
+            case "task.child_finished":
+                # Addressed to the parent (task_id): one of its sub-tasks has finished.
+                report = ChildReport(
+                    child_task_id=str(data.get("child_task_id", "")),
+                    employee_id=str(data.get("employee_id", "")),
+                    title=str(data.get("title", "")),
+                    status=str(data.get("status", "")),
+                    stop_reason=str(data.get("stop_reason", "")),
+                    output=str(data.get("output", "")),
+                )
+                await self.signal(task_id, EmployeeRun.child_finished, report)
             case _:
                 pass  # task.state_changed and future events: not ours to act on
 
