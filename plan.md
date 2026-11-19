@@ -469,6 +469,21 @@ Notes for later phases:
 - The web app's dev dependencies carry a ReDoS advisory in `picomatch` (through vitest), with no fixed version yet.
   Production dependencies have none.
 
+## Restructure: two backend services (ADR-0017)
+
+The backend becomes two services, one per language
+([ADR-0017](architecture/adr/0017-two-backend-services.md)). Each former service is a module with its own database,
+migrations, contracts and events; only the deployable changes. Branch: `build/two-backend-services`.
+
+| # | Task | Done when | Commit message |
+|---|---|---|---|
+| R.1 | ADR-0017 and this plan section | Docs merged, ADR listed | `Add ADR-0017 for two backend services` |
+| R.2 | `core-python`: workforce, agent runtime, brain and evaluation as modules in one project and one process (gRPC on 7001, every worker supervised), one platform copy, `core-python migrate` | Every unit and integration test of the four services passes in `core-python`, plus tests of the composed process | `Merge Python services into core-python` |
+| R.3 | `core-rust`: task, channel and sandbox as modules in one crate and one binary (HTTP and gRPC on 7002) | Every test of the three services passes in `core-rust` | `Merge Rust services into core-rust` |
+| R.4 | Local stack, web app and e2e on the two services | `just up-all` healthy, `just e2e` passes | `Run the local stack on two backend services` |
+| R.5 | The ten unbuilt services become module specs in the service of their language | No service folder without code is left | `Fold unbuilt service specs into module docs` |
+| R.6 | Docs: architecture, port map, CLAUDE.md, templates | No doc points at a removed service folder | `Update docs for two backend services` |
+
 ## Phase 8: Learning and evaluation (Brain steps 5 and 6)
 
 Consolidation workflow, credit assignment from `recall_log`, Evaluation Service on the harness `Evaluator`, skills

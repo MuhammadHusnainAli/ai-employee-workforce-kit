@@ -5,7 +5,7 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-service-boundaries.md) | Cut services by business capability (16 cell services, not nano-services) | Accepted |
+| [0001](0001-service-boundaries.md) | Cut services by business capability (16 cell services, not nano-services) | Boundaries accepted; deployables superseded by 0017 |
 | [0002](0002-temporal-durable-execution.md) | Temporal for durable agent execution | Accepted |
 | [0003](0003-postgresql-system-of-record.md) | PostgreSQL (CloudNativePG) as the only system of record | Accepted |
 | [0004](0004-outbox-and-nats-jetstream.md) | Transactional outbox + NATS JetStream for events | Accepted |
@@ -19,5 +19,6 @@ after acceptance. A changed decision gets a new ADR that supersedes the old one.
 | [0012](0012-gated-brain-evolution.md) | Brain evolution through versioned, evaluated, reversible proposals | Accepted |
 | [0013](0013-rust-and-python.md) | Rust and Python as the two implementation languages (supersedes Go) | Accepted |
 | [0014](0014-agent-harness-adk-step-loop.md) | agent-harness-adk as the agent framework, driven step by step by Temporal | Superseded by 0016 |
-| [0015](0015-self-contained-microservices.md) | Every microservice is a self-contained project: own manifest, lockfile, platform code and contracts | Accepted |
+| [0015](0015-self-contained-microservices.md) | Every microservice is a self-contained project: own manifest, lockfile, platform code and contracts | Accepted; applies to the two services of 0017 |
 | [0016](0016-harness-package-as-dependency.md) | agent-harness-adk used unchanged as a dependency; the step loop lives in Agent Runtime | Accepted |
+| [0017](0017-two-backend-services.md) | Two backend services, one per language: core-python and core-rust, each former service a module | Accepted |
