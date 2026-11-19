@@ -16,6 +16,7 @@ const FILES = [
     "wfk/agent_runtime/v1/runs.proto",
     "wfk/brain_service/v1/brain.proto",
     "wfk/workforce_service/v1/workforce.proto",
+    "wfk/collaboration_service/v1/collaboration.proto",
 ];
 
 type Unary = (
@@ -84,6 +85,7 @@ export interface Backends {
     runs: Service;
     brain: Service;
     workforce: Service;
+    collaboration: Service;
 }
 
 let backends: Backends | undefined;
@@ -107,6 +109,10 @@ export function realBackends(): Backends {
             workforce: service(
                 "wfk.workforce_service.v1.WorkforceService",
                 env.WFK_WORKFORCE_SERVICE_ADDR ?? "127.0.0.1:7001",
+            ),
+            collaboration: service(
+                "wfk.collaboration_service.v1.CollaborationService",
+                env.WFK_COLLAB_SERVICE_ADDR ?? "127.0.0.1:7001",
             ),
         };
     }

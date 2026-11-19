@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package wfk.collaboration_service.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wfk/common/v1/common.proto";
+
+// Conversations between AI employees and with the person who owns the workspace: direct
+// messages, calls and standups. Every message is kept, so the person can read all of them.
+// Owned by the collaboration module of core-python; callers copy this file.
+//
+// Who is speaking comes from the tenant context: actor kind EMPLOYEE speaks as that employee
+// (actor.id), actor kind HUMAN speaks as the person.
+service CollaborationService {
+  // A message to another employee, or to the person (to = "person"). One direct conversation
+  // per pair, reused. Idempotent on idempotency_key.
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  // Post into a conversation (the person joining a call or a standup, for example).
+  // FAILED_PRECONDITION when it is closed. Idempotent on idempotency_key.
+  rpc PostMessage(PostMessageRequest) returns (PostMessageResponse);
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  // A conversation and its messages after after_seq (0: from the start), for live reading.
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+  // Unread direct messages for the calling employee; marks them read.
+  rpc ReadInbox(ReadInboxRequest) returns (ReadInboxResponse);
+  // Ask a colleague a question on a call and get the answer. Ask again with the same
+  // conversation_id to carry on; a call closes after 6 turns. Idempotent on idempotency_key.
+  rpc AskColleague(AskColleagueRequest) returns (AskColleagueResponse);
+
+  // Standups, run by the co-CEO from real task status. The person joins by posting into the
+  // standup's conversation (conversation_id = standup_id) while it is discussing.
+  // Starts one for the whole company, or one department. Idempotent on idempotency_key.
+  rpc StartStandup(StartStandupRequest) returns (StartStandupResponse);
+  rpc GetStandup(GetStandupRequest) returns (GetStandupResponse);
+  rpc ListStandups(ListStandupsRequest) returns (ListStandupsResponse);
+  // Close the discussion now and go to the summary. FAILED_PRECONDITION once summarising.
+  rpc EndStandupDiscussion(EndStandupDiscussionRequest) returns (EndStandupDiscussionResponse);
+}
+
+enum ConversationKind {
+  CONVERSATION_KIND_UNSPECIFIED = 0;
+  CONVERSATION_KIND_DIRECT = 1;
+  CONVERSATION_KIND_CALL = 2;
+  CONVERSATION_KIND_STANDUP = 3;
+}
+
+message Participant {
+  // An employee id, or "person".
+  string id = 1;
+  // "employee" or "person".
+  string kind = 2;
+}
+
+message Message {
+  string conversation_id = 1;
+  int32 seq = 2;
+  string message_id = 3;
+  // An employee id, the person's user id, or "system".
+  string author = 4;
+  // "employee", "person" or "system".
+  string author_kind = 5;
+  // message, question, answer, report, summary or system.
+  string kind = 6;
+  string text = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message Conversation {
+  string conversation_id = 1;
+  ConversationKind kind = 2;
+  string topic = 3;
+  // "open" or "closed".
+  string status = 4;
+  string started_by = 5;
+  repeated Participant participants = 6;
+  int32 turns = 7;
+  // 0: no cap.
+  int32 max_turns = 8;
+  int32 last_seq = 9;
+  // The latest message, for lists.
+  Message last_message = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message SendMessageRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  // An employee id, or "person".
+  string to = 3;
+  string text = 4;
+}
+
+message SendMessageResponse {
+  Message message = 1;
+}
+
+message PostMessageRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  string conversation_id = 3;
+  string text = 4;
+}
+
+message PostMessageResponse {
+  Message message = 1;
+}
+
+message ListConversationsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // Only conversations this employee (or "person") takes part in. Empty: all.
+  string participant = 2;
+  // Unspecified: any kind.
+  ConversationKind kind = 3;
+  // At most 200, default 50. Most recently active first.
+  int32 limit = 4;
+}
+
+message ListConversationsResponse {
+  repeated Conversation conversations = 1;
+}
+
+message GetConversationRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string conversation_id = 2;
+  int32 after_seq = 3;
+  // At most 500, default 200.
+  int32 limit = 4;
+}
+
+message GetConversationResponse {
+  Conversation conversation = 1;
+  repeated Message messages = 2;
+}
+
+message ReadInboxRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+}
+
+message ReadInboxResponse {
+  repeated Message messages = 1;
+}
+
+message AskColleagueRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  // The employee asked.
+  string colleague = 3;
+  string question = 4;
+  // Carry on an earlier call. Empty: start a new one.
+  string conversation_id = 5;
+  // What the call is about, for a new call.
+  string topic = 6;
+}
+
+message AskColleagueResponse {
+  string conversation_id = 1;
+  string answer = 2;
+  // Questions left before the call closes.
+  int32 turns_left = 3;
+}
+
+message StandupReport {
+  string employee_id = 1;
+  string title = 2;
+  string done = 3;
+  string next = 4;
+  string blockers = 5;
+  // Nothing new since the last standup: a fixed line, no model call.
+  bool idle = 6;
+}
+
+message NextStep {
+  // An employee id, or "person".
+  string owner = 1;
+  string action = 2;
+  // The task it became, when the standup assigns next steps.
+  string task_id = 3;
+}
+
+message Standup {
+  // Also the id of its conversation.
+  string standup_id = 1;
+  // Empty: the whole company.
+  string department_id = 2;
+  // collecting, discussing, summarising, done or failed.
+  string status = 3;
+  string led_by = 4;
+  string started_by = 5;
+  int32 discussion_s = 6;
+  bool assign_next_steps = 7;
+  repeated StandupReport reports = 8;
+  string where_we_are = 9;
+  string where_we_go = 10;
+  repeated NextStep next_steps = 11;
+  repeated string risks = 12;
+  string error = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp finished_at = 15;
+}
+
+message StartStandupRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  wfk.common.v1.IdempotencyKey idempotency_key = 2;
+  // Empty: the whole company.
+  string department_id = 3;
+  // Seconds of quiet before the discussion closes: 0 skips it, at most 3600. Unset: 120.
+  optional int32 discussion_s = 4;
+  // Turn each next step into a task for its owner.
+  bool assign_next_steps = 5;
+}
+
+message StartStandupResponse {
+  Standup standup = 1;
+}
+
+message GetStandupRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string standup_id = 2;
+}
+
+message GetStandupResponse {
+  Standup standup = 1;
+}
+
+message ListStandupsRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  // At most 100, default 20. Newest first.
+  int32 limit = 2;
+}
+
+message ListStandupsResponse {
+  repeated Standup standups = 1;
+}
+
+message EndStandupDiscussionRequest {
+  wfk.common.v1.TenantContext tenant = 1;
+  string standup_id = 2;
+}
+
+message EndStandupDiscussionResponse {
+  Standup standup = 1;
+}

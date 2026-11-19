@@ -15,6 +15,11 @@ export interface Task {
     created_by: string;
     created_at: string | null;
     updated_at: string | null;
+    parent_task_id?: string | null;
+    root_task_id?: string | null;
+    depth?: number;
+    output?: string;
+    delegated_by?: string | null;
 }
 
 export interface Run {
